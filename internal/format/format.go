@@ -51,6 +51,14 @@ type DependencyInfo struct {
 	CoreFiles []string            `xml:"coreFiles>file"`
 }
 
+type ProjectAnalysis struct {
+	EntryPoints    map[string]string    `xml:"entryPoints,omitempty"`
+	ConfigFiles    map[string]string    `xml:"configFiles,omitempty"`
+	CoreFiles      map[string]string    `xml:"coreFiles,omitempty"`
+	TestFiles      map[string]string    `xml:"testFiles,omitempty"`
+	Documentation  map[string]string    `xml:"documentation,omitempty"`
+}
+
 // Helper function to convert DirectoryNode to markdown string
 func (d *DirectoryNode) ToMarkdown(level int) string {
 	var sb strings.Builder
