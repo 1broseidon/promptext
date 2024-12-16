@@ -29,6 +29,7 @@ type ProjectOutput struct {
 	Overview      *ProjectOverview `xml:"overview,omitempty"`
 	FileStats     *FileStatistics `xml:"fileStats,omitempty"`
 	Dependencies  *DependencyInfo `xml:"dependencies,omitempty"`
+	Analysis      *ProjectAnalysis `xml:"analysis,omitempty"`
 }
 
 type ProjectOverview struct {

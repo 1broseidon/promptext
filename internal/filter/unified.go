@@ -27,6 +27,42 @@ func NewUnifiedFilter(gitIgnore *gitignore.GitIgnore, extensions, excludes []str
 	}
 }
 
+// GetFileType determines the type of file based on its path and patterns
+func (uf *UnifiedFilter) GetFileType(path string) string {
+    ext := strings.ToLower(filepath.Ext(path))
+    base := strings.ToLower(filepath.Base(path))
+    
+    // Check for tests
+    if strings.Contains(path, "_test.") || strings.Contains(path, "test_") {
+        return "test"
+    }
+    
+    // Check for entry points
+    for lang, patterns := range entryPointPatterns {
+        for _, pattern := range patterns {
+            if matched, _ := filepath.Match(pattern, base); matched {
+                return "entry:" + lang
+            }
+        }
+    }
+    
+    // Check for configs
+    for _, pattern := range configPatterns {
+        if matched, _ := filepath.Match(pattern, base); matched {
+            return "config"
+        }
+    }
+    
+    // Check for documentation
+    for _, pattern := range docPatterns {
+        if matched, _ := filepath.Match(pattern, base); matched {
+            return "doc"
+        }
+    }
+    
+    return "source"
+}
+
 // ShouldProcess determines if a file should be processed based on all rules
 func (uf *UnifiedFilter) ShouldProcess(path string) bool {
 	// 1. Check all exclusion patterns first
