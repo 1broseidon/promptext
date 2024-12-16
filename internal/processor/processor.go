@@ -7,7 +7,7 @@ import (
     "path/filepath"
     "strings"
 
-    "promptext/internal/filter"
+    "github.com/1broseidon/promptext/internal/filter"
 )
 
 type Config struct {
