@@ -38,8 +38,11 @@ func (gi *GitIgnore) ShouldIgnore(path string) bool {
 		return false
 	}
 
+	// Get both the full path and base name for matching
+	baseName := filepath.Base(path)
+
 	for _, pattern := range gi.patterns {
-		// Handle directory patterns first
+		// Handle directory patterns
 		if strings.HasSuffix(pattern, "/") {
 			dirPattern := strings.TrimSuffix(pattern, "/")
 			if strings.Contains(path, dirPattern) {
@@ -48,19 +51,26 @@ func (gi *GitIgnore) ShouldIgnore(path string) bool {
 			continue
 		}
 
-		// Try exact match first
-		if pattern == filepath.Base(path) {
+		// Try exact matches first
+		if pattern == baseName || pattern == path {
 			return true
 		}
 
-		// Try glob pattern match
-		matched, err := filepath.Match(pattern, filepath.Base(path))
-		if err == nil && matched {
-			return true
-		}
-
-		// Handle patterns that should match in any directory
+		// Handle glob patterns
 		if strings.Contains(pattern, "*") {
+			// Try matching against full path first
+			matched, err := filepath.Match(pattern, path)
+			if err == nil && matched {
+				return true
+			}
+
+			// Then try matching against base name
+			matched, err = filepath.Match(pattern, baseName)
+			if err == nil && matched {
+				return true
+			}
+
+			// Finally try matching against each path segment
 			segments := strings.Split(path, string(filepath.Separator))
 			for _, segment := range segments {
 				matched, err := filepath.Match(pattern, segment)
