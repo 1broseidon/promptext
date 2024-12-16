@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/1broseidon/promptext/internal/gitignore"
 )
 
 // ProjectInfo holds all discoverable information about the project
@@ -424,6 +426,13 @@ func getJavaGradleDependencies(root string) []string {
 }
 
 func shouldSkip(path string) bool {
+	// First check gitignore patterns
+	gitIgnore, err := gitignore.New(".gitignore")
+	if err == nil && gitIgnore.ShouldIgnore(path) {
+		return true
+	}
+
+	// Then check common patterns
 	patterns := []string{
 		".git/",
 		"node_modules/",
@@ -440,6 +449,8 @@ func shouldSkip(path string) bool {
 		"target/",
 		"dist/",
 		"build/",
+		".aider*",  // Add explicit pattern
+		"vendor/",
 	}
 
 	for _, pattern := range patterns {
