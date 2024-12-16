@@ -3,6 +3,7 @@ package format
 import (
 	"encoding/xml"
 	"fmt"
+	"path/filepath"
 	"strings"
 )
 
@@ -44,7 +45,7 @@ func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
 			if ext == "" {
 				ext = "text"
 			}
-			
+
 			sb.WriteString(fmt.Sprintf("\n### %s\n", file.Path))
 			sb.WriteString(fmt.Sprintf("```%s\n", ext))
 			sb.WriteString(file.Content)
