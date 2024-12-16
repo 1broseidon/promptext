@@ -91,6 +91,12 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 		}
 
 		// For directories, only skip if explicitly filtered
+		indent := strings.Repeat("  ", strings.Count(rel, string(filepath.Separator)))
+		prefix := "├──"
+		if isLastItem(path, dt) {
+			prefix = "└──"
+		}
+
 		if d.IsDir() {
 			if gitIgnore.ShouldIgnore(rel) {
 				return filepath.SkipDir
@@ -104,17 +110,7 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 			return nil
 		}
 
-		indent := strings.Repeat("  ", strings.Count(rel, string(filepath.Separator)))
-		prefix := "├──"
-		if isLastItem(path, dt) {
-			prefix = "└──"
-		}
-
-		if d.IsDir() {
-			builder.WriteString(fmt.Sprintf("%s%s %s/\n", indent, prefix, d.Name()))
-		} else {
-			builder.WriteString(fmt.Sprintf("%s%s %s\n", indent, prefix, d.Name()))
-		}
+		builder.WriteString(fmt.Sprintf("%s%s %s\n", indent, prefix, d.Name()))
 		return nil
 	})
 
