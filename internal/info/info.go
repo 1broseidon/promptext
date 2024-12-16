@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/1broseidon/promptext/internal/filter"
+	"github.com/1broseidon/promptext/internal/format"
 	"github.com/1broseidon/promptext/internal/gitignore"
 )
 

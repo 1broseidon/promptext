@@ -10,6 +10,7 @@ import (
 
 	"github.com/1broseidon/promptext/internal/config"
 	"github.com/1broseidon/promptext/internal/filter"
+	"github.com/1broseidon/promptext/internal/format"
 	"github.com/1broseidon/promptext/internal/gitignore"
 	"github.com/1broseidon/promptext/internal/info"
 	"github.com/atotto/clipboard"
@@ -57,7 +58,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 	// Populate ProjectOutput
 	projectOutput.DirectoryTree = projectInfo.DirectoryTree
-	
+
 	if projectInfo.GitInfo != nil {
 		projectOutput.GitInfo = &format.GitInfo{
 			Branch:        projectInfo.GitInfo.Branch,
@@ -251,13 +252,13 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		if err != nil {
 			return fmt.Errorf("error formatting output: %w", err)
 		}
-		
+
 		if err := clipboard.WriteAll(formattedOutput); err != nil {
 			log.Printf("Warning: Failed to copy to clipboard: %v", err)
 		} else {
 			// Always print metadata summary and success message in green
 			if info, err := GetMetadataSummary(procConfig); err == nil {
-				fmt.Printf("\033[32m%s   ✓ code context copied to clipboard (%s format)\033[0m\n", 
+				fmt.Printf("\033[32m%s   ✓ code context copied to clipboard (%s format)\033[0m\n",
 					info, outputFormat)
 			}
 		}
