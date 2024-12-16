@@ -33,5 +33,5 @@ jobs:
             promptext-linux-amd64
             promptext-linux-arm64
             promptext-windows-amd64.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          generate_release_notes: true
