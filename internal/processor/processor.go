@@ -89,8 +89,8 @@ func ProcessDirectory(config Config, verbose bool) (string, error) {
 				builder.Write(content)
 				builder.WriteString("\n```\n")
 			} else {
-				// Just add file path
-				builder.WriteString(fmt.Sprintf("\n### File: %s\n", path))
+				// Skip adding file headers in non-verbose mode
+				continue
 			}
 		}
 
