@@ -77,6 +77,7 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 	currentPath := make([]string, 0)
 	currentNode := rootNode
 
+	var err error
 	err = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -154,7 +155,10 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 		return nil
 	})
 
-	return rootNode, err
+	if err != nil {
+		return nil, err
+	}
+	return rootNode, nil
 }
 
 func getGitInfo(root string) (*GitInfo, error) {
