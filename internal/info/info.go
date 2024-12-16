@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"promptext/internal/filter"
-	"promptext/internal/gitignore"
+	"github.com/1broseidon/promptext/internal/filter"
+	"github.com/1broseidon/promptext/internal/gitignore"
 )
 
 // Config holds directory processing configuration
