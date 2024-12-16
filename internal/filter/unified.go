@@ -31,7 +31,7 @@ func (uf *UnifiedFilter) ShouldProcess(path string) bool {
 	
 	// Check default ignore directories
 	for _, dir := range uf.defaultIgnores {
-		if strings.Contains(path, "/"+dir+"/") || strings.HasPrefix(path, dir+"/") {
+		if strings.Contains(path, "/"+dir+"/") || strings.HasPrefix(path, dir+"/") || path == dir {
 			return false
 		}
 	}

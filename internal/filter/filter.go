@@ -3,7 +3,7 @@ package filter
 import "github.com/1broseidon/promptext/internal/gitignore"
 
 // DefaultIgnoreDirs contains common directories that should be ignored
-var defaultIgnoreDirs = []string{
+var DefaultIgnoreDirs = []string{
 	".git",
 	"node_modules",
 	"vendor",
