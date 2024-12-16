@@ -26,6 +26,28 @@ type ProjectOutput struct {
 	GitInfo       *GitInfo       `xml:"gitInfo,omitempty"`
 	Metadata      *Metadata      `xml:"metadata,omitempty"`
 	Files         []FileInfo     `xml:"files>file,omitempty"`
+	Overview      *ProjectOverview `xml:"overview,omitempty"`
+	FileStats     *FileStatistics `xml:"fileStats,omitempty"`
+	Dependencies  *DependencyInfo `xml:"dependencies,omitempty"`
+}
+
+type ProjectOverview struct {
+	Description string   `xml:"description"`
+	Purpose     string   `xml:"purpose"`
+	Features    []string `xml:"features>feature,omitempty"`
+}
+
+type FileStatistics struct {
+	TotalFiles     int            `xml:"totalFiles"`
+	FilesByType    map[string]int `xml:"fileTypes>type"`
+	TotalLines     int            `xml:"totalLines"`
+	PackageCount   int            `xml:"packageCount"`
+}
+
+type DependencyInfo struct {
+	Imports     map[string][]string `xml:"imports>file"`
+	Packages    []string            `xml:"packages>package"`
+	CoreFiles   []string            `xml:"coreFiles>file"`
 }
 
 // Helper function to convert DirectoryNode to markdown string

@@ -13,40 +13,76 @@ type XMLFormatter struct{}
 func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
 	var sb strings.Builder
 
-	// Add directory tree
-	sb.WriteString("### Project Structure:\n```\n")
+	// Project Overview Section
+	if project.Overview != nil {
+		sb.WriteString("# Project Overview\n\n")
+		sb.WriteString(fmt.Sprintf("%s\n\n", project.Overview.Description))
+		
+		if len(project.Overview.Features) > 0 {
+			sb.WriteString("## Key Features\n")
+			for _, feature := range project.Overview.Features {
+				sb.WriteString(fmt.Sprintf("- %s\n", feature))
+			}
+			sb.WriteString("\n")
+		}
+	}
+
+	// Quick Reference Section
+	sb.WriteString("## Quick Reference\n\n")
+	if project.FileStats != nil {
+		sb.WriteString(fmt.Sprintf("- Total Files: %d\n", project.FileStats.TotalFiles))
+		sb.WriteString(fmt.Sprintf("- Total Lines: %d\n", project.FileStats.TotalLines))
+		sb.WriteString(fmt.Sprintf("- Packages: %d\n", project.FileStats.PackageCount))
+		
+		sb.WriteString("\nFile Types:\n")
+		for ext, count := range project.FileStats.FilesByType {
+			sb.WriteString(fmt.Sprintf("- %s: %d files\n", ext, count))
+		}
+		sb.WriteString("\n")
+	}
+
+	// Directory Structure with annotations
+	sb.WriteString("## Project Structure\n```\n")
 	sb.WriteString(project.DirectoryTree.ToMarkdown(0))
 	sb.WriteString("```\n")
 
-	// Add git information if available
+	// Git Information
 	if project.GitInfo != nil {
-		sb.WriteString("\n### Git Information:\n")
-		sb.WriteString(fmt.Sprintf("Branch: %s\n", project.GitInfo.Branch))
-		sb.WriteString(fmt.Sprintf("Commit: %s\n", project.GitInfo.CommitHash))
-		sb.WriteString(fmt.Sprintf("Message: %s\n", project.GitInfo.CommitMessage))
+		sb.WriteString("\n## Git Information\n")
+		sb.WriteString(fmt.Sprintf("- Branch: %s\n", project.GitInfo.Branch))
+		sb.WriteString(fmt.Sprintf("- Commit: %s\n", project.GitInfo.CommitHash))
+		sb.WriteString(fmt.Sprintf("- Message: %s\n", project.GitInfo.CommitMessage))
 	}
 
-	// Add detailed metadata section if available
-	if project.Metadata != nil && len(project.Metadata.Dependencies) > 0 {
-		sb.WriteString("\n## Dependencies\n")
-		sb.WriteString("```\n")
-		for _, dep := range project.Metadata.Dependencies {
-			sb.WriteString(fmt.Sprintf("%s\n", dep))
+	// Dependencies and Relationships
+	if project.Dependencies != nil {
+		sb.WriteString("\n## Package Dependencies\n")
+		for pkg := range project.Dependencies.Imports {
+			sb.WriteString(fmt.Sprintf("### %s\n", pkg))
+			for _, imp := range project.Dependencies.Imports[pkg] {
+				sb.WriteString(fmt.Sprintf("- %s\n", imp))
+			}
 		}
-		sb.WriteString("```\n")
+
+		if len(project.Dependencies.CoreFiles) > 0 {
+			sb.WriteString("\n### Core Components\n")
+			for _, file := range project.Dependencies.CoreFiles {
+				sb.WriteString(fmt.Sprintf("- %s\n", file))
+			}
+		}
 	}
 
-	// Add files section with better formatting
+	// Source Files with line counts
 	if len(project.Files) > 0 {
 		sb.WriteString("\n## Source Files\n")
 		for _, file := range project.Files {
-			// Extract file extension for syntax highlighting
 			ext := strings.TrimPrefix(filepath.Ext(file.Path), ".")
 			if ext == "" {
 				ext = "text"
 			}
 
-			sb.WriteString(fmt.Sprintf("\n### %s\n", file.Path))
+			lineCount := strings.Count(file.Content, "\n") + 1
+			sb.WriteString(fmt.Sprintf("\n### %s (%d lines)\n", file.Path, lineCount))
 			sb.WriteString(fmt.Sprintf("```%s\n", ext))
 			sb.WriteString(file.Content)
 			sb.WriteString("\n```\n")
@@ -83,23 +119,50 @@ func writeDirectoryNode(node *DirectoryNode, b *strings.Builder, indent int) {
 }
 
 func (x *XMLFormatter) Format(project *ProjectOutput) (string, error) {
-	// Create a custom encoder that uses indentation
 	var b strings.Builder
 	enc := xml.NewEncoder(&b)
 	enc.Indent("", "  ")
 
-	// Start with XML header
 	b.WriteString(xml.Header)
-
-	// Start the project element
 	b.WriteString("<project>\n")
 
-	// Write directory tree as structured XML
+	// Project Overview
+	if project.Overview != nil {
+		b.WriteString("  <overview>\n")
+		b.WriteString(fmt.Sprintf("    <description><![CDATA[%s]]></description>\n", project.Overview.Description))
+		b.WriteString(fmt.Sprintf("    <purpose><![CDATA[%s]]></purpose>\n", project.Overview.Purpose))
+		if len(project.Overview.Features) > 0 {
+			b.WriteString("    <features>\n")
+			for _, feature := range project.Overview.Features {
+				b.WriteString(fmt.Sprintf("      <feature>%s</feature>\n", feature))
+			}
+			b.WriteString("    </features>\n")
+		}
+		b.WriteString("  </overview>\n")
+	}
+
+	// File Statistics
+	if project.FileStats != nil {
+		b.WriteString("  <fileStats>\n")
+		b.WriteString(fmt.Sprintf("    <totalFiles>%d</totalFiles>\n", project.FileStats.TotalFiles))
+		b.WriteString(fmt.Sprintf("    <totalLines>%d</totalLines>\n", project.FileStats.TotalLines))
+		b.WriteString(fmt.Sprintf("    <packageCount>%d</packageCount>\n", project.FileStats.PackageCount))
+		if len(project.FileStats.FilesByType) > 0 {
+			b.WriteString("    <fileTypes>\n")
+			for ext, count := range project.FileStats.FilesByType {
+				b.WriteString(fmt.Sprintf("      <type ext=\"%s\">%d</type>\n", ext, count))
+			}
+			b.WriteString("    </fileTypes>\n")
+		}
+		b.WriteString("  </fileStats>\n")
+	}
+
+	// Directory Tree
 	b.WriteString("  <directoryTree>\n")
 	writeDirectoryNode(project.DirectoryTree, &b, 4)
 	b.WriteString("  </directoryTree>\n")
 
-	// Write git info if available
+	// Git Info
 	if project.GitInfo != nil {
 		b.WriteString("  <gitInfo>\n")
 		b.WriteString(fmt.Sprintf("    <branch>%s</branch>\n", project.GitInfo.Branch))
@@ -110,26 +173,36 @@ func (x *XMLFormatter) Format(project *ProjectOutput) (string, error) {
 		b.WriteString("  </gitInfo>\n")
 	}
 
-	// Write metadata if available
-	if project.Metadata != nil {
-		b.WriteString("  <metadata>\n")
-		b.WriteString(fmt.Sprintf("    <language>%s</language>\n", project.Metadata.Language))
-		b.WriteString(fmt.Sprintf("    <version>%s</version>\n", project.Metadata.Version))
-		if len(project.Metadata.Dependencies) > 0 {
-			b.WriteString("    <dependencies>\n")
-			for _, dep := range project.Metadata.Dependencies {
-				b.WriteString(fmt.Sprintf("      <dependency>%s</dependency>\n", dep))
+	// Dependencies and Relationships
+	if project.Dependencies != nil {
+		b.WriteString("  <dependencies>\n")
+		if len(project.Dependencies.Imports) > 0 {
+			b.WriteString("    <imports>\n")
+			for file, imports := range project.Dependencies.Imports {
+				b.WriteString(fmt.Sprintf("      <file path=\"%s\">\n", file))
+				for _, imp := range imports {
+					b.WriteString(fmt.Sprintf("        <import>%s</import>\n", imp))
+				}
+				b.WriteString("      </file>\n")
 			}
-			b.WriteString("    </dependencies>\n")
+			b.WriteString("    </imports>\n")
 		}
-		b.WriteString("  </metadata>\n")
+		if len(project.Dependencies.CoreFiles) > 0 {
+			b.WriteString("    <coreFiles>\n")
+			for _, file := range project.Dependencies.CoreFiles {
+				b.WriteString(fmt.Sprintf("      <file>%s</file>\n", file))
+			}
+			b.WriteString("    </coreFiles>\n")
+		}
+		b.WriteString("  </dependencies>\n")
 	}
 
-	// Write files if available
+	// Files with metadata
 	if len(project.Files) > 0 {
 		b.WriteString("  <files>\n")
 		for _, file := range project.Files {
-			b.WriteString(fmt.Sprintf("    <file path=\"%s\">\n", file.Path))
+			lineCount := strings.Count(file.Content, "\n") + 1
+			b.WriteString(fmt.Sprintf("    <file path=\"%s\" lines=\"%d\">\n", file.Path, lineCount))
 			b.WriteString("      <content><![CDATA[")
 			b.WriteString(file.Content)
 			b.WriteString("]]></content>\n")
@@ -139,6 +212,5 @@ func (x *XMLFormatter) Format(project *ProjectOutput) (string, error) {
 	}
 
 	b.WriteString("</project>")
-
 	return b.String(), nil
 }
