@@ -118,6 +118,8 @@ func GetMetadataSummary(config Config) (string, error) {
 
 	if len(config.Extensions) > 0 {
 		summary.WriteString(fmt.Sprintf("   Filtering: %s\n", strings.Join(config.Extensions, ", ")))
+	} else {
+		summary.WriteString("\n")
 	}
 
 	return summary.String(), nil
