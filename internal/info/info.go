@@ -162,6 +162,261 @@ func getProjectMetadata(root string) (*ProjectMetadata, error) {
 	return metadata, nil
 }
 
+func detectLanguage(filename string) string {
+	switch filename {
+	case "go.mod":
+		return "Go"
+	case "package.json":
+		return "JavaScript/Node.js"
+	case "requirements.txt":
+		return "Python"
+	case "Cargo.toml":
+		return "Rust"
+	case "pom.xml":
+		return "Java (Maven)"
+	case "build.gradle":
+		return "Java (Gradle)"
+	default:
+		return ""
+	}
+}
+
+func getLanguageVersion(root, language string) string {
+	switch language {
+	case "Go":
+		return getGoVersion(root)
+	case "JavaScript/Node.js":
+		return getNodeVersion(root)
+	case "Python":
+		return getPythonVersion(root)
+	case "Rust":
+		return getRustVersion(root)
+	case "Java (Maven)", "Java (Gradle)":
+		return getJavaVersion(root)
+	default:
+		return ""
+	}
+}
+
+func getDependencies(root, filename string) []string {
+	switch filename {
+	case "go.mod":
+		return getGoDependencies(root)
+	case "package.json":
+		return getNodeDependencies(root)
+	case "requirements.txt":
+		return getPythonDependencies(root)
+	case "Cargo.toml":
+		return getRustDependencies(root)
+	case "pom.xml":
+		return getJavaMavenDependencies(root)
+	case "build.gradle":
+		return getJavaGradleDependencies(root)
+	default:
+		return nil
+	}
+}
+
+func getGoVersion(root string) string {
+	content, err := os.ReadFile(filepath.Join(root, "go.mod"))
+	if err != nil {
+		return ""
+	}
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "go ") {
+			return strings.TrimSpace(strings.TrimPrefix(line, "go"))
+		}
+	}
+	return ""
+}
+
+func getNodeVersion(root string) string {
+	cmd := exec.Command("node", "--version")
+	cmd.Dir = root
+	if out, err := cmd.Output(); err == nil {
+		return strings.TrimSpace(string(out))
+	}
+	return ""
+}
+
+func getPythonVersion(root string) string {
+	cmd := exec.Command("python", "--version")
+	cmd.Dir = root
+	if out, err := cmd.Output(); err == nil {
+		return strings.TrimSpace(string(out))
+	}
+	return ""
+}
+
+func getRustVersion(root string) string {
+	cmd := exec.Command("rustc", "--version")
+	cmd.Dir = root
+	if out, err := cmd.Output(); err == nil {
+		return strings.TrimSpace(string(out))
+	}
+	return ""
+}
+
+func getJavaVersion(root string) string {
+	cmd := exec.Command("java", "--version")
+	cmd.Dir = root
+	if out, err := cmd.Output(); err == nil {
+		return strings.Split(strings.TrimSpace(string(out)), "\n")[0]
+	}
+	return ""
+}
+
+func getGoDependencies(root string) []string {
+	content, err := os.ReadFile(filepath.Join(root, "go.mod"))
+	if err != nil {
+		return nil
+	}
+	
+	var deps []string
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "require ") || (strings.Contains(line, " ") && !strings.HasPrefix(line, "go ")) {
+			deps = append(deps, strings.Split(line, " ")[0])
+		}
+	}
+	return deps
+}
+
+func getNodeDependencies(root string) []string {
+	content, err := os.ReadFile(filepath.Join(root, "package.json"))
+	if err != nil {
+		return nil
+	}
+	
+	var deps []string
+	lines := strings.Split(string(content), "\n")
+	inDeps := false
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.Contains(line, "\"dependencies\"") || strings.Contains(line, "\"devDependencies\"") {
+			inDeps = true
+			continue
+		}
+		if inDeps && strings.Contains(line, "}") {
+			inDeps = false
+			continue
+		}
+		if inDeps && strings.Contains(line, "\":") {
+			dep := strings.Split(line, "\"")[1]
+			deps = append(deps, dep)
+		}
+	}
+	return deps
+}
+
+func getPythonDependencies(root string) []string {
+	content, err := os.ReadFile(filepath.Join(root, "requirements.txt"))
+	if err != nil {
+		return nil
+	}
+	
+	var deps []string
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "#") {
+			deps = append(deps, strings.Split(line, "==")[0])
+		}
+	}
+	return deps
+}
+
+func getRustDependencies(root string) []string {
+	content, err := os.ReadFile(filepath.Join(root, "Cargo.toml"))
+	if err != nil {
+		return nil
+	}
+	
+	var deps []string
+	lines := strings.Split(string(content), "\n")
+	inDeps := false
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.Contains(line, "[dependencies]") {
+			inDeps = true
+			continue
+		}
+		if inDeps && strings.HasPrefix(line, "[") {
+			inDeps = false
+			continue
+		}
+		if inDeps && strings.Contains(line, "=") {
+			dep := strings.Split(line, "=")[0]
+			deps = append(deps, strings.TrimSpace(dep))
+		}
+	}
+	return deps
+}
+
+func getJavaMavenDependencies(root string) []string {
+	// This is a simplified version. For a full implementation,
+	// you'd want to use an XML parser
+	content, err := os.ReadFile(filepath.Join(root, "pom.xml"))
+	if err != nil {
+		return nil
+	}
+	
+	var deps []string
+	lines := strings.Split(string(content), "\n")
+	inDep := false
+	var currentDep string
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.Contains(line, "<dependency>") {
+			inDep = true
+			currentDep = ""
+			continue
+		}
+		if strings.Contains(line, "</dependency>") {
+			if currentDep != "" {
+				deps = append(deps, currentDep)
+			}
+			inDep = false
+			continue
+		}
+		if inDep && strings.Contains(line, "<artifactId>") {
+			currentDep = strings.TrimSuffix(strings.TrimPrefix(line, "<artifactId>"), "</artifactId>")
+		}
+	}
+	return deps
+}
+
+func getJavaGradleDependencies(root string) []string {
+	content, err := os.ReadFile(filepath.Join(root, "build.gradle"))
+	if err != nil {
+		return nil
+	}
+	
+	var deps []string
+	lines := strings.Split(string(content), "\n")
+	inDeps := false
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.Contains(line, "dependencies {") {
+			inDeps = true
+			continue
+		}
+		if inDeps && strings.Contains(line, "}") {
+			inDeps = false
+			continue
+		}
+		if inDeps && strings.Contains(line, "implementation") {
+			parts := strings.Split(line, "'")
+			if len(parts) > 1 {
+				deps = append(deps, parts[1])
+			}
+		}
+	}
+	return deps
+}
+
 func shouldSkip(path string) bool {
 	patterns := []string{
 		".git/",
