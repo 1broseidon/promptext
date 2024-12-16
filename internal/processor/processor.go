@@ -108,18 +108,38 @@ func GetMetadataSummary(config Config) (string, error) {
 	var summary strings.Builder
 	summary.WriteString("📦 Project Summary:\n")
 	
+	// Add root folder name
+	absPath, err := filepath.Abs(config.DirPath)
+	if err == nil {
+		summary.WriteString(fmt.Sprintf("   Project: %s\n", filepath.Base(absPath)))
+	}
+	
 	if projectInfo.Metadata != nil {
 		summary.WriteString(fmt.Sprintf("   Language: %s %s\n", projectInfo.Metadata.Language, projectInfo.Metadata.Version))
+		if len(projectInfo.Metadata.Dependencies) > 0 {
+			summary.WriteString(fmt.Sprintf("   Dependencies: %d packages\n", len(projectInfo.Metadata.Dependencies)))
+		}
 	}
 	
 	if projectInfo.GitInfo != nil {
 		summary.WriteString(fmt.Sprintf("   Branch: %s (%s)\n", projectInfo.GitInfo.Branch, projectInfo.GitInfo.CommitHash))
 	}
 
+	// Count included files
+	fileCount := 0
+	filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return nil
+		}
+		if filter.ShouldProcessFile(path, config.Extensions, config.Excludes, &gitignore.GitIgnore{}) {
+			fileCount++
+		}
+		return nil
+	})
+	summary.WriteString(fmt.Sprintf("   Files: %d included\n", fileCount))
+
 	if len(config.Extensions) > 0 {
 		summary.WriteString(fmt.Sprintf("   Filtering: %s\n", strings.Join(config.Extensions, ", ")))
-	} else {
-		summary.WriteString("\n")
 	}
 
 	return summary.String(), nil

@@ -15,6 +15,7 @@ func main() {
 	extension := flag.String("ext", "", "File extension to filter (e.g., .go,.js)")
 	exclude := flag.String("exclude", "", "Patterns to exclude (comma-separated)")
 	noCopy := flag.Bool("no-copy", false, "Disable automatic copying to clipboard")
+	infoOnly := flag.Bool("info", false, "Only display project summary")
 
 	flag.Parse()
 
@@ -25,23 +26,32 @@ func main() {
 		Excludes:   processor.ParseCommaSeparated(*exclude),
 	}
 
-	// Process the directory
-	output, err := processor.ProcessDirectory(config)
-	if err != nil {
-		log.Fatalf("Error processing directory: %v", err)
-	}
-
-	// Write to stdout
-	fmt.Println(output)
-
-	// Copy to clipboard unless disabled
-	if !*noCopy {
-		if err := clipboard.WriteAll(output); err != nil {
-			log.Printf("Warning: Failed to copy to clipboard: %v", err)
+	if *infoOnly {
+		// Only display project summary
+		if info, err := processor.GetMetadataSummary(config); err == nil {
+			fmt.Printf("\033[32m%s\033[0m\n", info)
 		} else {
-			// Print metadata summary and success message in green
-			if info, err := processor.GetMetadataSummary(config); err == nil {
-				fmt.Printf("\033[32m%s   ✓ code context copied to clipboard\033[0m\n", info)
+			log.Fatalf("Error getting project info: %v", err)
+		}
+	} else {
+		// Process the directory
+		output, err := processor.ProcessDirectory(config)
+		if err != nil {
+			log.Fatalf("Error processing directory: %v", err)
+		}
+
+		// Write to stdout
+		fmt.Println(output)
+
+		// Copy to clipboard unless disabled
+		if !*noCopy {
+			if err := clipboard.WriteAll(output); err != nil {
+				log.Printf("Warning: Failed to copy to clipboard: %v", err)
+			} else {
+				// Print metadata summary and success message in green
+				if info, err := processor.GetMetadataSummary(config); err == nil {
+					fmt.Printf("\033[32m%s   ✓ code context copied to clipboard\033[0m\n", info)
+				}
 			}
 		}
 	}
