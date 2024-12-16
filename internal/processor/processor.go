@@ -1,68 +1,68 @@
 package processor
 
 import (
-    "fmt"
-    "io/fs"
-    "os"
-    "path/filepath"
-    "strings"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"strings"
 
-    "github.com/1broseidon/promptext/internal/filter"
-    "github.com/1broseidon/promptext/internal/gitignore"
+	"github.com/1broseidon/promptext/internal/filter"
+	"github.com/1broseidon/promptext/internal/gitignore"
 )
 
 type Config struct {
-    DirPath    string
-    Extensions []string
-    Excludes   []string
+	DirPath    string
+	Extensions []string
+	Excludes   []string
 }
 
 func ParseCommaSeparated(input string) []string {
-    if input == "" {
-        return nil
-    }
-    return strings.Split(input, ",")
+	if input == "" {
+		return nil
+	}
+	return strings.Split(input, ",")
 }
 
 func ProcessDirectory(config Config) (string, error) {
-    var builder strings.Builder
-    
-    // Initialize gitignore
-    gitIgnore, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
-    if err != nil {
-        return "", fmt.Errorf("error reading .gitignore: %w", err)
-    }
+	var builder strings.Builder
 
-    err := filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
-        if err != nil {
-            return err
-        }
+	// Initialize gitignore
+	gitIgnore, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
+	if err != nil {
+		return "", fmt.Errorf("error reading .gitignore: %w", err)
+	}
 
-        if d.IsDir() {
-            return nil
-        }
+	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
 
-        if !filter.ShouldProcessFile(path, config.Extensions, config.Excludes, gitIgnore) {
-            return nil
-        }
+		if d.IsDir() {
+			return nil
+		}
 
-        content, err := os.ReadFile(path)
-        if err != nil {
-            return fmt.Errorf("error reading file %s: %w", path, err)
-        }
+		if !filter.ShouldProcessFile(path, config.Extensions, config.Excludes, gitIgnore) {
+			return nil
+		}
 
-        // Add file header
-        builder.WriteString(fmt.Sprintf("\n### File: %s\n", path))
-        builder.WriteString("```\n")
-        builder.Write(content)
-        builder.WriteString("\n```\n")
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("error reading file %s: %w", path, err)
+		}
 
-        return nil
-    })
+		// Add file header
+		builder.WriteString(fmt.Sprintf("\n### File: %s\n", path))
+		builder.WriteString("```\n")
+		builder.Write(content)
+		builder.WriteString("\n```\n")
 
-    if err != nil {
-        return "", fmt.Errorf("error walking directory: %w", err)
-    }
+		return nil
+	})
 
-    return builder.String(), nil
+	if err != nil {
+		return "", fmt.Errorf("error walking directory: %w", err)
+	}
+
+	return builder.String(), nil
 }
