@@ -77,8 +77,7 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 	currentPath := make([]string, 0)
 	currentNode := rootNode
 
-	var err error
-	err = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -485,58 +484,6 @@ func getJavaGradleDependencies(root string) []string {
 	return deps
 }
 
-// dirTracker keeps track of items remaining in each directory
-type dirTracker struct {
-	itemsLeft map[string]int
-}
-
-// newDirTracker initializes a new directory tracker
-func newDirTracker(root string, config *Config, gitIgnore *gitignore.GitIgnore) (*dirTracker, error) {
-	dt := &dirTracker{
-		itemsLeft: make(map[string]int),
-	}
-
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if path == root {
-			return nil
-		}
-
-		rel, err := filepath.Rel(root, path)
-		if err != nil {
-			return err
-		}
-
-		// Always count directories
-		if d.IsDir() {
-			parent := filepath.Dir(path)
-			dt.itemsLeft[parent]++
-			return nil
-		}
-
-		// Only count files that match filters
-		if filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gitIgnore) {
-			parent := filepath.Dir(path)
-			dt.itemsLeft[parent]++
-		}
-		return nil
-	})
-
-	return dt, err
-}
-
-// decrementDir reduces the count for a directory and returns if it's the last item
-func (dt *dirTracker) decrementDir(dir string) bool {
-	dt.itemsLeft[dir]--
-	return dt.itemsLeft[dir] == 0
-}
-
-func isLastItem(path string, dt *dirTracker) bool {
-	return dt.decrementDir(filepath.Dir(path))
-}
 
 // ProjectAnalysis contains categorized project files and their descriptions
 type ProjectAnalysis struct {
@@ -547,24 +494,6 @@ type ProjectAnalysis struct {
 	Documentation map[string]string // Documentation files
 }
 
-var entryPointPatterns = map[string][]string{
-	"Go":      {"main.go", "cmd/*/main.go"},
-	"Python":  {"__main__.py", "app.py", "main.py"},
-	"Node.js": {"index.js", "server.js", "app.js"},
-	"Rust":    {"main.rs", "lib.rs"},
-	"Java":    {"Main.java", "Application.java"},
-}
-
-var configPatterns = []string{
-	"*.yml", "*.yaml", "*.json", "*.toml", "*.ini",
-	"config.*", ".env*", "requirements.txt",
-	"package.json", "Cargo.toml", "pom.xml",
-}
-
-var docPatterns = []string{
-	"README*", "CONTRIBUTING*", "CHANGELOG*", "LICENSE*",
-	"docs/*", "*.md", "*.rst",
-}
 
 // Helper function to compare path slices
 func getConfigDescription(path string) string {
@@ -598,7 +527,7 @@ func isCoreFile(path string) bool {
 		strings.Contains(dir, "lib/")
 }
 
-func getCoreDescription(path string) string {
+func getCoreDescription(_ string) string {
 	return "Core implementation"
 }
 
