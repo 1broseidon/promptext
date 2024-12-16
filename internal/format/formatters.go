@@ -52,11 +52,40 @@ func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
 }
 
 func (x *XMLFormatter) Format(project *ProjectOutput) (string, error) {
-    output, err := xml.MarshalIndent(project, "", "  ")
-    if err != nil {
+    // Create a custom encoder that uses indentation
+    var b strings.Builder
+    enc := xml.NewEncoder(&b)
+    enc.Indent("", "  ")
+
+    // Start with XML header
+    b.WriteString(xml.Header)
+
+    // Wrap content fields in CDATA
+    projectWithCDATA := &ProjectOutput{
+        XMLName:       project.XMLName,
+        DirectoryTree: "<![CDATA[" + project.DirectoryTree + "]]>",
+        GitInfo: &GitInfo{
+            Branch:        project.GitInfo.Branch,
+            CommitHash:    project.GitInfo.CommitHash,
+            CommitMessage: "<![CDATA[" + project.GitInfo.CommitMessage + "]]>",
+        },
+        Metadata: project.Metadata,
+        Files:    make([]FileInfo, len(project.Files)),
+    }
+
+    // Wrap file contents in CDATA
+    for i, file := range project.Files {
+        projectWithCDATA.Files[i] = FileInfo{
+            Path:    file.Path,
+            Content: "<![CDATA[" + file.Content + "]]>",
+        }
+    }
+
+    if err := enc.Encode(projectWithCDATA); err != nil {
         return "", err
     }
-    return string(output), nil
+
+    return b.String(), nil
 }
 
 func (j *JSONFormatter) Format(project *ProjectOutput) (string, error) {
