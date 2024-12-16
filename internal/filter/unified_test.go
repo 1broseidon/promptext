@@ -1,7 +1,6 @@
 package filter
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/1broseidon/promptext/internal/gitignore"
@@ -22,14 +21,14 @@ func TestUnifiedFilter_ShouldProcess(t *testing.T) {
 		want            bool
 	}{
 		{
-			name:        "default ignored directory",
-			path:        "node_modules/package.json",
-			want:        false,
+			name: "default ignored directory",
+			path: "node_modules/package.json",
+			want: false,
 		},
 		{
-			name:        "default ignored extension",
-			path:        "images/photo.jpg",
-			want:        false,
+			name: "default ignored extension",
+			path: "images/photo.jpg",
+			want: false,
 		},
 		{
 			name:        "allowed extension",
@@ -80,14 +79,14 @@ func TestUnifiedFilter_ShouldProcess(t *testing.T) {
 			want:            false,
 		},
 		{
-			name:        "binary file extension",
-			path:        "bin/program.exe",
-			want:        false,
+			name: "binary file extension",
+			path: "bin/program.exe",
+			want: false,
 		},
 		{
-			name:        "image file extension",
-			path:        "assets/logo.png",
-			want:        false,
+			name: "image file extension",
+			path: "assets/logo.png",
+			want: false,
 		},
 	}
 
