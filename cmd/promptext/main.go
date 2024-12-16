@@ -20,23 +20,33 @@ func main() {
 
 	flag.Parse()
 
+	// Load config file
+	fileConfig, err := config.LoadConfig(*dirPath)
+	if err != nil {
+		log.Printf("Warning: Failed to load .promptext.yml: %v", err)
+		fileConfig = &config.FileConfig{}
+	}
+
+	// Merge file config with command line flags
+	extensions, excludes, verbose := fileConfig.MergeWithFlags(*extension, *exclude, *verbose)
+
 	// Create processor configuration
-	config := processor.Config{
+	procConfig := processor.Config{
 		DirPath:    *dirPath,
-		Extensions: processor.ParseCommaSeparated(*extension),
-		Excludes:   processor.ParseCommaSeparated(*exclude),
+		Extensions: extensions,
+		Excludes:   excludes,
 	}
 
 	if *infoOnly {
 		// Only display project summary
-		if info, err := processor.GetMetadataSummary(config); err == nil {
+		if info, err := processor.GetMetadataSummary(procConfig); err == nil {
 			fmt.Printf("\033[32m%s\033[0m\n", info)
 		} else {
 			log.Fatalf("Error getting project info: %v", err)
 		}
 	} else {
 		// Process the directory
-		result, err := processor.ProcessDirectory(config, *verbose)
+		result, err := processor.ProcessDirectory(procConfig, verbose)
 		if err != nil {
 			log.Fatalf("Error processing directory: %v", err)
 		}
@@ -52,7 +62,7 @@ func main() {
 				log.Printf("Warning: Failed to copy to clipboard: %v", err)
 			}
 			// Always print metadata summary and success message in green
-			if info, err := processor.GetMetadataSummary(config); err == nil {
+			if info, err := processor.GetMetadataSummary(procConfig); err == nil {
 				fmt.Printf("\033[32m%s   ✓ code context copied to clipboard\033[0m\n", info)
 			}
 		}
