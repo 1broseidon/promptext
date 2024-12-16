@@ -1,6 +1,8 @@
 package processor
 
 import (
+	"flag"
+	"fmt"
 	"fmt"
 	"io/fs"
 	"os"
@@ -183,4 +185,58 @@ func GetMetadataSummary(config Config) (string, error) {
 	}
 
 	return summary.String(), nil
+}
+
+// Run executes the promptext tool with the given configuration
+func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool) error {
+	// Load config file
+	fileConfig, err := config.LoadConfig(dirPath)
+	if err != nil {
+		log.Printf("Warning: Failed to load .promptext.yml: %v", err)
+		fileConfig = &config.FileConfig{}
+	}
+
+	// Merge file config with command line flags
+	extensions, excludes, verboseFlag := fileConfig.MergeWithFlags(extension, exclude, verbose)
+
+	// Create processor configuration
+	procConfig := Config{
+		DirPath:    dirPath,
+		Extensions: extensions,
+		Excludes:   excludes,
+	}
+
+	if infoOnly {
+		// Only display project summary
+		if info, err := GetMetadataSummary(procConfig); err == nil {
+			fmt.Printf("\033[32m%s\033[0m\n", info)
+		} else {
+			return fmt.Errorf("error getting project info: %v", err)
+		}
+		return nil
+	}
+
+	// Process the directory
+	result, err := ProcessDirectory(procConfig, verboseFlag)
+	if err != nil {
+		return fmt.Errorf("error processing directory: %v", err)
+	}
+
+	// Write display content to stdout
+	if verbose {
+		fmt.Println(result.DisplayContent)
+	}
+
+	// Copy to clipboard unless disabled
+	if !noCopy {
+		if err := clipboard.WriteAll(result.ClipboardContent); err != nil {
+			log.Printf("Warning: Failed to copy to clipboard: %v", err)
+		}
+		// Always print metadata summary and success message in green
+		if info, err := GetMetadataSummary(procConfig); err == nil {
+			fmt.Printf("\033[32m%s   ✓ code context copied to clipboard\033[0m\n", info)
+		}
+	}
+
+	return nil
 }

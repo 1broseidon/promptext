@@ -2,12 +2,9 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 
-	"github.com/1broseidon/promptext/internal/config"
-	"github.com/1broseidon/promptext/internal/processor"
-	"github.com/atotto/clipboard"
+	"github.com/1broseidon/promptext"
 )
 
 func main() {
@@ -21,51 +18,7 @@ func main() {
 
 	flag.Parse()
 
-	// Load config file
-	fileConfig, err := config.LoadConfig(*dirPath)
-	if err != nil {
-		log.Printf("Warning: Failed to load .promptext.yml: %v", err)
-		fileConfig = &config.FileConfig{}
-	}
-
-	// Merge file config with command line flags
-	extensions, excludes, verboseFlag := fileConfig.MergeWithFlags(*extension, *exclude, *verbose)
-
-	// Create processor configuration
-	procConfig := processor.Config{
-		DirPath:    *dirPath,
-		Extensions: extensions,
-		Excludes:   excludes,
-	}
-
-	if *infoOnly {
-		// Only display project summary
-		if info, err := processor.GetMetadataSummary(procConfig); err == nil {
-			fmt.Printf("\033[32m%s\033[0m\n", info)
-		} else {
-			log.Fatalf("Error getting project info: %v", err)
-		}
-	} else {
-		// Process the directory
-		result, err := processor.ProcessDirectory(procConfig, verboseFlag)
-		if err != nil {
-			log.Fatalf("Error processing directory: %v", err)
-		}
-
-		// Write display content to stdout
-		if *verbose {
-			fmt.Println(result.DisplayContent)
-		}
-
-		// Copy to clipboard unless disabled
-		if !*noCopy {
-			if err := clipboard.WriteAll(result.ClipboardContent); err != nil {
-				log.Printf("Warning: Failed to copy to clipboard: %v", err)
-			}
-			// Always print metadata summary and success message in green
-			if info, err := processor.GetMetadataSummary(procConfig); err == nil {
-				fmt.Printf("\033[32m%s   ✓ code context copied to clipboard\033[0m\n", info)
-			}
-		}
+	if err := promptext.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose); err != nil {
+		log.Fatal(err)
 	}
 }
