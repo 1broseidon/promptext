@@ -14,29 +14,37 @@ A command-line tool for extracting and formatting code context from projects, de
 
 ## Installation
 
-### Download Binary (Recommended)
+### Installation
 
-Download the latest binary for your platform from the [releases page](https://github.com/1broseidon/promptext/releases).
+#### Build from Source (Recommended)
 
-#### macOS
-```bash
-# Download and install to /usr/local/bin
-curl -L https://github.com/1broseidon/promptext/releases/latest/download/promptext-darwin-amd64 -o /usr/local/bin/promptext && chmod +x /usr/local/bin/promptext
-```
-
-#### Linux
-```bash
-# Download and install to /usr/local/bin
-curl -L https://github.com/1broseidon/promptext/releases/latest/download/promptext-linux-amd64 -o /usr/local/bin/promptext && chmod +x /usr/local/bin/promptext
-```
-
-### Build from Source
-
-Alternatively, if you have Go installed:
+1. Install Go 1.22 or later
+2. Clone and build:
 ```bash
 git clone https://github.com/1broseidon/promptext.git
 cd promptext
+go install ./cmd/promptext
+```
+
+The binary will be installed to your `$GOPATH/bin` directory.
+
+#### Download Release Binary
+
+Download the latest release for your platform from the [releases page](https://github.com/1broseidon/promptext/releases).
+
+#### Development Build
+
+For development:
+```bash
+# Clone repository
+git clone https://github.com/1broseidon/promptext.git
+cd promptext
+
+# Build locally
 go build -o promptext cmd/promptext/main.go
+
+# Create a release with GoReleaser (requires GoReleaser installed)
+goreleaser release --snapshot --clean
 ```
 
 ## Usage
