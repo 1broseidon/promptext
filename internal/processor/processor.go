@@ -189,7 +189,7 @@ func GetMetadataSummary(config Config) (string, error) {
 }
 
 // Run executes the promptext tool with the given configuration
-func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool) error {
+func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, format string) error {
 	// Load config file
 	fileConfig, err := config.LoadConfig(dirPath)
 	if err != nil {
