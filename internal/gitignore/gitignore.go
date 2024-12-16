@@ -58,23 +58,33 @@ func (gi *GitIgnore) ShouldIgnore(path string) bool {
 
 		// Handle glob patterns
 		if strings.Contains(pattern, "*") {
-			// Try matching against full path first
+			// For patterns starting with *, try matching against base name first
+			if strings.HasPrefix(pattern, "*") {
+				matched, err := filepath.Match(pattern, baseName)
+				if err == nil && matched {
+					return true
+				}
+			}
+
+			// Try matching against full path
 			matched, err := filepath.Match(pattern, path)
 			if err == nil && matched {
 				return true
 			}
 
-			// Then try matching against base name
-			matched, err = filepath.Match(pattern, baseName)
-			if err == nil && matched {
-				return true
-			}
-
-			// Finally try matching against each path segment
+			// Try matching against each path segment
 			segments := strings.Split(path, string(filepath.Separator))
 			for _, segment := range segments {
 				matched, err := filepath.Match(pattern, segment)
 				if err == nil && matched {
+					return true
+				}
+			}
+
+			// For patterns like .aider*, try matching with the pattern as a suffix
+			if strings.HasSuffix(pattern, "*") {
+				prefix := strings.TrimSuffix(pattern, "*")
+				if strings.HasPrefix(path, prefix) || strings.HasPrefix(baseName, prefix) {
 					return true
 				}
 			}
