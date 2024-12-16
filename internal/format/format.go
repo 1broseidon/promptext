@@ -3,6 +3,7 @@ package format
 import (
 	"encoding/xml"
 	"fmt"
+	"strings"
 )
 
 type OutputFormat string
@@ -15,17 +16,17 @@ const (
 
 // DirectoryNode represents a node in the directory tree
 type DirectoryNode struct {
-	Name     string          `xml:"name,attr" json:"name"`
-	Type     string          `xml:"type,attr" json:"type"` // "file" or "dir"
+	Name     string           `xml:"name,attr" json:"name"`
+	Type     string           `xml:"type,attr" json:"type"` // "file" or "dir"
 	Children []*DirectoryNode `xml:"node,omitempty" json:"children,omitempty"`
 }
 
 type ProjectOutput struct {
-	XMLName       xml.Name      `xml:"project" json:"-"`
+	XMLName       xml.Name       `xml:"project" json:"-"`
 	DirectoryTree *DirectoryNode `xml:"directoryTree" json:"directoryTree"`
-	GitInfo       *GitInfo      `xml:"gitInfo,omitempty" json:"gitInfo,omitempty"`
-	Metadata      *Metadata     `xml:"metadata,omitempty" json:"metadata,omitempty"`
-	Files         []FileInfo    `xml:"files>file,omitempty" json:"files,omitempty"`
+	GitInfo       *GitInfo       `xml:"gitInfo,omitempty" json:"gitInfo,omitempty"`
+	Metadata      *Metadata      `xml:"metadata,omitempty" json:"metadata,omitempty"`
+	Files         []FileInfo     `xml:"files>file,omitempty" json:"files,omitempty"`
 }
 
 // Helper function to convert DirectoryNode to markdown string
