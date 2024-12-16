@@ -41,7 +41,11 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	}
 
 	// Get project information with filtering config
-	projectInfo, err := info.GetProjectInfo(config.DirPath, &config, gitIgnore)
+	infoConfig := &info.Config{
+		Extensions: config.Extensions,
+		Excludes:   config.Excludes,
+	}
+	projectInfo, err := info.GetProjectInfo(config.DirPath, infoConfig, gitIgnore)
 	if err != nil {
 		return &ProcessResult{}, fmt.Errorf("error getting project info: %w", err)
 	}
@@ -75,11 +79,6 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		displayBuilder.WriteString(clipBuilder.String())
 	}
 
-	// Initialize gitignore
-	gitIgnore, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
-	if err != nil {
-		return &ProcessResult{}, fmt.Errorf("error reading .gitignore: %w", err)
-	}
 
 	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -129,7 +128,16 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 // GetMetadataSummary returns a concise summary of project metadata
 func GetMetadataSummary(config Config) (string, error) {
-	projectInfo, err := info.GetProjectInfo(config.DirPath)
+	gitIgnore, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
+	if err != nil {
+		return "", err
+	}
+
+	infoConfig := &info.Config{
+		Extensions: config.Extensions,
+		Excludes:   config.Excludes,
+	}
+	projectInfo, err := info.GetProjectInfo(config.DirPath, infoConfig, gitIgnore)
 	if err != nil {
 		return "", err
 	}
