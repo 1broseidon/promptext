@@ -1,0 +1,9 @@
+# Example configuration file for promptext
+extensions:
+  - .go
+  - .md
+excludes:
+  - vendor/
+  - '*.test.go'
+  - tmp/
+verbose: false
