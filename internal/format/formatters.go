@@ -60,28 +60,56 @@ func (x *XMLFormatter) Format(project *ProjectOutput) (string, error) {
     // Start with XML header
     b.WriteString(xml.Header)
 
-    // Wrap content fields in CDATA
-    projectWithCDATA := &ProjectOutput{
-        XMLName:       project.XMLName,
-        DirectoryTree: "<![CDATA[" + project.DirectoryTree + "]]>",
-        GitInfo: &GitInfo{
-            Branch:        project.GitInfo.Branch,
-            CommitHash:    project.GitInfo.CommitHash,
-            CommitMessage: "<![CDATA[" + project.GitInfo.CommitMessage + "]]>",
-        },
-        Metadata: project.Metadata,
-        Files:    make([]FileInfo, len(project.Files)),
+    // Start the project element
+    b.WriteString("<project>\n")
+
+    // Write directory tree with CDATA
+    b.WriteString("  <directoryTree><![CDATA[")
+    b.WriteString(project.DirectoryTree)
+    b.WriteString("]]></directoryTree>\n")
+
+    // Write git info if available
+    if project.GitInfo != nil {
+        b.WriteString("  <gitInfo>\n")
+        b.WriteString(fmt.Sprintf("    <branch>%s</branch>\n", project.GitInfo.Branch))
+        b.WriteString(fmt.Sprintf("    <commitHash>%s</commitHash>\n", project.GitInfo.CommitHash))
+        b.WriteString("    <commitMessage><![CDATA[")
+        b.WriteString(project.GitInfo.CommitMessage)
+        b.WriteString("]]></commitMessage>\n")
+        b.WriteString("  </gitInfo>\n")
     }
 
-    // Wrap file contents in CDATA
-    for i, file := range project.Files {
-        projectWithCDATA.Files[i] = FileInfo{
-            Path:    file.Path,
-            Content: "<![CDATA[" + file.Content + "]]>",
+    // Write metadata if available
+    if project.Metadata != nil {
+        b.WriteString("  <metadata>\n")
+        b.WriteString(fmt.Sprintf("    <language>%s</language>\n", project.Metadata.Language))
+        b.WriteString(fmt.Sprintf("    <version>%s</version>\n", project.Metadata.Version))
+        if len(project.Metadata.Dependencies) > 0 {
+            b.WriteString("    <dependencies>\n")
+            for _, dep := range project.Metadata.Dependencies {
+                b.WriteString(fmt.Sprintf("      <dependency>%s</dependency>\n", dep))
+            }
+            b.WriteString("    </dependencies>\n")
         }
+        b.WriteString("  </metadata>\n")
     }
 
-    if err := enc.Encode(projectWithCDATA); err != nil {
+    // Write files if available
+    if len(project.Files) > 0 {
+        b.WriteString("  <files>\n")
+        for _, file := range project.Files {
+            b.WriteString(fmt.Sprintf("    <file path=\"%s\">\n", file.Path))
+            b.WriteString("      <content><![CDATA[")
+            b.WriteString(file.Content)
+            b.WriteString("]]></content>\n")
+            b.WriteString("    </file>\n")
+        }
+        b.WriteString("  </files>\n")
+    }
+
+    b.WriteString("</project>")
+
+    return b.String(), nil
         return "", err
     }
 
