@@ -29,6 +29,44 @@ func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
 
 	// Quick Reference Section
 	sb.WriteString("## Quick Reference\n\n")
+	if project.Analysis != nil {
+		// Entry Points
+		if len(project.Analysis.EntryPoints) > 0 {
+			sb.WriteString("### Entry Points\n")
+			for path, desc := range project.Analysis.EntryPoints {
+				sb.WriteString(fmt.Sprintf("- %s: %s\n", path, desc))
+			}
+			sb.WriteString("\n")
+		}
+
+		// Config Files
+		if len(project.Analysis.ConfigFiles) > 0 {
+			sb.WriteString("### Configuration Files\n")
+			for path, desc := range project.Analysis.ConfigFiles {
+				sb.WriteString(fmt.Sprintf("- %s: %s\n", path, desc))
+			}
+			sb.WriteString("\n")
+		}
+
+		// Core Files
+		if len(project.Analysis.CoreFiles) > 0 {
+			sb.WriteString("### Core Components\n")
+			for path, desc := range project.Analysis.CoreFiles {
+				sb.WriteString(fmt.Sprintf("- %s: %s\n", path, desc))
+			}
+			sb.WriteString("\n")
+		}
+
+		// Test Files
+		if len(project.Analysis.TestFiles) > 0 {
+			sb.WriteString("### Tests\n")
+			for path, desc := range project.Analysis.TestFiles {
+				sb.WriteString(fmt.Sprintf("- %s: %s\n", path, desc))
+			}
+			sb.WriteString("\n")
+		}
+	}
+
 	if project.FileStats != nil {
 		sb.WriteString(fmt.Sprintf("- Total Files: %d\n", project.FileStats.TotalFiles))
 		sb.WriteString(fmt.Sprintf("- Total Lines: %d\n", project.FileStats.TotalLines))

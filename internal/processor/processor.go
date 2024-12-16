@@ -40,6 +40,10 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	var displayBuilder strings.Builder
 	projectOutput := &format.ProjectOutput{}
 
+	// Get project analysis
+	analysis := info.AnalyzeProject(config.DirPath)
+	projectOutput.Analysis = analysis
+
 	// Initialize gitignore once
 	gitIgnore, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
 	if err != nil {

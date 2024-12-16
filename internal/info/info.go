@@ -602,7 +602,7 @@ func getCoreDescription(path string) string {
 	return "Core implementation"
 }
 
-func analyzeProject(rootPath string) *ProjectAnalysis {
+func AnalyzeProject(rootPath string) *ProjectAnalysis {
 	analysis := &ProjectAnalysis{
 		EntryPoints:   make(map[string]string),
 		ConfigFiles:   make(map[string]string),
