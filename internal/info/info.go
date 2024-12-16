@@ -8,8 +8,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/1broseidon/promptext/internal/filter"
 	"github.com/1broseidon/promptext/internal/gitignore"
 )
+
+// Config holds directory processing configuration
+type Config struct {
+	Extensions []string
+	Excludes   []string
+}
 
 // ProjectInfo holds all discoverable information about the project
 type ProjectInfo struct {
@@ -33,11 +40,11 @@ type ProjectMetadata struct {
 }
 
 // GetProjectInfo gathers all available information about the project
-func GetProjectInfo(rootPath string) (*ProjectInfo, error) {
+func GetProjectInfo(rootPath string, config *Config, gitIgnore *gitignore.GitIgnore) (*ProjectInfo, error) {
 	info := &ProjectInfo{}
 
 	// Get directory tree
-	tree, err := generateDirectoryTree(rootPath)
+	tree, err := generateDirectoryTree(rootPath, config, gitIgnore)
 	if err != nil {
 		return nil, fmt.Errorf("error generating directory tree: %w", err)
 	}
@@ -58,12 +65,12 @@ func GetProjectInfo(rootPath string) (*ProjectInfo, error) {
 	return info, nil
 }
 
-func generateDirectoryTree(root string) (string, error) {
+func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.GitIgnore) (string, error) {
 	var builder strings.Builder
 	builder.WriteString("### Project Structure:\n```\n")
 
 	// Initialize directory tracker
-	dt, err := newDirTracker(root)
+	dt, err := newDirTracker(root, config, gitIgnore)
 	if err != nil {
 		return "", err
 	}
@@ -83,8 +90,8 @@ func generateDirectoryTree(root string) (string, error) {
 			return nil
 		}
 
-		// Skip hidden files and common ignore patterns
-		if shouldSkip(rel) {
+		// Skip files that don't match our filters
+		if !filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gitIgnore) {
 			if d.IsDir() {
 				return filepath.SkipDir
 			}
@@ -425,44 +432,6 @@ func getJavaGradleDependencies(root string) []string {
 	return deps
 }
 
-func shouldSkip(path string) bool {
-	// First check gitignore patterns
-	gitIgnore, err := gitignore.New(".gitignore")
-	if err == nil && gitIgnore.ShouldIgnore(path) {
-		return true
-	}
-
-	// Then check common patterns
-	patterns := []string{
-		".git/",
-		"node_modules/",
-		"__pycache__/",
-		".env",
-		".DS_Store",
-		"*.pyc",
-		"*.pyo",
-		"*.pyd",
-		"*.so",
-		"*.dylib",
-		"*.dll",
-		"*.class",
-		"target/",
-		"dist/",
-		"build/",
-		".aider*",  // Add explicit pattern
-		"vendor/",
-	}
-
-	for _, pattern := range patterns {
-		if matched, _ := filepath.Match(pattern, filepath.Base(path)); matched {
-			return true
-		}
-		if strings.Contains(path, pattern) {
-			return true
-		}
-	}
-	return false
-}
 
 // dirTracker keeps track of items remaining in each directory
 type dirTracker struct {
@@ -470,7 +439,7 @@ type dirTracker struct {
 }
 
 // newDirTracker initializes a new directory tracker
-func newDirTracker(root string) (*dirTracker, error) {
+func newDirTracker(root string, config *Config, gitIgnore *gitignore.GitIgnore) (*dirTracker, error) {
 	dt := &dirTracker{
 		itemsLeft: make(map[string]int),
 	}

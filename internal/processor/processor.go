@@ -34,8 +34,14 @@ type ProcessResult struct {
 func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	var displayBuilder, clipBuilder strings.Builder
 
-	// Get project information
-	projectInfo, err := info.GetProjectInfo(config.DirPath)
+	// Initialize gitignore once
+	gitIgnore, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
+	if err != nil {
+		return &ProcessResult{}, fmt.Errorf("error reading .gitignore: %w", err)
+	}
+
+	// Get project information with filtering config
+	projectInfo, err := info.GetProjectInfo(config.DirPath, &config, gitIgnore)
 	if err != nil {
 		return &ProcessResult{}, fmt.Errorf("error getting project info: %w", err)
 	}
