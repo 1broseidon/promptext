@@ -153,7 +153,6 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		}
 
 		// Add file to ProjectOutput
-		currentDir := filepath.Dir(path)
 		rel, err := filepath.Rel(config.DirPath, path)
 		if err != nil {
 			return fmt.Errorf("error getting relative path for %s: %w", path, err)
