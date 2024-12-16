@@ -110,10 +110,6 @@ func (x *XMLFormatter) Format(project *ProjectOutput) (string, error) {
     b.WriteString("</project>")
 
     return b.String(), nil
-        return "", err
-    }
-
-    return b.String(), nil
 }
 
 func (j *JSONFormatter) Format(project *ProjectOutput) (string, error) {
