@@ -15,7 +15,9 @@ func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
     var sb strings.Builder
 
     // Add directory tree
-    sb.WriteString(project.DirectoryTree)
+    sb.WriteString("### Project Structure:\n```\n")
+    sb.WriteString(project.DirectoryTree.ToMarkdown(0))
+    sb.WriteString("```\n")
 
     // Add git information if available
     if project.GitInfo != nil {
@@ -51,6 +53,32 @@ func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
     return sb.String(), nil
 }
 
+// Helper function to write directory nodes as XML
+func writeDirectoryNode(node *DirectoryNode, b *strings.Builder, indent int) {
+	if node == nil {
+		return
+	}
+
+	indentStr := strings.Repeat(" ", indent)
+	
+	if node.Type != "" { // Skip root node
+		b.WriteString(fmt.Sprintf("%s<node name=\"%s\" type=\"%s\"", indentStr, node.Name, node.Type))
+		if len(node.Children) == 0 {
+			b.WriteString("/>\n")
+			return
+		}
+		b.WriteString(">\n")
+	}
+
+	for _, child := range node.Children {
+		writeDirectoryNode(child, b, indent+2)
+	}
+
+	if node.Type != "" {
+		b.WriteString(fmt.Sprintf("%s</node>\n", indentStr))
+	}
+}
+
 func (x *XMLFormatter) Format(project *ProjectOutput) (string, error) {
     // Create a custom encoder that uses indentation
     var b strings.Builder
@@ -63,10 +91,10 @@ func (x *XMLFormatter) Format(project *ProjectOutput) (string, error) {
     // Start the project element
     b.WriteString("<project>\n")
 
-    // Write directory tree with CDATA
-    b.WriteString("  <directoryTree><![CDATA[")
-    b.WriteString(project.DirectoryTree)
-    b.WriteString("]]></directoryTree>\n")
+    // Write directory tree as structured XML
+    b.WriteString("  <directoryTree>\n")
+    writeDirectoryNode(project.DirectoryTree, &b, 4)
+    b.WriteString("  </directoryTree>\n")
 
     // Write git info if available
     if project.GitInfo != nil {
