@@ -14,8 +14,29 @@ A command-line tool for extracting and formatting code context from projects, de
 
 ## Installation
 
+### Download Binary (Recommended)
+
+Download the latest binary for your platform from the [releases page](https://github.com/1broseidon/promptext/releases).
+
+#### macOS
 ```bash
-go install github.com/1broseidon/promptext@latest
+# Download and install to /usr/local/bin
+curl -L https://github.com/1broseidon/promptext/releases/latest/download/promptext-darwin-amd64 -o /usr/local/bin/promptext && chmod +x /usr/local/bin/promptext
+```
+
+#### Linux
+```bash
+# Download and install to /usr/local/bin
+curl -L https://github.com/1broseidon/promptext/releases/latest/download/promptext-linux-amd64 -o /usr/local/bin/promptext && chmod +x /usr/local/bin/promptext
+```
+
+### Build from Source
+
+Alternatively, if you have Go installed:
+```bash
+git clone https://github.com/1broseidon/promptext.git
+cd promptext
+go build -o promptext cmd/promptext/main.go
 ```
 
 ## Usage
