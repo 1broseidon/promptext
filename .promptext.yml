@@ -1,6 +1,5 @@
 extensions:
   - .go
-  - .md
 excludes:
   - vendor/
   - '*.test.go'
