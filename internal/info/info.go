@@ -90,11 +90,17 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 			return nil
 		}
 
-		// Skip files that don't match our filters
-		if !filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gitIgnore) {
-			if d.IsDir() {
+		// For directories, only skip if explicitly filtered
+		if d.IsDir() {
+			if gitIgnore.ShouldIgnore(rel) {
 				return filepath.SkipDir
 			}
+			builder.WriteString(fmt.Sprintf("%s%s %s/\n", indent, prefix, d.Name()))
+			return nil
+		}
+
+		// For files, apply all filters
+		if !filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gitIgnore) {
 			return nil
 		}
 
