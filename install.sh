@@ -60,6 +60,12 @@ echo "Extracting archive..."
 tar xzf promptext.tar.gz
 
 echo "Installing promptext..."
+# Remove existing installation if present
+if [ -f "$INSTALL_DIR/promptext" ]; then
+    echo "Removing existing installation..."
+    sudo rm "$INSTALL_DIR/promptext"
+fi
+
 sudo mv promptext "$INSTALL_DIR/"
 sudo chmod +x "$INSTALL_DIR/promptext"
 
