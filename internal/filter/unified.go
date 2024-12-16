@@ -21,7 +21,7 @@ func NewUnifiedFilter(gitIgnore *gitignore.GitIgnore, extensions, excludes []str
 		gitIgnore:         gitIgnore,
 		configExcludes:    excludes,
 		allowedExtensions: extensions,
-		defaultIgnores:    defaultIgnoreDirs,
+		defaultIgnores:    DefaultIgnoreDirs,
 	}
 }
 
