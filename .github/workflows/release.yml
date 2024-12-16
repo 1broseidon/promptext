@@ -26,6 +26,8 @@ jobs:
       
       - name: Create Release
         uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           files: |
             promptext-darwin-amd64
@@ -33,5 +35,4 @@ jobs:
             promptext-linux-amd64
             promptext-linux-arm64
             promptext-windows-amd64.exe
-          token: ${{ secrets.GITHUB_TOKEN }}
           generate_release_notes: true
