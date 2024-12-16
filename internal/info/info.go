@@ -292,8 +292,16 @@ func getGoDependencies(root string) []string {
 	lines := strings.Split(string(content), "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "require ") || (strings.Contains(line, " ") && !strings.HasPrefix(line, "go ")) {
-			deps = append(deps, strings.Split(line, " ")[0])
+		if strings.HasPrefix(line, "require ") {
+			parts := strings.Fields(line)
+			if len(parts) > 1 {
+				deps = append(deps, parts[1])
+			}
+		} else if strings.Contains(line, " ") && !strings.HasPrefix(line, "go ") && !strings.HasPrefix(line, "module ") {
+			parts := strings.Fields(line)
+			if len(parts) > 0 {
+				deps = append(deps, parts[0])
+			}
 		}
 	}
 	return deps
@@ -444,7 +452,6 @@ func newDirTracker(root string, config *Config, gitIgnore *gitignore.GitIgnore) 
 		itemsLeft: make(map[string]int),
 	}
 
-	// First pass: count items in each directory
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -458,16 +465,19 @@ func newDirTracker(root string, config *Config, gitIgnore *gitignore.GitIgnore) 
 		if err != nil {
 			return err
 		}
-		
-		if !filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gitIgnore) {
-			if d.IsDir() {
-				return filepath.SkipDir
-			}
+
+		// Always count directories
+		if d.IsDir() {
+			parent := filepath.Dir(path)
+			dt.itemsLeft[parent]++
 			return nil
 		}
-
-		parent := filepath.Dir(path)
-		dt.itemsLeft[parent]++
+		
+		// Only count files that match filters
+		if filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gitIgnore) {
+			parent := filepath.Dir(path)
+			dt.itemsLeft[parent]++
+		}
 		return nil
 	})
 
