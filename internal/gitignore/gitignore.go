@@ -81,7 +81,7 @@ func (gi *GitIgnore) ShouldIgnore(path string) bool {
 				}
 			}
 
-			// For patterns like .aider*, try matching with the pattern as a suffix
+			// For patterns like .name*, try matching with the pattern as a suffix
 			if strings.HasSuffix(pattern, "*") {
 				prefix := strings.TrimSuffix(pattern, "*")
 				if strings.HasPrefix(path, prefix) || strings.HasPrefix(baseName, prefix) {

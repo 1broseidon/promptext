@@ -6,4 +6,5 @@ excludes:
   - vendor/
   - '*.test.go'
   - tmp/
+  - .aider*
 verbose: false
