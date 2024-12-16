@@ -133,6 +133,15 @@ func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
 			sb.WriteString(fmt.Sprintf("```%s\n", ext))
 			sb.WriteString(file.Content)
 			sb.WriteString("\n```\n")
+
+			// Add references section if any exist
+			if len(file.References) > 0 {
+				sb.WriteString("\n**References:**\n")
+				for _, ref := range file.References {
+					sb.WriteString(fmt.Sprintf("- References `%s`\n", ref))
+				}
+				sb.WriteString("\n")
+			}
 		}
 	}
 

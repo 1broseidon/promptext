@@ -13,8 +13,25 @@ import (
 	"github.com/1broseidon/promptext/internal/format"
 	"github.com/1broseidon/promptext/internal/gitignore"
 	"github.com/1broseidon/promptext/internal/info"
+	"github.com/1broseidon/promptext/internal/references"
 	"github.com/atotto/clipboard"
 )
+
+func getAllFiles(root string) ([]string, error) {
+    var files []string
+    err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+        if err != nil || d.IsDir() {
+            return err
+        }
+        rel, err := filepath.Rel(root, path)
+        if err != nil {
+            return err
+        }
+        files = append(files, rel)
+        return nil
+    })
+    return files, err
+}
 
 type Config struct {
 	DirPath    string
@@ -39,6 +56,12 @@ type ProcessResult struct {
 func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	var displayBuilder strings.Builder
 	projectOutput := &format.ProjectOutput{}
+
+	// Get all files first for reference resolution
+	allFiles, err := getAllFiles(config.DirPath)
+	if err != nil {
+		return nil, fmt.Errorf("could not list all files: %w", err)
+	}
 
 	// Get project analysis and convert to format.ProjectAnalysis
 	analysis := info.AnalyzeProject(config.DirPath)

@@ -102,8 +102,9 @@ type Metadata struct {
 }
 
 type FileInfo struct {
-	Path    string `xml:"path,attr"`
-	Content string `xml:"content"`
+	Path       string   `xml:"path,attr"`
+	Content    string   `xml:"content"`
+	References []string `xml:"references>file,omitempty"`
 }
 
 // Formatter interface for different output formats
