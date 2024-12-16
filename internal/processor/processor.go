@@ -30,12 +30,14 @@ func ParseCommaSeparated(input string) []string {
 
 // ProcessResult contains both display and clipboard content
 type ProcessResult struct {
+	ProjectOutput    *format.ProjectOutput
 	DisplayContent   string
 	ClipboardContent string
 }
 
 func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
-	var displayBuilder, clipBuilder strings.Builder
+	var displayBuilder strings.Builder
+	projectOutput := &format.ProjectOutput{}
 
 	// Initialize gitignore once
 	gitIgnore, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
@@ -53,33 +55,45 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		return &ProcessResult{}, fmt.Errorf("error getting project info: %w", err)
 	}
 
-	// Always add full content to clipboard
-	clipBuilder.WriteString(projectInfo.DirectoryTree)
-
-	// Add git information if available
+	// Populate ProjectOutput
+	projectOutput.DirectoryTree = projectInfo.DirectoryTree
+	
 	if projectInfo.GitInfo != nil {
-		clipBuilder.WriteString("\n### Git Information:\n")
-		clipBuilder.WriteString(fmt.Sprintf("Branch: %s\n", projectInfo.GitInfo.Branch))
-		clipBuilder.WriteString(fmt.Sprintf("Commit: %s\n", projectInfo.GitInfo.CommitHash))
-		clipBuilder.WriteString(fmt.Sprintf("Message: %s\n", projectInfo.GitInfo.CommitMessage))
+		projectOutput.GitInfo = &format.GitInfo{
+			Branch:        projectInfo.GitInfo.Branch,
+			CommitHash:    projectInfo.GitInfo.CommitHash,
+			CommitMessage: projectInfo.GitInfo.CommitMessage,
+		}
 	}
 
-	// Add project metadata if available
 	if projectInfo.Metadata != nil {
-		clipBuilder.WriteString("\n### Project Metadata:\n")
-		clipBuilder.WriteString(fmt.Sprintf("Language: %s\n", projectInfo.Metadata.Language))
-		clipBuilder.WriteString(fmt.Sprintf("Version: %s\n", projectInfo.Metadata.Version))
-		if len(projectInfo.Metadata.Dependencies) > 0 {
-			clipBuilder.WriteString("Dependencies:\n")
-			for _, dep := range projectInfo.Metadata.Dependencies {
-				clipBuilder.WriteString(fmt.Sprintf("  - %s\n", dep))
-			}
+		projectOutput.Metadata = &format.Metadata{
+			Language:     projectInfo.Metadata.Language,
+			Version:      projectInfo.Metadata.Version,
+			Dependencies: projectInfo.Metadata.Dependencies,
 		}
 	}
 
 	// Only add to display if verbose
 	if verbose {
-		displayBuilder.WriteString(clipBuilder.String())
+		displayBuilder.WriteString(projectOutput.DirectoryTree)
+		if projectOutput.GitInfo != nil {
+			displayBuilder.WriteString(fmt.Sprintf("\nBranch: %s\nCommit: %s\nMessage: %s\n",
+				projectOutput.GitInfo.Branch,
+				projectOutput.GitInfo.CommitHash,
+				projectOutput.GitInfo.CommitMessage))
+		}
+		if projectOutput.Metadata != nil {
+			displayBuilder.WriteString(fmt.Sprintf("\nLanguage: %s\nVersion: %s\n",
+				projectOutput.Metadata.Language,
+				projectOutput.Metadata.Version))
+			if len(projectOutput.Metadata.Dependencies) > 0 {
+				displayBuilder.WriteString("Dependencies:\n")
+				for _, dep := range projectOutput.Metadata.Dependencies {
+					displayBuilder.WriteString(fmt.Sprintf("  - %s\n", dep))
+				}
+			}
+		}
 	}
 
 	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
@@ -104,18 +118,15 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			return fmt.Errorf("error reading file %s: %w", path, err)
 		}
 
-		// Always add to clipboard content
-		clipBuilder.WriteString(fmt.Sprintf("\n### File: %s\n", path))
-		clipBuilder.WriteString("```\n")
-		clipBuilder.Write(content)
-		clipBuilder.WriteString("\n```\n")
+		// Add file to ProjectOutput
+		projectOutput.Files = append(projectOutput.Files, format.FileInfo{
+			Path:    path,
+			Content: string(content),
+		})
 
 		// Only add to display if verbose
 		if verbose {
-			displayBuilder.WriteString(fmt.Sprintf("\n### File: %s\n", path))
-			displayBuilder.WriteString("```\n")
-			displayBuilder.Write(content)
-			displayBuilder.WriteString("\n```\n")
+			displayBuilder.WriteString(fmt.Sprintf("\n### File: %s\n```\n%s\n```\n", path, content))
 		}
 
 		return nil
@@ -126,8 +137,9 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	}
 
 	return &ProcessResult{
+		ProjectOutput:    projectOutput,
 		DisplayContent:   displayBuilder.String(),
-		ClipboardContent: clipBuilder.String(),
+		ClipboardContent: "", // Will be set in Run() based on format
 	}, nil
 }
 
@@ -189,7 +201,12 @@ func GetMetadataSummary(config Config) (string, error) {
 }
 
 // Run executes the promptext tool with the given configuration
-func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, format string) error {
+func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string) error {
+	// Validate format
+	formatter, err := format.GetFormatter(outputFormat)
+	if err != nil {
+		return fmt.Errorf("invalid format: %w", err)
+	}
 	// Load config file
 	fileConfig, err := config.LoadConfig(dirPath)
 	if err != nil {
@@ -228,14 +245,21 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		fmt.Println(result.DisplayContent)
 	}
 
-	// Copy to clipboard unless disabled
+	// Format output and copy to clipboard unless disabled
 	if !noCopy {
-		if err := clipboard.WriteAll(result.ClipboardContent); err != nil {
-			log.Printf("Warning: Failed to copy to clipboard: %v", err)
+		formattedOutput, err := formatter.Format(result.ProjectOutput)
+		if err != nil {
+			return fmt.Errorf("error formatting output: %w", err)
 		}
-		// Always print metadata summary and success message in green
-		if info, err := GetMetadataSummary(procConfig); err == nil {
-			fmt.Printf("\033[32m%s   ✓ code context copied to clipboard\033[0m\n", info)
+		
+		if err := clipboard.WriteAll(formattedOutput); err != nil {
+			log.Printf("Warning: Failed to copy to clipboard: %v", err)
+		} else {
+			// Always print metadata summary and success message in green
+			if info, err := GetMetadataSummary(procConfig); err == nil {
+				fmt.Printf("\033[32m%s   ✓ code context copied to clipboard (%s format)\033[0m\n", 
+					info, outputFormat)
+			}
 		}
 	}
 
