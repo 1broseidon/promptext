@@ -23,33 +23,38 @@ var defaultIgnoreDirs = []string{
 }
 
 func ShouldProcessFile(path string, extensions, excludes []string, gitIgnore *gitignore.GitIgnore) bool {
-	// Check default ignore directories first
+	// 1. Check default ignore directories first
 	for _, dir := range defaultIgnoreDirs {
 		if strings.Contains(path, "/"+dir+"/") || strings.HasPrefix(path, dir+"/") {
 			return false
 		}
 	}
 
-	// Check gitignore patterns
-	if gitIgnore.ShouldIgnore(path) {
+	// 2. Check gitignore patterns - this takes precedence over everything
+	if gitIgnore != nil && gitIgnore.ShouldIgnore(path) {
 		return false
 	}
-	// Check if file should be excluded
+
+	// 3. Check exclude patterns - these also take precedence
 	for _, exclude := range excludes {
+		// Support both glob patterns and direct path contains
+		if matched, err := filepath.Match(exclude, filepath.Base(path)); err == nil && matched {
+			return false
+		}
 		if strings.Contains(path, exclude) {
 			return false
 		}
 	}
 
-	// If no extensions specified, process all files
+	// 4. Only check extensions if file hasn't been excluded
 	if len(extensions) == 0 {
 		return true
 	}
 
-	// Check if file extension matches
 	ext := filepath.Ext(path)
 	for _, allowedExt := range extensions {
-		if strings.TrimPrefix(allowedExt, ".") == strings.TrimPrefix(ext, ".") {
+		// Normalize extensions by trimming dots and comparing
+		if strings.EqualFold(strings.TrimPrefix(allowedExt, "."), strings.TrimPrefix(ext, ".")) {
 			return true
 		}
 	}
