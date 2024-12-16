@@ -454,7 +454,12 @@ func newDirTracker(root string, config *Config, gitIgnore *gitignore.GitIgnore) 
 			return nil
 		}
 
-		if shouldSkip(path) {
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		
+		if !filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gitIgnore) {
 			if d.IsDir() {
 				return filepath.SkipDir
 			}
