@@ -25,24 +25,28 @@ func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
 		sb.WriteString(fmt.Sprintf("Message: %s\n", project.GitInfo.CommitMessage))
 	}
 
-	// Add metadata if available
-	if project.Metadata != nil {
-		sb.WriteString("\n### Project Metadata:\n")
-		sb.WriteString(fmt.Sprintf("Language: %s\n", project.Metadata.Language))
-		sb.WriteString(fmt.Sprintf("Version: %s\n", project.Metadata.Version))
-		if len(project.Metadata.Dependencies) > 0 {
-			sb.WriteString("Dependencies:\n")
-			for _, dep := range project.Metadata.Dependencies {
-				sb.WriteString(fmt.Sprintf("  - %s\n", dep))
-			}
+	// Add detailed metadata section if available
+	if project.Metadata != nil && len(project.Metadata.Dependencies) > 0 {
+		sb.WriteString("\n## Dependencies\n")
+		sb.WriteString("```\n")
+		for _, dep := range project.Metadata.Dependencies {
+			sb.WriteString(fmt.Sprintf("%s\n", dep))
 		}
+		sb.WriteString("```\n")
 	}
 
-	// Add files if available
+	// Add files section with better formatting
 	if len(project.Files) > 0 {
+		sb.WriteString("\n## Source Files\n")
 		for _, file := range project.Files {
-			sb.WriteString(fmt.Sprintf("\n### File: %s\n", file.Path))
-			sb.WriteString("```\n")
+			// Extract file extension for syntax highlighting
+			ext := strings.TrimPrefix(filepath.Ext(file.Path), ".")
+			if ext == "" {
+				ext = "text"
+			}
+			
+			sb.WriteString(fmt.Sprintf("\n### %s\n", file.Path))
+			sb.WriteString(fmt.Sprintf("```%s\n", ext))
 			sb.WriteString(file.Content)
 			sb.WriteString("\n```\n")
 		}
