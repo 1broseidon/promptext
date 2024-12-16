@@ -90,7 +90,9 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 			return nil
 		}
 
-		// For directories, only skip if explicitly filtered
+		// Create unified filter for consistent filtering
+		unifiedFilter := filter.NewUnifiedFilter(gitIgnore, config.Extensions, config.Excludes)
+		
 		indent := strings.Repeat("  ", strings.Count(rel, string(filepath.Separator)))
 		prefix := "├──"
 		if isLastItem(path, dt) {
@@ -98,15 +100,16 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 		}
 
 		if d.IsDir() {
-			if gitIgnore.ShouldIgnore(rel) {
+			// Skip directory if it should be filtered
+			if !unifiedFilter.ShouldProcess(rel) {
 				return filepath.SkipDir
 			}
 			builder.WriteString(fmt.Sprintf("%s%s %s/\n", indent, prefix, d.Name()))
 			return nil
 		}
 
-		// For files, apply all filters
-		if !filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gitIgnore) {
+		// For files, use the same unified filter
+		if !unifiedFilter.ShouldProcess(rel) {
 			return nil
 		}
 
