@@ -9,19 +9,21 @@ import (
 
 // UnifiedFilter combines all filtering rules into a single structure
 type UnifiedFilter struct {
-	gitIgnore         *gitignore.GitIgnore
-	configExcludes    []string
-	allowedExtensions []string
-	defaultIgnores    []string
+	gitIgnore           *gitignore.GitIgnore
+	configExcludes      []string
+	allowedExtensions   []string
+	defaultIgnores      []string
+	defaultIgnoreExts   []string
 }
 
 // NewUnifiedFilter creates a new UnifiedFilter with all exclusion patterns
 func NewUnifiedFilter(gitIgnore *gitignore.GitIgnore, extensions, excludes []string) *UnifiedFilter {
 	return &UnifiedFilter{
-		gitIgnore:         gitIgnore,
-		configExcludes:    excludes,
-		allowedExtensions: extensions,
-		defaultIgnores:    DefaultIgnoreDirs,
+		gitIgnore:           gitIgnore,
+		configExcludes:      excludes,
+		allowedExtensions:   extensions,
+		defaultIgnores:      DefaultIgnoreDirs,
+		defaultIgnoreExts:   DefaultIgnoreExtensions,
 	}
 }
 
@@ -66,13 +68,23 @@ func (uf *UnifiedFilter) ShouldProcess(path string) bool {
 		return true
 	}
 
-	// Only include files with matching extensions
+	// Check default ignored extensions
 	ext := filepath.Ext(path)
-	for _, allowedExt := range uf.allowedExtensions {
-		// Normalize extensions for comparison
-		if strings.EqualFold(strings.TrimPrefix(allowedExt, "."), strings.TrimPrefix(ext, ".")) {
-			return true
+	for _, ignoreExt := range uf.defaultIgnoreExts {
+		if strings.EqualFold(ignoreExt, ext) {
+			return false
 		}
+	}
+
+	// If allowed extensions specified, only include files with matching extensions
+	if len(uf.allowedExtensions) > 0 {
+		for _, allowedExt := range uf.allowedExtensions {
+			// Normalize extensions for comparison
+			if strings.EqualFold(strings.TrimPrefix(allowedExt, "."), strings.TrimPrefix(ext, ".")) {
+				return true
+			}
+		}
+		return false
 	}
 
 	return false

@@ -2,6 +2,20 @@ package filter
 
 import "github.com/1broseidon/promptext/internal/gitignore"
 
+// DefaultIgnoreExtensions contains file extensions that should be ignored by default
+var DefaultIgnoreExtensions = []string{
+	// Images
+	".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp",
+	".ico", ".icns", ".svg", ".eps", ".raw", ".cr2", ".nef",
+	// Binary/Executable
+	".exe", ".dll", ".so", ".dylib", ".bin", ".obj",
+	// Archives
+	".zip", ".tar", ".gz", ".7z", ".rar", ".iso",
+	// Other binary formats
+	".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+	".class", ".pyc", ".pyo", ".pyd", ".o", ".a",
+}
+
 // DefaultIgnoreDirs contains common directories that should be ignored
 var DefaultIgnoreDirs = []string{
 	".git",
