@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"log"
-	
+
 	"github.com/1broseidon/promptext/internal/processor"
 )
 
