@@ -9,6 +9,7 @@ import (
 
 type GitIgnore struct {
 	patterns []string
+	Patterns []string // Exported for testing
 }
 
 func New(path string) (*GitIgnore, error) {
