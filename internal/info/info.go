@@ -272,7 +272,7 @@ func getGoDependencies(root string) []string {
 	if err != nil {
 		return nil
 	}
-	
+
 	var deps []string
 	lines := strings.Split(string(content), "\n")
 	for _, line := range lines {
@@ -289,7 +289,7 @@ func getNodeDependencies(root string) []string {
 	if err != nil {
 		return nil
 	}
-	
+
 	var deps []string
 	lines := strings.Split(string(content), "\n")
 	inDeps := false
@@ -316,7 +316,7 @@ func getPythonDependencies(root string) []string {
 	if err != nil {
 		return nil
 	}
-	
+
 	var deps []string
 	lines := strings.Split(string(content), "\n")
 	for _, line := range lines {
@@ -333,7 +333,7 @@ func getRustDependencies(root string) []string {
 	if err != nil {
 		return nil
 	}
-	
+
 	var deps []string
 	lines := strings.Split(string(content), "\n")
 	inDeps := false
@@ -362,7 +362,7 @@ func getJavaMavenDependencies(root string) []string {
 	if err != nil {
 		return nil
 	}
-	
+
 	var deps []string
 	lines := strings.Split(string(content), "\n")
 	inDep := false
@@ -393,7 +393,7 @@ func getJavaGradleDependencies(root string) []string {
 	if err != nil {
 		return nil
 	}
-	
+
 	var deps []string
 	lines := strings.Split(string(content), "\n")
 	inDeps := false
