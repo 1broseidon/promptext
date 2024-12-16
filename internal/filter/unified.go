@@ -68,23 +68,26 @@ func (uf *UnifiedFilter) ShouldProcess(path string) bool {
 		return true
 	}
 
-	// Check default ignored extensions
+	// Get file extension
 	ext := filepath.Ext(path)
+	
+	// Always check default ignored extensions first
 	for _, ignoreExt := range uf.defaultIgnoreExts {
 		if strings.EqualFold(ignoreExt, ext) {
 			return false
 		}
 	}
 
-	// If allowed extensions specified, only include files with matching extensions
-	if len(uf.allowedExtensions) > 0 {
-		for _, allowedExt := range uf.allowedExtensions {
-			// Normalize extensions for comparison
-			if strings.EqualFold(strings.TrimPrefix(allowedExt, "."), strings.TrimPrefix(ext, ".")) {
-				return true
-			}
+	// If no allowed extensions specified, include all non-excluded files
+	if len(uf.allowedExtensions) == 0 {
+		return true
+	}
+
+	// If allowed extensions specified, only include matching files
+	for _, allowedExt := range uf.allowedExtensions {
+		if strings.EqualFold(strings.TrimPrefix(allowedExt, "."), strings.TrimPrefix(ext, ".")) {
+			return true
 		}
-		return false
 	}
 
 	return false
