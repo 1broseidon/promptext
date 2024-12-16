@@ -1,8 +1,8 @@
-extensions:
-  - .go
-  - .md
-excludes:
-  - vendor/
-  - '*.test.go'
-  - tmp/
-verbose: false
+# extensions:
+#   - .go
+#   - .md
+# excludes:
+#   - vendor/
+#   - '*.test.go'
+#   - tmp/
+# verbose: false

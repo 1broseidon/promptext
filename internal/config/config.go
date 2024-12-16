@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/1broseidon/promptext/internal/filter"
 	"gopkg.in/yaml.v3"
 )
 
@@ -46,10 +47,10 @@ func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bo
 
 	// Start with default excludes from filter package
 	excludes = append([]string{}, filter.DefaultIgnoreDirs...)
-	
+
 	// Add config file excludes
 	excludes = append(excludes, fc.Excludes...)
-	
+
 	// Add flag excludes (highest priority)
 	if flagExclude != "" {
 		excludes = append(excludes, parseCommaSeparated(flagExclude)...)
