@@ -25,7 +25,7 @@ func ParseCommaSeparated(input string) []string {
 	return strings.Split(input, ",")
 }
 
-func ProcessDirectory(config Config) (string, error) {
+func ProcessDirectory(config Config, verbose bool) (string, error) {
 	var builder strings.Builder
 
 	// Get project information
@@ -82,11 +82,16 @@ func ProcessDirectory(config Config) (string, error) {
 			return fmt.Errorf("error reading file %s: %w", path, err)
 		}
 
-		// Add file header
-		builder.WriteString(fmt.Sprintf("\n### File: %s\n", path))
-		builder.WriteString("```\n")
-		builder.Write(content)
-		builder.WriteString("\n```\n")
+		if verbose {
+			// Add file header and content
+			builder.WriteString(fmt.Sprintf("\n### File: %s\n", path))
+			builder.WriteString("```\n")
+			builder.Write(content)
+			builder.WriteString("\n```\n")
+		} else {
+			// Just add file path
+			builder.WriteString(fmt.Sprintf("\n### File: %s\n", path))
+		}
 
 		return nil
 	})

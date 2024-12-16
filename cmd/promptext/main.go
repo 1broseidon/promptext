@@ -16,6 +16,7 @@ func main() {
 	exclude := flag.String("exclude", "", "Patterns to exclude (comma-separated)")
 	noCopy := flag.Bool("no-copy", false, "Disable automatic copying to clipboard")
 	infoOnly := flag.Bool("info", false, "Only display project summary")
+	verbose := flag.Bool("verbose", false, "Show full code content in terminal")
 
 	flag.Parse()
 
@@ -35,7 +36,7 @@ func main() {
 		}
 	} else {
 		// Process the directory
-		output, err := processor.ProcessDirectory(config)
+		output, err := processor.ProcessDirectory(config, *verbose)
 		if err != nil {
 			log.Fatalf("Error processing directory: %v", err)
 		}
