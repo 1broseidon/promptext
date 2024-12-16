@@ -27,7 +27,7 @@ func ParseCommaSeparated(input string) []string {
 
 // ProcessResult contains both display and clipboard content
 type ProcessResult struct {
-	DisplayContent  string
+	DisplayContent   string
 	ClipboardContent string
 }
 
@@ -79,7 +79,6 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		displayBuilder.WriteString(clipBuilder.String())
 	}
 
-
 	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -91,7 +90,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 		// Create unified filter once
 		unifiedFilter := filter.NewUnifiedFilter(gitIgnore, config.Extensions, config.Excludes)
-		
+
 		// Skip if file doesn't match our filters
 		if !unifiedFilter.ShouldProcess(path) {
 			return nil
@@ -101,7 +100,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		if err != nil {
 			return fmt.Errorf("error reading file %s: %w", path, err)
 		}
-		
+
 		// Always add to clipboard content
 		clipBuilder.WriteString(fmt.Sprintf("\n### File: %s\n", path))
 		clipBuilder.WriteString("```\n")
@@ -147,20 +146,20 @@ func GetMetadataSummary(config Config) (string, error) {
 
 	var summary strings.Builder
 	summary.WriteString("📦 Project Summary:\n")
-	
+
 	// Add root folder name
 	absPath, err := filepath.Abs(config.DirPath)
 	if err == nil {
 		summary.WriteString(fmt.Sprintf("   Project: %s\n", filepath.Base(absPath)))
 	}
-	
+
 	if projectInfo.Metadata != nil {
 		summary.WriteString(fmt.Sprintf("   Language: %s %s\n", projectInfo.Metadata.Language, projectInfo.Metadata.Version))
 		if len(projectInfo.Metadata.Dependencies) > 0 {
 			summary.WriteString(fmt.Sprintf("   Dependencies: %d packages\n", len(projectInfo.Metadata.Dependencies)))
 		}
 	}
-	
+
 	if projectInfo.GitInfo != nil {
 		summary.WriteString(fmt.Sprintf("   Branch: %s (%s)\n", projectInfo.GitInfo.Branch, projectInfo.GitInfo.CommitHash))
 	}
