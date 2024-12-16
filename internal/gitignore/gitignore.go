@@ -39,16 +39,34 @@ func (gi *GitIgnore) ShouldIgnore(path string) bool {
 	}
 
 	for _, pattern := range gi.patterns {
+		// Handle directory patterns first
+		if strings.HasSuffix(pattern, "/") {
+			dirPattern := strings.TrimSuffix(pattern, "/")
+			if strings.Contains(path, dirPattern) {
+				return true
+			}
+			continue
+		}
+
+		// Try exact match first
+		if pattern == filepath.Base(path) {
+			return true
+		}
+
+		// Try glob pattern match
 		matched, err := filepath.Match(pattern, filepath.Base(path))
 		if err == nil && matched {
 			return true
 		}
 
-		// Handle directory patterns
-		if strings.HasSuffix(pattern, "/") {
-			dirPattern := strings.TrimSuffix(pattern, "/")
-			if strings.Contains(path, dirPattern) {
-				return true
+		// Handle patterns that should match in any directory
+		if strings.Contains(pattern, "*") {
+			segments := strings.Split(path, string(filepath.Separator))
+			for _, segment := range segments {
+				matched, err := filepath.Match(pattern, segment)
+				if err == nil && matched {
+					return true
+				}
 			}
 		}
 	}
