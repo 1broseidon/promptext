@@ -1,17 +1,18 @@
 package processor
 
 import (
-	"flag"
 	"fmt"
-	"fmt"
+	"log"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/1broseidon/promptext/internal/config"
 	"github.com/1broseidon/promptext/internal/filter"
 	"github.com/1broseidon/promptext/internal/gitignore"
 	"github.com/1broseidon/promptext/internal/info"
+	"github.com/atotto/clipboard"
 )
 
 type Config struct {
