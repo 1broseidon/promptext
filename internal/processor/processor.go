@@ -89,8 +89,11 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			return nil
 		}
 
+		// Create unified filter once
+		unifiedFilter := filter.NewUnifiedFilter(gitIgnore, config.Extensions, config.Excludes)
+		
 		// Skip if file doesn't match our filters
-		if !filter.ShouldProcessFile(path, config.Extensions, config.Excludes, gitIgnore) {
+		if !unifiedFilter.ShouldProcess(path) {
 			return nil
 		}
 
