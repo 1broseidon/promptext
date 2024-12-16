@@ -8,6 +8,7 @@ import (
     "strings"
 
     "github.com/1broseidon/promptext/internal/filter"
+    "github.com/1broseidon/promptext/internal/gitignore"
 )
 
 type Config struct {
@@ -25,6 +26,12 @@ func ParseCommaSeparated(input string) []string {
 
 func ProcessDirectory(config Config) (string, error) {
     var builder strings.Builder
+    
+    // Initialize gitignore
+    gitIgnore, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
+    if err != nil {
+        return "", fmt.Errorf("error reading .gitignore: %w", err)
+    }
 
     err := filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
         if err != nil {
@@ -35,7 +42,7 @@ func ProcessDirectory(config Config) (string, error) {
             return nil
         }
 
-        if !filter.ShouldProcessFile(path, config.Extensions, config.Excludes) {
+        if !filter.ShouldProcessFile(path, config.Extensions, config.Excludes, gitIgnore) {
             return nil
         }
 

@@ -3,9 +3,15 @@ package filter
 import (
     "path/filepath"
     "strings"
+
+    "github.com/1broseidon/promptext/internal/gitignore"
 )
 
-func ShouldProcessFile(path string, extensions, excludes []string) bool {
+func ShouldProcessFile(path string, extensions, excludes []string, gitIgnore *gitignore.GitIgnore) bool {
+    // Check gitignore first
+    if gitIgnore.ShouldIgnore(path) {
+        return false
+    }
     // Check if file should be excluded
     for _, exclude := range excludes {
         if strings.Contains(path, exclude) {
