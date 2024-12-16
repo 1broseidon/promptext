@@ -75,23 +75,22 @@ func ProcessDirectory(config Config, verbose bool) (string, error) {
 			return nil
 		}
 
-		// Only process files that match our filters
-		if filter.ShouldProcessFile(path, config.Extensions, config.Excludes, gitIgnore) {
-			if verbose {
-				// Read and include file content
-				content, err := os.ReadFile(path)
-				if err != nil {
-					return fmt.Errorf("error reading file %s: %w", path, err)
-				}
-				
-				builder.WriteString(fmt.Sprintf("\n### File: %s\n", path))
-				builder.WriteString("```\n")
-				builder.Write(content)
-				builder.WriteString("\n```\n")
-			} else {
-				// Skip adding file headers in non-verbose mode
-				continue
+		// Skip if file doesn't match our filters
+		if !filter.ShouldProcessFile(path, config.Extensions, config.Excludes, gitIgnore) {
+			return nil
+		}
+
+		// Only process content in verbose mode
+		if verbose {
+			content, err := os.ReadFile(path)
+			if err != nil {
+				return fmt.Errorf("error reading file %s: %w", path, err)
 			}
+			
+			builder.WriteString(fmt.Sprintf("\n### File: %s\n", path))
+			builder.WriteString("```\n")
+			builder.Write(content)
+			builder.WriteString("\n```\n")
 		}
 
 		return nil
