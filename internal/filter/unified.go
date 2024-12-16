@@ -28,7 +28,7 @@ func NewUnifiedFilter(gitIgnore *gitignore.GitIgnore, extensions, excludes []str
 // ShouldProcess determines if a file should be processed based on all rules
 func (uf *UnifiedFilter) ShouldProcess(path string) bool {
 	// 1. Check all exclusion patterns first
-	
+
 	// Check default ignore directories
 	for _, dir := range uf.defaultIgnores {
 		if strings.Contains(path, "/"+dir+"/") || strings.HasPrefix(path, dir+"/") || path == dir {
@@ -47,12 +47,12 @@ func (uf *UnifiedFilter) ShouldProcess(path string) bool {
 		if exclude == path {
 			return false
 		}
-		
+
 		// Try glob pattern match
 		if matched, err := filepath.Match(exclude, filepath.Base(path)); err == nil && matched {
 			return false
 		}
-		
+
 		// Try path contains pattern
 		if strings.Contains(path, exclude) {
 			return false
@@ -60,7 +60,7 @@ func (uf *UnifiedFilter) ShouldProcess(path string) bool {
 	}
 
 	// 2. After exclusions, check extensions
-	
+
 	// If no extensions specified, include all non-excluded files
 	if len(uf.allowedExtensions) == 0 {
 		return true
