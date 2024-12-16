@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"log"
-
-	"promptext"
+	
+	"github.com/1broseidon/promptext/internal/processor"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 
 	flag.Parse()
 
-	if err := promptext.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose); err != nil {
+	if err := processor.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose); err != nil {
 		log.Fatal(err)
 	}
 }
