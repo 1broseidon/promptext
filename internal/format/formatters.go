@@ -65,6 +65,15 @@ func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
 			}
 			sb.WriteString("\n")
 		}
+
+		// Documentation Files
+		if len(project.Analysis.Documentation) > 0 {
+			sb.WriteString("### Documentation\n")
+			for path, desc := range project.Analysis.Documentation {
+				sb.WriteString(fmt.Sprintf("- %s: %s\n", path, desc))
+			}
+			sb.WriteString("\n")
+		}
 	}
 
 	if project.FileStats != nil {

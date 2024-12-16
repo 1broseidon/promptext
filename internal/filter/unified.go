@@ -49,17 +49,20 @@ func NewUnifiedFilter(gitIgnore *gitignore.GitIgnore, extensions, excludes []str
 
 // GetFileType determines the type of file based on its path and patterns
 func (uf *UnifiedFilter) GetFileType(path string) string {
-    base := strings.ToLower(filepath.Base(path))
-    
     // Check for tests
     if strings.Contains(path, "_test.") || strings.Contains(path, "test_") {
         return "test"
     }
     
-    // Check for entry points
+    // Check for entry points with full path support
     for lang, patterns := range entryPointPatterns {
         for _, pattern := range patterns {
-            if matched, _ := filepath.Match(pattern, base); matched {
+            // Try matching against full path first
+            if matched, _ := filepath.Match(pattern, path); matched {
+                return "entry:" + lang
+            }
+            // Fall back to base name for simple patterns
+            if matched, _ := filepath.Match(pattern, filepath.Base(path)); matched {
                 return "entry:" + lang
             }
         }
@@ -67,14 +70,19 @@ func (uf *UnifiedFilter) GetFileType(path string) string {
     
     // Check for configs
     for _, pattern := range configPatterns {
-        if matched, _ := filepath.Match(pattern, base); matched {
+        if matched, _ := filepath.Match(pattern, filepath.Base(path)); matched {
             return "config"
         }
     }
     
     // Check for documentation
     for _, pattern := range docPatterns {
-        if matched, _ := filepath.Match(pattern, base); matched {
+        // Try full path first
+        if matched, _ := filepath.Match(pattern, path); matched {
+            return "doc"
+        }
+        // Then try base name
+        if matched, _ := filepath.Match(pattern, filepath.Base(path)); matched {
             return "doc"
         }
     }
