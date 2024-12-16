@@ -16,7 +16,15 @@ A command-line tool for extracting and formatting code context from projects, de
 
 ### Installation
 
-#### Build from Source (Recommended)
+#### Quick Install (Linux and macOS)
+
+```bash
+curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/install.sh | bash
+```
+
+This will automatically download and install the latest version of promptext for your system.
+
+#### Build from Source
 
 1. Install Go 1.22 or later
 2. Clone and build:
@@ -28,7 +36,7 @@ go install ./cmd/promptext
 
 The binary will be installed to your `$GOPATH/bin` directory.
 
-#### Download Release Binary
+#### Manual Installation
 
 Download the latest release for your platform from the [releases page](https://github.com/1broseidon/promptext/releases).
 
