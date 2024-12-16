@@ -27,7 +27,7 @@ func NewUnifiedFilter(gitIgnore *gitignore.GitIgnore, extensions, excludes []str
 
 // ShouldProcess determines if a file should be processed based on all rules
 func (uf *UnifiedFilter) ShouldProcess(path string) bool {
-	// 1. Check default ignore directories
+	// 1. Check default ignore directories first
 	for _, dir := range uf.defaultIgnores {
 		if strings.Contains(path, "/"+dir+"/") || strings.HasPrefix(path, dir+"/") {
 			return false
@@ -39,7 +39,7 @@ func (uf *UnifiedFilter) ShouldProcess(path string) bool {
 		return false
 	}
 
-	// 3. Check exclude patterns
+	// 3. Check exclude patterns from config
 	for _, exclude := range uf.configExcludes {
 		if matched, err := filepath.Match(exclude, filepath.Base(path)); err == nil && matched {
 			return false
@@ -49,16 +49,20 @@ func (uf *UnifiedFilter) ShouldProcess(path string) bool {
 		}
 	}
 
-	// 4. Check extensions if specified
-	if len(uf.allowedExtensions) > 0 {
-		ext := filepath.Ext(path)
-		for _, allowedExt := range uf.allowedExtensions {
-			if strings.EqualFold(strings.TrimPrefix(allowedExt, "."), strings.TrimPrefix(ext, ".")) {
-				return true
-			}
-		}
-		return false
+	// 4. If no extensions specified, include all non-excluded files
+	if len(uf.allowedExtensions) == 0 {
+		return true
 	}
 
-	return true
+	// 5. Only include files with matching extensions
+	ext := filepath.Ext(path)
+	for _, allowedExt := range uf.allowedExtensions {
+		// Normalize extensions for comparison
+		if strings.EqualFold(strings.TrimPrefix(allowedExt, "."), strings.TrimPrefix(ext, ".")) {
+			return true
+		}
+	}
+
+	// File extension doesn't match any allowed extensions
+	return false
 }
