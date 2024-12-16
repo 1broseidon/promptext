@@ -537,3 +537,16 @@ func (dt *dirTracker) decrementDir(dir string) bool {
 func isLastItem(path string, dt *dirTracker) bool {
 	return dt.decrementDir(filepath.Dir(path))
 }
+
+// Helper function to compare path slices
+func pathEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
