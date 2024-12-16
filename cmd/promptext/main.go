@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/atotto/clipboard"
 	"github.com/1broseidon/promptext/internal/processor"
 )
 
@@ -13,6 +14,7 @@ func main() {
 	dirPath := flag.String("dir", ".", "Directory path to process")
 	extension := flag.String("ext", "", "File extension to filter (e.g., .go,.js)")
 	exclude := flag.String("exclude", "", "Patterns to exclude (comma-separated)")
+	noCopy := flag.Bool("no-copy", false, "Disable automatic copying to clipboard")
 
 	flag.Parse()
 
@@ -31,4 +33,11 @@ func main() {
 
 	// Write to stdout
 	fmt.Println(output)
+
+	// Copy to clipboard unless disabled
+	if !*noCopy {
+		if err := clipboard.WriteAll(output); err != nil {
+			log.Printf("Warning: Failed to copy to clipboard: %v", err)
+		}
+	}
 }
