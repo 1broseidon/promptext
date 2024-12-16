@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -17,7 +18,7 @@ type FileConfig struct {
 // LoadConfig attempts to load and parse the .promptext.yml file
 func LoadConfig(dirPath string) (*FileConfig, error) {
 	configPath := filepath.Join(dirPath, ".promptext.yml")
-	
+
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {

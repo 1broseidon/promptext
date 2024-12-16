@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/atotto/clipboard"
 	"github.com/1broseidon/promptext/internal/config"
 	"github.com/1broseidon/promptext/internal/processor"
+	"github.com/atotto/clipboard"
 )
 
 func main() {
