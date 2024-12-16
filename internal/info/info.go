@@ -446,7 +446,6 @@ func getJavaGradleDependencies(root string) []string {
 	return deps
 }
 
-
 // dirTracker keeps track of items remaining in each directory
 type dirTracker struct {
 	itemsLeft map[string]int
@@ -478,7 +477,7 @@ func newDirTracker(root string, config *Config, gitIgnore *gitignore.GitIgnore) 
 			dt.itemsLeft[parent]++
 			return nil
 		}
-		
+
 		// Only count files that match filters
 		if filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gitIgnore) {
 			parent := filepath.Dir(path)
