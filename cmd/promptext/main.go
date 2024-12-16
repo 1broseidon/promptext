@@ -29,7 +29,7 @@ func main() {
 	}
 
 	// Merge file config with command line flags
-	extensions, excludes, verbose := fileConfig.MergeWithFlags(*extension, *exclude, *verbose)
+	extensions, excludes, verboseFlag := fileConfig.MergeWithFlags(*extension, *exclude, *verbose)
 
 	// Create processor configuration
 	procConfig := processor.Config{
@@ -47,7 +47,7 @@ func main() {
 		}
 	} else {
 		// Process the directory
-		result, err := processor.ProcessDirectory(procConfig, *verbose)
+		result, err := processor.ProcessDirectory(procConfig, verboseFlag)
 		if err != nil {
 			log.Fatalf("Error processing directory: %v", err)
 		}
