@@ -37,7 +37,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	// Get project information
 	projectInfo, err := info.GetProjectInfo(config.DirPath)
 	if err != nil {
-		return "", fmt.Errorf("error getting project info: %w", err)
+		return &ProcessResult{}, fmt.Errorf("error getting project info: %w", err)
 	}
 
 	// Always add full content to clipboard
@@ -72,7 +72,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	// Initialize gitignore
 	gitIgnore, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
 	if err != nil {
-		return "", fmt.Errorf("error reading .gitignore: %w", err)
+		return &ProcessResult{}, fmt.Errorf("error reading .gitignore: %w", err)
 	}
 
 	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
@@ -91,7 +91,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 		content, err := os.ReadFile(path)
 		if err != nil {
-			return nil, fmt.Errorf("error reading file %s: %w", path, err)
+			return fmt.Errorf("error reading file %s: %w", path, err)
 		}
 		
 		// Always add to clipboard content
@@ -112,7 +112,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	})
 
 	if err != nil {
-		return "", fmt.Errorf("error walking directory: %w", err)
+		return &ProcessResult{}, fmt.Errorf("error walking directory: %w", err)
 	}
 
 	return &ProcessResult{
