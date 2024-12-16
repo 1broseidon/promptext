@@ -7,8 +7,30 @@ import (
     "github.com/1broseidon/promptext/internal/gitignore"
 )
 
+var defaultIgnoreDirs = []string{
+    ".git",
+    "node_modules",
+    "vendor",
+    ".idea",
+    ".vscode",
+    "__pycache__",
+    ".pytest_cache",
+    "dist",
+    "build",
+    "coverage",
+    "bin",
+    ".terraform",
+}
+
 func ShouldProcessFile(path string, extensions, excludes []string, gitIgnore *gitignore.GitIgnore) bool {
-    // Check gitignore first
+    // Check default ignore directories first
+    for _, dir := range defaultIgnoreDirs {
+        if strings.Contains(path, "/"+dir+"/") || strings.HasPrefix(path, dir+"/") {
+            return false
+        }
+    }
+
+    // Check gitignore patterns
     if gitIgnore.ShouldIgnore(path) {
         return false
     }
