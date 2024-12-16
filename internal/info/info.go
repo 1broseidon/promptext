@@ -85,7 +85,7 @@ func generateDirectoryTree(root string) (string, error) {
 
 		indent := strings.Repeat("  ", strings.Count(rel, string(filepath.Separator)))
 		prefix := "├──"
-		if isLastItem(path) {
+		if isLastItem() {
 			prefix = "└──"
 		}
 
@@ -447,7 +447,7 @@ func shouldSkip(path string) bool {
 	return false
 }
 
-func isLastItem(path string) bool {
+func isLastItem() bool {
 	// This is a simplified version. For a more accurate implementation,
 	// we'd need to track parent directories and their remaining items
 	return true
