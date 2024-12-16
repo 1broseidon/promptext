@@ -38,6 +38,9 @@ func main() {
 	if !*noCopy {
 		if err := clipboard.WriteAll(output); err != nil {
 			log.Printf("Warning: Failed to copy to clipboard: %v", err)
+		} else {
+			// Print success message in green (not included in clipboard)
+			fmt.Printf("\033[32mcode context copied to clipboard\033[0m\n")
 		}
 	}
 }
