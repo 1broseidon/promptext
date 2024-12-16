@@ -20,7 +20,7 @@ type Config struct {
 
 // ProjectInfo holds all discoverable information about the project
 type ProjectInfo struct {
-	DirectoryTree string
+	DirectoryTree *format.DirectoryNode
 	GitInfo       *GitInfo
 	Metadata      *ProjectMetadata
 }
@@ -65,15 +65,20 @@ func GetProjectInfo(rootPath string, config *Config, gitIgnore *gitignore.GitIgn
 	return info, nil
 }
 
-func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.GitIgnore) (string, error) {
-	var builder strings.Builder
-	builder.WriteString("### Project Structure:\n```\n")
+func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.GitIgnore) (*format.DirectoryNode, error) {
+	rootNode := &format.DirectoryNode{
+		Name: filepath.Base(root),
+		Type: "dir",
+	}
 
 	// Initialize directory tracker
 	dt, err := newDirTracker(root, config, gitIgnore)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+
+	currentPath := make([]string, 0)
+	currentNode := rootNode
 
 	err = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -92,11 +97,39 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 
 		// Create unified filter for consistent filtering
 		unifiedFilter := filter.NewUnifiedFilter(gitIgnore, config.Extensions, config.Excludes)
-		
-		indent := strings.Repeat("  ", strings.Count(rel, string(filepath.Separator)))
-		prefix := "├──"
-		if isLastItem(path, dt) {
-			prefix = "└──"
+
+		// Split the relative path
+		parts := strings.Split(rel, string(filepath.Separator))
+
+		// Reset to root node when we start a new top-level item
+		if len(parts) == 1 {
+			currentNode = rootNode
+			currentPath = currentPath[:0]
+		}
+
+		// Navigate to the correct parent node
+		parentPath := parts[:len(parts)-1]
+		if !pathEqual(currentPath, parentPath) {
+			currentNode = rootNode
+			for _, part := range parentPath {
+				found := false
+				for _, child := range currentNode.Children {
+					if child.Name == part {
+						currentNode = child
+						found = true
+						break
+					}
+				}
+				if !found {
+					newNode := &format.DirectoryNode{
+						Name: part,
+						Type: "dir",
+					}
+					currentNode.Children = append(currentNode.Children, newNode)
+					currentNode = newNode
+				}
+			}
+			currentPath = parentPath
 		}
 
 		if d.IsDir() {
@@ -104,21 +137,27 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 			if !unifiedFilter.ShouldProcess(rel) {
 				return filepath.SkipDir
 			}
-			builder.WriteString(fmt.Sprintf("%s%s %s/\n", indent, prefix, d.Name()))
-			return nil
+			newNode := &format.DirectoryNode{
+				Name: d.Name(),
+				Type: "dir",
+			}
+			currentNode.Children = append(currentNode.Children, newNode)
+		} else {
+			// For files, use the same unified filter
+			if !unifiedFilter.ShouldProcess(rel) {
+				return nil
+			}
+			newNode := &format.DirectoryNode{
+				Name: d.Name(),
+				Type: "file",
+			}
+			currentNode.Children = append(currentNode.Children, newNode)
 		}
 
-		// For files, use the same unified filter
-		if !unifiedFilter.ShouldProcess(rel) {
-			return nil
-		}
-
-		builder.WriteString(fmt.Sprintf("%s%s %s\n", indent, prefix, d.Name()))
 		return nil
 	})
 
-	builder.WriteString("```\n")
-	return builder.String(), err
+	return rootNode, err
 }
 
 func getGitInfo(root string) (*GitInfo, error) {
