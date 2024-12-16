@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/1broseidon/promptext"
+	"promptext"
 )
 
 func main() {

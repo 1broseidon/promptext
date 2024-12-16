@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/1broseidon/promptext/internal/config"
-	"github.com/1broseidon/promptext/internal/filter"
-	"github.com/1broseidon/promptext/internal/gitignore"
-	"github.com/1broseidon/promptext/internal/info"
+	"promptext/internal/config"
+	"promptext/internal/filter"
+	"promptext/internal/gitignore"
+	"promptext/internal/info"
 	"github.com/atotto/clipboard"
 )
 

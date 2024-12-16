@@ -1,4 +1,4 @@
-module github.com/1broseidon/promptext
+module promptext
 
 go 1.22.4
 
