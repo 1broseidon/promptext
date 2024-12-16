@@ -60,7 +60,13 @@ func generateDirectoryTree(root string) (string, error) {
 	var builder strings.Builder
 	builder.WriteString("### Project Structure:\n```\n")
 
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+	// Initialize directory tracker
+	dt, err := newDirTracker(root)
+	if err != nil {
+		return "", err
+	}
+
+	err = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -85,7 +91,7 @@ func generateDirectoryTree(root string) (string, error) {
 
 		indent := strings.Repeat("  ", strings.Count(rel, string(filepath.Separator)))
 		prefix := "├──"
-		if isLastItem() {
+		if isLastItem(path, dt) {
 			prefix = "└──"
 		}
 
@@ -447,8 +453,48 @@ func shouldSkip(path string) bool {
 	return false
 }
 
-func isLastItem() bool {
-	// This is a simplified version. For a more accurate implementation,
-	// we'd need to track parent directories and their remaining items
-	return true
+// dirTracker keeps track of items remaining in each directory
+type dirTracker struct {
+	itemsLeft map[string]int
+}
+
+// newDirTracker initializes a new directory tracker
+func newDirTracker(root string) (*dirTracker, error) {
+	dt := &dirTracker{
+		itemsLeft: make(map[string]int),
+	}
+
+	// First pass: count items in each directory
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if path == root {
+			return nil
+		}
+
+		if shouldSkip(path) {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		parent := filepath.Dir(path)
+		dt.itemsLeft[parent]++
+		return nil
+	})
+
+	return dt, err
+}
+
+// decrementDir reduces the count for a directory and returns if it's the last item
+func (dt *dirTracker) decrementDir(dir string) bool {
+	dt.itemsLeft[dir]--
+	return dt.itemsLeft[dir] == 0
+}
+
+func isLastItem(path string, dt *dirTracker) bool {
+	return dt.decrementDir(filepath.Dir(path))
 }
