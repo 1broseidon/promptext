@@ -39,7 +39,10 @@ func main() {
 		if err := clipboard.WriteAll(output); err != nil {
 			log.Printf("Warning: Failed to copy to clipboard: %v", err)
 		} else {
-			// Print success message in green (not included in clipboard)
+			// Print metadata summary and success message in green
+			if info, err := processor.GetMetadataSummary(config); err == nil {
+				fmt.Printf("\033[32m%s\033[0m\n", info)
+			}
 			fmt.Printf("\033[32mcode context copied to clipboard\033[0m\n")
 		}
 	}

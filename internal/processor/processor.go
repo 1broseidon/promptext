@@ -97,3 +97,28 @@ func ProcessDirectory(config Config) (string, error) {
 
 	return builder.String(), nil
 }
+
+// GetMetadataSummary returns a concise summary of project metadata
+func GetMetadataSummary(config Config) (string, error) {
+	projectInfo, err := info.GetProjectInfo(config.DirPath)
+	if err != nil {
+		return "", err
+	}
+
+	var summary strings.Builder
+	summary.WriteString("📦 Project Summary:\n")
+	
+	if projectInfo.Metadata != nil {
+		summary.WriteString(fmt.Sprintf("   Language: %s %s\n", projectInfo.Metadata.Language, projectInfo.Metadata.Version))
+	}
+	
+	if projectInfo.GitInfo != nil {
+		summary.WriteString(fmt.Sprintf("   Branch: %s (%s)\n", projectInfo.GitInfo.Branch, projectInfo.GitInfo.CommitHash))
+	}
+
+	if len(config.Extensions) > 0 {
+		summary.WriteString(fmt.Sprintf("   Filtering: %s\n", strings.Join(config.Extensions, ", ")))
+	}
+
+	return summary.String(), nil
+}
