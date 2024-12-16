@@ -9,7 +9,6 @@ import (
 
 type MarkdownFormatter struct{}
 type XMLFormatter struct{}
-type JSONFormatter struct{}
 
 func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
     var sb strings.Builder
@@ -140,10 +139,3 @@ func (x *XMLFormatter) Format(project *ProjectOutput) (string, error) {
     return b.String(), nil
 }
 
-func (j *JSONFormatter) Format(project *ProjectOutput) (string, error) {
-    output, err := json.MarshalIndent(project, "", "  ")
-    if err != nil {
-        return "", err
-    }
-    return string(output), nil
-}

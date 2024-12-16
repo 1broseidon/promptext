@@ -11,22 +11,21 @@ type OutputFormat string
 const (
 	FormatMarkdown OutputFormat = "markdown"
 	FormatXML      OutputFormat = "xml"
-	FormatJSON     OutputFormat = "json"
 )
 
 // DirectoryNode represents a node in the directory tree
 type DirectoryNode struct {
-	Name     string           `xml:"name,attr" json:"name"`
-	Type     string           `xml:"type,attr" json:"type"` // "file" or "dir"
-	Children []*DirectoryNode `xml:"node,omitempty" json:"children,omitempty"`
+	Name     string           `xml:"name,attr"`
+	Type     string           `xml:"type,attr"` // "file" or "dir"
+	Children []*DirectoryNode `xml:"node,omitempty"`
 }
 
 type ProjectOutput struct {
-	XMLName       xml.Name       `xml:"project" json:"-"`
-	DirectoryTree *DirectoryNode `xml:"directoryTree" json:"directoryTree"`
-	GitInfo       *GitInfo       `xml:"gitInfo,omitempty" json:"gitInfo,omitempty"`
-	Metadata      *Metadata      `xml:"metadata,omitempty" json:"metadata,omitempty"`
-	Files         []FileInfo     `xml:"files>file,omitempty" json:"files,omitempty"`
+	XMLName       xml.Name       `xml:"project"`
+	DirectoryTree *DirectoryNode `xml:"directoryTree"`
+	GitInfo       *GitInfo       `xml:"gitInfo,omitempty"`
+	Metadata      *Metadata      `xml:"metadata,omitempty"`
+	Files         []FileInfo     `xml:"files>file,omitempty"`
 }
 
 // Helper function to convert DirectoryNode to markdown string
@@ -60,20 +59,20 @@ func (d *DirectoryNode) ToMarkdown(level int) string {
 }
 
 type GitInfo struct {
-	Branch        string `xml:"branch" json:"branch"`
-	CommitHash    string `xml:"commitHash" json:"commitHash"`
-	CommitMessage string `xml:"commitMessage" json:"commitMessage"`
+	Branch        string `xml:"branch"`
+	CommitHash    string `xml:"commitHash"`
+	CommitMessage string `xml:"commitMessage"`
 }
 
 type Metadata struct {
-	Language     string   `xml:"language" json:"language"`
-	Version      string   `xml:"version" json:"version"`
-	Dependencies []string `xml:"dependencies>dependency,omitempty" json:"dependencies,omitempty"`
+	Language     string   `xml:"language"`
+	Version      string   `xml:"version"`
+	Dependencies []string `xml:"dependencies>dependency,omitempty"`
 }
 
 type FileInfo struct {
-	Path    string `xml:"path,attr" json:"path"`
-	Content string `xml:"content" json:"content"`
+	Path    string `xml:"path,attr"`
+	Content string `xml:"content"`
 }
 
 // Formatter interface for different output formats
@@ -88,9 +87,7 @@ func GetFormatter(format string) (Formatter, error) {
 		return &MarkdownFormatter{}, nil
 	case FormatXML:
 		return &XMLFormatter{}, nil
-	case FormatJSON:
-		return &JSONFormatter{}, nil
 	default:
-		return nil, fmt.Errorf("unsupported format: %s", format)
+		return nil, fmt.Errorf("unsupported format: %s (supported: markdown, xml)", format)
 	}
 }
