@@ -21,14 +21,14 @@ type DirectoryNode struct {
 }
 
 type ProjectOutput struct {
-	XMLName       xml.Name       `xml:"project"`
-	DirectoryTree *DirectoryNode `xml:"directoryTree"`
-	GitInfo       *GitInfo       `xml:"gitInfo,omitempty"`
-	Metadata      *Metadata      `xml:"metadata,omitempty"`
-	Files         []FileInfo     `xml:"files>file,omitempty"`
+	XMLName       xml.Name         `xml:"project"`
+	DirectoryTree *DirectoryNode   `xml:"directoryTree"`
+	GitInfo       *GitInfo         `xml:"gitInfo,omitempty"`
+	Metadata      *Metadata        `xml:"metadata,omitempty"`
+	Files         []FileInfo       `xml:"files>file,omitempty"`
 	Overview      *ProjectOverview `xml:"overview,omitempty"`
-	FileStats     *FileStatistics `xml:"fileStats,omitempty"`
-	Dependencies  *DependencyInfo `xml:"dependencies,omitempty"`
+	FileStats     *FileStatistics  `xml:"fileStats,omitempty"`
+	Dependencies  *DependencyInfo  `xml:"dependencies,omitempty"`
 	Analysis      *ProjectAnalysis `xml:"analysis,omitempty"`
 }
 
@@ -39,16 +39,16 @@ type ProjectOverview struct {
 }
 
 type FileStatistics struct {
-	TotalFiles     int            `xml:"totalFiles"`
-	FilesByType    map[string]int `xml:"fileTypes>type"`
-	TotalLines     int            `xml:"totalLines"`
-	PackageCount   int            `xml:"packageCount"`
+	TotalFiles   int            `xml:"totalFiles"`
+	FilesByType  map[string]int `xml:"fileTypes>type"`
+	TotalLines   int            `xml:"totalLines"`
+	PackageCount int            `xml:"packageCount"`
 }
 
 type DependencyInfo struct {
-	Imports     map[string][]string `xml:"imports>file"`
-	Packages    []string            `xml:"packages>package"`
-	CoreFiles   []string            `xml:"coreFiles>file"`
+	Imports   map[string][]string `xml:"imports>file"`
+	Packages  []string            `xml:"packages>package"`
+	CoreFiles []string            `xml:"coreFiles>file"`
 }
 
 // Helper function to convert DirectoryNode to markdown string
