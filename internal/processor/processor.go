@@ -164,14 +164,18 @@ func GetMetadataSummary(config Config) (string, error) {
 		summary.WriteString(fmt.Sprintf("   Branch: %s (%s)\n", projectInfo.GitInfo.Branch, projectInfo.GitInfo.CommitHash))
 	}
 
-	// Count included files
+	// Count and log included/excluded files
 	fileCount := 0
 	filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return nil
 		}
-		if filter.ShouldProcessFile(path, config.Extensions, config.Excludes, &gitignore.GitIgnore{}) {
+		rel, _ := filepath.Rel(config.DirPath, path)
+		if filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gitIgnore) {
+			fmt.Printf("Including file: %s\n", rel)
 			fileCount++
+		} else {
+			fmt.Printf("Excluding file: %s\n", rel)
 		}
 		return nil
 	})
