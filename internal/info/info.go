@@ -73,10 +73,6 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 	}
 
 	// Initialize directory tracker
-	dt, err := newDirTracker(root, config, gitIgnore)
-	if err != nil {
-		return nil, err
-	}
 
 	currentPath := make([]string, 0)
 	currentNode := rootNode

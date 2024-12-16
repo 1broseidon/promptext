@@ -77,7 +77,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 	// Only add to display if verbose
 	if verbose {
-		displayBuilder.WriteString(projectOutput.DirectoryTree)
+		displayBuilder.WriteString(projectOutput.DirectoryTree.ToMarkdown(0))
 		if projectOutput.GitInfo != nil {
 			displayBuilder.WriteString(fmt.Sprintf("\nBranch: %s\nCommit: %s\nMessage: %s\n",
 				projectOutput.GitInfo.Branch,
