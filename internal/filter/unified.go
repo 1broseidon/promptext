@@ -7,6 +7,26 @@ import (
 	"github.com/1broseidon/promptext/internal/gitignore"
 )
 
+// Language-specific patterns
+var entryPointPatterns = map[string][]string{
+    "Go":      {"main.go", "cmd/*/main.go"},
+    "Python":  {"__main__.py", "app.py", "main.py"},
+    "Node.js": {"index.js", "server.js", "app.js"},
+    "Rust":    {"main.rs", "lib.rs"},
+    "Java":    {"Main.java", "Application.java"},
+}
+
+var configPatterns = []string{
+    "*.yml", "*.yaml", "*.json", "*.toml", "*.ini",
+    "config.*", ".env*", "requirements.txt",
+    "package.json", "Cargo.toml", "pom.xml",
+}
+
+var docPatterns = []string{
+    "README*", "CONTRIBUTING*", "CHANGELOG*", "LICENSE*",
+    "docs/*", "*.md", "*.rst",
+}
+
 // UnifiedFilter combines all filtering rules into a single structure
 type UnifiedFilter struct {
 	gitIgnore         *gitignore.GitIgnore
@@ -61,6 +81,42 @@ func (uf *UnifiedFilter) GetFileType(path string) string {
 	}
 
 	return "source"
+}
+
+// GetFileType determines the type of file based on its path and patterns
+func (uf *UnifiedFilter) GetFileType(path string) string {
+    ext := strings.ToLower(filepath.Ext(path))
+    base := strings.ToLower(filepath.Base(path))
+    
+    // Check for tests
+    if strings.Contains(path, "_test.") || strings.Contains(path, "test_") {
+        return "test"
+    }
+    
+    // Check for entry points
+    for lang, patterns := range entryPointPatterns {
+        for _, pattern := range patterns {
+            if matched, _ := filepath.Match(pattern, base); matched {
+                return "entry:" + lang
+            }
+        }
+    }
+    
+    // Check for configs
+    for _, pattern := range configPatterns {
+        if matched, _ := filepath.Match(pattern, base); matched {
+            return "config"
+        }
+    }
+    
+    // Check for documentation
+    for _, pattern := range docPatterns {
+        if matched, _ := filepath.Match(pattern, base); matched {
+            return "doc"
+        }
+    }
+    
+    return "source"
 }
 
 // ShouldProcess determines if a file should be processed based on all rules
