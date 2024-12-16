@@ -47,7 +47,7 @@ func main() {
 		}
 	} else {
 		// Process the directory
-		result, err := processor.ProcessDirectory(procConfig, verbose)
+		result, err := processor.ProcessDirectory(procConfig, *verbose)
 		if err != nil {
 			log.Fatalf("Error processing directory: %v", err)
 		}
