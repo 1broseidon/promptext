@@ -34,26 +34,28 @@ func ProcessDirectory(config Config, verbose bool) (string, error) {
 		return "", fmt.Errorf("error getting project info: %w", err)
 	}
 
-	// Add directory tree
-	builder.WriteString(projectInfo.DirectoryTree)
+	if verbose {
+		// Add directory tree
+		builder.WriteString(projectInfo.DirectoryTree)
 
-	// Add git information if available
-	if projectInfo.GitInfo != nil {
-		builder.WriteString("\n### Git Information:\n")
-		builder.WriteString(fmt.Sprintf("Branch: %s\n", projectInfo.GitInfo.Branch))
-		builder.WriteString(fmt.Sprintf("Commit: %s\n", projectInfo.GitInfo.CommitHash))
-		builder.WriteString(fmt.Sprintf("Message: %s\n", projectInfo.GitInfo.CommitMessage))
-	}
+		// Add git information if available
+		if projectInfo.GitInfo != nil {
+			builder.WriteString("\n### Git Information:\n")
+			builder.WriteString(fmt.Sprintf("Branch: %s\n", projectInfo.GitInfo.Branch))
+			builder.WriteString(fmt.Sprintf("Commit: %s\n", projectInfo.GitInfo.CommitHash))
+			builder.WriteString(fmt.Sprintf("Message: %s\n", projectInfo.GitInfo.CommitMessage))
+		}
 
-	// Add project metadata if available
-	if projectInfo.Metadata != nil {
-		builder.WriteString("\n### Project Metadata:\n")
-		builder.WriteString(fmt.Sprintf("Language: %s\n", projectInfo.Metadata.Language))
-		builder.WriteString(fmt.Sprintf("Version: %s\n", projectInfo.Metadata.Version))
-		if len(projectInfo.Metadata.Dependencies) > 0 {
-			builder.WriteString("Dependencies:\n")
-			for _, dep := range projectInfo.Metadata.Dependencies {
-				builder.WriteString(fmt.Sprintf("  - %s\n", dep))
+		// Add project metadata if available
+		if projectInfo.Metadata != nil {
+			builder.WriteString("\n### Project Metadata:\n")
+			builder.WriteString(fmt.Sprintf("Language: %s\n", projectInfo.Metadata.Language))
+			builder.WriteString(fmt.Sprintf("Version: %s\n", projectInfo.Metadata.Version))
+			if len(projectInfo.Metadata.Dependencies) > 0 {
+				builder.WriteString("Dependencies:\n")
+				for _, dep := range projectInfo.Metadata.Dependencies {
+					builder.WriteString(fmt.Sprintf("  - %s\n", dep))
+				}
 			}
 		}
 	}
