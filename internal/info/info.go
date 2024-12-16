@@ -611,7 +611,7 @@ func analyzeProject(rootPath string) *ProjectAnalysis {
 		Documentation: make(map[string]string),
 	}
 
-	filter := NewUnifiedFilter(nil, nil, nil)
+	filter := filter.NewUnifiedFilter(nil, nil, nil)
 
 	filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
