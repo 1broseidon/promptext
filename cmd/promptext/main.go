@@ -15,10 +15,11 @@ func main() {
 	noCopy := flag.Bool("no-copy", false, "Disable automatic copying to clipboard")
 	infoOnly := flag.Bool("info", false, "Only display project summary")
 	verbose := flag.Bool("verbose", false, "Show full code content in terminal")
+	format := flag.String("format", "markdown", "Output format (markdown, xml, json)")
 
 	flag.Parse()
 
-	if err := processor.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose); err != nil {
+	if err := processor.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose, *format); err != nil {
 		log.Fatal(err)
 	}
 }

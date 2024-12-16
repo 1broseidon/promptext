@@ -14,6 +14,7 @@ type FileConfig struct {
 	Extensions []string `yaml:"extensions"`
 	Excludes   []string `yaml:"excludes"`
 	Verbose    bool     `yaml:"verbose"`
+	Format     string   `yaml:"format"` // Add format field: "markdown", "xml", "json"
 }
 
 // LoadConfig attempts to load and parse the .promptext.yml file
