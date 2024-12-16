@@ -25,8 +25,14 @@ func ParseCommaSeparated(input string) []string {
 	return strings.Split(input, ",")
 }
 
-func ProcessDirectory(config Config, verbose bool) (string, error) {
-	var builder strings.Builder
+// ProcessResult contains both display and clipboard content
+type ProcessResult struct {
+	DisplayContent  string
+	ClipboardContent string
+}
+
+func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
+	var displayBuilder, clipBuilder strings.Builder
 
 	// Get project information
 	projectInfo, err := info.GetProjectInfo(config.DirPath)
@@ -34,30 +40,33 @@ func ProcessDirectory(config Config, verbose bool) (string, error) {
 		return "", fmt.Errorf("error getting project info: %w", err)
 	}
 
-	if verbose {
-		// Add directory tree
-		builder.WriteString(projectInfo.DirectoryTree)
+	// Always add full content to clipboard
+	clipBuilder.WriteString(projectInfo.DirectoryTree)
 
-		// Add git information if available
-		if projectInfo.GitInfo != nil {
-			builder.WriteString("\n### Git Information:\n")
-			builder.WriteString(fmt.Sprintf("Branch: %s\n", projectInfo.GitInfo.Branch))
-			builder.WriteString(fmt.Sprintf("Commit: %s\n", projectInfo.GitInfo.CommitHash))
-			builder.WriteString(fmt.Sprintf("Message: %s\n", projectInfo.GitInfo.CommitMessage))
-		}
+	// Add git information if available
+	if projectInfo.GitInfo != nil {
+		clipBuilder.WriteString("\n### Git Information:\n")
+		clipBuilder.WriteString(fmt.Sprintf("Branch: %s\n", projectInfo.GitInfo.Branch))
+		clipBuilder.WriteString(fmt.Sprintf("Commit: %s\n", projectInfo.GitInfo.CommitHash))
+		clipBuilder.WriteString(fmt.Sprintf("Message: %s\n", projectInfo.GitInfo.CommitMessage))
+	}
 
-		// Add project metadata if available
-		if projectInfo.Metadata != nil {
-			builder.WriteString("\n### Project Metadata:\n")
-			builder.WriteString(fmt.Sprintf("Language: %s\n", projectInfo.Metadata.Language))
-			builder.WriteString(fmt.Sprintf("Version: %s\n", projectInfo.Metadata.Version))
-			if len(projectInfo.Metadata.Dependencies) > 0 {
-				builder.WriteString("Dependencies:\n")
-				for _, dep := range projectInfo.Metadata.Dependencies {
-					builder.WriteString(fmt.Sprintf("  - %s\n", dep))
-				}
+	// Add project metadata if available
+	if projectInfo.Metadata != nil {
+		clipBuilder.WriteString("\n### Project Metadata:\n")
+		clipBuilder.WriteString(fmt.Sprintf("Language: %s\n", projectInfo.Metadata.Language))
+		clipBuilder.WriteString(fmt.Sprintf("Version: %s\n", projectInfo.Metadata.Version))
+		if len(projectInfo.Metadata.Dependencies) > 0 {
+			clipBuilder.WriteString("Dependencies:\n")
+			for _, dep := range projectInfo.Metadata.Dependencies {
+				clipBuilder.WriteString(fmt.Sprintf("  - %s\n", dep))
 			}
 		}
+	}
+
+	// Only add to display if verbose
+	if verbose {
+		displayBuilder.WriteString(clipBuilder.String())
 	}
 
 	// Initialize gitignore
@@ -80,17 +89,23 @@ func ProcessDirectory(config Config, verbose bool) (string, error) {
 			return nil
 		}
 
-		// Only process content in verbose mode
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return nil, fmt.Errorf("error reading file %s: %w", path, err)
+		}
+		
+		// Always add to clipboard content
+		clipBuilder.WriteString(fmt.Sprintf("\n### File: %s\n", path))
+		clipBuilder.WriteString("```\n")
+		clipBuilder.Write(content)
+		clipBuilder.WriteString("\n```\n")
+
+		// Only add to display if verbose
 		if verbose {
-			content, err := os.ReadFile(path)
-			if err != nil {
-				return fmt.Errorf("error reading file %s: %w", path, err)
-			}
-			
-			builder.WriteString(fmt.Sprintf("\n### File: %s\n", path))
-			builder.WriteString("```\n")
-			builder.Write(content)
-			builder.WriteString("\n```\n")
+			displayBuilder.WriteString(fmt.Sprintf("\n### File: %s\n", path))
+			displayBuilder.WriteString("```\n")
+			displayBuilder.Write(content)
+			displayBuilder.WriteString("\n```\n")
 		}
 
 		return nil
@@ -100,7 +115,10 @@ func ProcessDirectory(config Config, verbose bool) (string, error) {
 		return "", fmt.Errorf("error walking directory: %w", err)
 	}
 
-	return builder.String(), nil
+	return &ProcessResult{
+		DisplayContent:   displayBuilder.String(),
+		ClipboardContent: clipBuilder.String(),
+	}, nil
 }
 
 // GetMetadataSummary returns a concise summary of project metadata

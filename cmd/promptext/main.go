@@ -36,23 +36,24 @@ func main() {
 		}
 	} else {
 		// Process the directory
-		output, err := processor.ProcessDirectory(config, *verbose)
+		result, err := processor.ProcessDirectory(config, *verbose)
 		if err != nil {
 			log.Fatalf("Error processing directory: %v", err)
 		}
 
-		// Write to stdout
-		fmt.Println(output)
+		// Write display content to stdout
+		if *verbose {
+			fmt.Println(result.DisplayContent)
+		}
 
 		// Copy to clipboard unless disabled
 		if !*noCopy {
-			if err := clipboard.WriteAll(output); err != nil {
+			if err := clipboard.WriteAll(result.ClipboardContent); err != nil {
 				log.Printf("Warning: Failed to copy to clipboard: %v", err)
-			} else {
-				// Print metadata summary and success message in green
-				if info, err := processor.GetMetadataSummary(config); err == nil {
-					fmt.Printf("\033[32m%s   ✓ code context copied to clipboard\033[0m\n", info)
-				}
+			}
+			// Always print metadata summary and success message in green
+			if info, err := processor.GetMetadataSummary(config); err == nil {
+				fmt.Printf("\033[32m%s   ✓ code context copied to clipboard\033[0m\n", info)
 			}
 		}
 	}
