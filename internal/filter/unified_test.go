@@ -2,13 +2,12 @@ package filter
 
 import (
 	"testing"
-
 )
 
 func TestUnifiedFilter_ShouldProcess(t *testing.T) {
 	// Helper function to create a gitignore for testing
-	createGitIgnore := func(patterns []string) *gitignore.GitIgnore {
-		return &gitignore.GitIgnore{Patterns: patterns}
+	createGitIgnore := func(patterns []string) *GitIgnore {
+		return &GitIgnore{Patterns: patterns}
 	}
 
 	tests := []struct {
@@ -103,7 +102,7 @@ func TestUnifiedFilter_ShouldProcess(t *testing.T) {
 }
 
 func TestNewUnifiedFilter(t *testing.T) {
-	gitIgnore := &gitignore.GitIgnore{}
+	gitIgnore := &GitIgnore{}
 	extensions := []string{".go", ".md"}
 	excludes := []string{"vendor/"}
 
