@@ -6,6 +6,33 @@ import (
 	"github.com/1broseidon/promptext/internal/filter"
 )
 
+// Test constants to match the package constants
+var (
+	testDefaultIgnoreDirs = []string{
+		".git",
+		"node_modules",
+		"vendor",
+		".idea",
+		".vscode",
+		"__pycache__",
+		".pytest_cache",
+		"dist",
+		"build",
+		"coverage",
+		"bin",
+		".terraform",
+	}
+
+	testDefaultIgnoreExts = []string{
+		".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp",
+		".ico", ".icns", ".svg", ".eps", ".raw", ".cr2", ".nef",
+		".exe", ".dll", ".so", ".dylib", ".bin", ".obj",
+		".zip", ".tar", ".gz", ".7z", ".rar", ".iso",
+		".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+		".class", ".pyc", ".pyo", ".pyd", ".o", ".a",
+	}
+)
+
 func TestUnifiedFilter_ShouldProcess(t *testing.T) {
 	// Helper function to create a gitignore for testing
 	createGitIgnore := func(patterns []string) *filter.GitIgnore {
@@ -122,12 +149,12 @@ func TestNewUnifiedFilter(t *testing.T) {
 		t.Errorf("NewUnifiedFilter got %d excludes, want %d", len(filter.configExcludes), len(excludes))
 	}
 
-	if len(filter.defaultIgnores) != len(DefaultIgnoreDirs) {
-		t.Errorf("NewUnifiedFilter got %d default ignores, want %d", len(filter.defaultIgnores), len(DefaultIgnoreDirs))
+	if len(filter.defaultIgnores) != len(testDefaultIgnoreDirs) {
+		t.Errorf("NewUnifiedFilter got %d default ignores, want %d", len(filter.defaultIgnores), len(testDefaultIgnoreDirs))
 	}
 
-	if len(filter.defaultIgnoreExts) != len(DefaultIgnoreExtensions) {
-		t.Errorf("NewUnifiedFilter got %d default ignore extensions, want %d", len(filter.defaultIgnoreExts), len(DefaultIgnoreExtensions))
+	if len(filter.defaultIgnoreExts) != len(testDefaultIgnoreExts) {
+		t.Errorf("NewUnifiedFilter got %d default ignore extensions, want %d", len(filter.defaultIgnoreExts), len(testDefaultIgnoreExts))
 	}
 }
 
@@ -167,7 +194,7 @@ func TestUnifiedFilter_PathMatching(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := filter.NewUnifiedFilter(nil, nil, tt.excludes)
-			got := filter.ShouldProcess(tt.path)
+			got := f.ShouldProcess(tt.path)
 			if got != tt.want {
 				t.Errorf("PathMatching(%q) = %v, want %v", tt.path, got, tt.want)
 			}
