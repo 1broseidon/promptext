@@ -95,11 +95,8 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 			return nil
 		}
 
-		// Check if we should process this path
-		if !unifiedFilter.ShouldProcess(rel) {
-			if d.IsDir() {
-				return filepath.SkipDir
-			}
+		// Always process directories, but check filter for files
+		if !d.IsDir() && !unifiedFilter.ShouldProcess(rel) {
 			return nil
 		}
 
@@ -108,17 +105,18 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 		currentPath := ""
 		currentNode := rootNode
 
-		// Create or get directory nodes for each part of the path
-		for i := 0; i < len(parts); i++ {
-			part := parts[i]
+		// Create nodes for each part of the path
+		for i, part := range parts {
 			if currentPath == "" {
 				currentPath = part
 			} else {
 				currentPath = filepath.Join(currentPath, part)
 			}
 
-			// If this is a directory or if it's the last part and it's a file
-			if i < len(parts)-1 || d.IsDir() {
+			isLast := i == len(parts)-1
+			isDir := d.IsDir() || !isLast
+
+			if isDir {
 				if _, exists := dirMap[currentPath]; !exists {
 					newNode := &format.DirectoryNode{
 						Name: part,
@@ -129,7 +127,6 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 				}
 				currentNode = dirMap[currentPath]
 			} else {
-				// This is a file (last part)
 				fileNode := &format.DirectoryNode{
 					Name: part,
 					Type: "file",
