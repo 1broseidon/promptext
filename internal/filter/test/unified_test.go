@@ -8,8 +8,8 @@ import (
 
 func TestUnifiedFilter_ShouldProcess(t *testing.T) {
 	// Helper function to create a gitignore for testing
-	createGitIgnore := func(patterns []string) *GitIgnore {
-		return &GitIgnore{Patterns: patterns}
+	createGitIgnore := func(patterns []string) *filter.GitIgnore {
+		return &filter.GitIgnore{Patterns: patterns}
 	}
 
 	tests := []struct {

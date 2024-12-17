@@ -8,8 +8,7 @@ import (
 )
 
 type GitIgnore struct {
-	patterns []string
-	Patterns []string // Exported for testing
+	Patterns []string // Exported for testing and external use
 }
 
 func NewGitIgnore(path string) (*GitIgnore, error) {
@@ -31,12 +30,12 @@ func NewGitIgnore(path string) (*GitIgnore, error) {
 		}
 	}
 
-	return &GitIgnore{patterns: patterns}, nil
+	return &GitIgnore{Patterns: patterns}, nil
 }
 
 // matchExact checks if the pattern exactly matches either the base name or full path,
 // or if the pattern matches the start of the path for directory-like patterns
-func (gi *GitIgnore) matchExact(pattern, path, baseName string) bool {
+func (gi *GitIgnore) MatchExact(pattern, path, baseName string) bool {
 	if pattern == baseName || pattern == path {
 		return true
 	}
@@ -48,7 +47,7 @@ func (gi *GitIgnore) matchExact(pattern, path, baseName string) bool {
 }
 
 // matchDirectory checks if a directory pattern matches the path
-func (gi *GitIgnore) matchDirectory(pattern, path string) bool {
+func (gi *GitIgnore) MatchDirectory(pattern, path string) bool {
 	if strings.HasSuffix(pattern, "/") {
 		dirPattern := strings.TrimSuffix(pattern, "/")
 		parts := strings.Split(path, string(filepath.Separator))
@@ -62,7 +61,7 @@ func (gi *GitIgnore) matchDirectory(pattern, path string) bool {
 }
 
 // matchGlobPattern checks if a glob pattern matches any part of the path
-func (gi *GitIgnore) matchGlobPattern(pattern, path, baseName string) bool {
+func (gi *GitIgnore) MatchGlobPattern(pattern, path, baseName string) bool {
 	// For patterns starting with *, try matching against base name first
 	if strings.HasPrefix(pattern, "*") {
 		if matched, err := filepath.Match(pattern, baseName); err == nil && matched {
@@ -95,25 +94,25 @@ func (gi *GitIgnore) matchGlobPattern(pattern, path, baseName string) bool {
 }
 
 func (gi *GitIgnore) ShouldIgnore(path string) bool {
-	if len(gi.patterns) == 0 {
+	if len(gi.Patterns) == 0 {
 		return false
 	}
 
 	baseName := filepath.Base(path)
 
-	for _, pattern := range gi.patterns {
+	for _, pattern := range gi.Patterns {
 		// Try exact matches first
-		if gi.matchExact(pattern, path, baseName) {
+		if gi.MatchExact(pattern, path, baseName) {
 			return true
 		}
 
 		// Check directory patterns
-		if gi.matchDirectory(pattern, path) {
+		if gi.MatchDirectory(pattern, path) {
 			return true
 		}
 
 		// Handle glob patterns
-		if strings.Contains(pattern, "*") && gi.matchGlobPattern(pattern, path, baseName) {
+		if strings.Contains(pattern, "*") && gi.MatchGlobPattern(pattern, path, baseName) {
 			return true
 		}
 	}
