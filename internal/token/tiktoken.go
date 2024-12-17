@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+
 	"github.com/pkoukk/tiktoken-go"
 )
 
@@ -15,13 +16,13 @@ func init() {
 			log.Printf("Warning: Could not get user home directory: %v", err)
 			return
 		}
-		
+
 		cacheDir := filepath.Join(homeDir, ".promptext", "cache")
 		if err := os.MkdirAll(cacheDir, 0755); err != nil {
 			log.Printf("Warning: Could not create cache directory: %v", err)
 			return
 		}
-		
+
 		os.Setenv("TIKTOKEN_CACHE_DIR", cacheDir)
 	}
 }
@@ -45,7 +46,7 @@ func (tc *TokenCounter) EstimateTokens(text string) int {
 	if tc.encoding == nil || text == "" {
 		return 0
 	}
-	
+
 	tokens := tc.encoding.Encode(text, nil, nil)
 	return len(tokens)
 }
