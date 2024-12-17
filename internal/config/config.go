@@ -4,8 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/1broseidon/promptext/internal/filter"
 	"gopkg.in/yaml.v3"
 )
 

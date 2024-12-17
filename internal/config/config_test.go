@@ -5,8 +5,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
-
-	"github.com/1broseidon/promptext/internal/filter"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -120,7 +118,7 @@ func TestMergeWithFlags(t *testing.T) {
 			flagExclude:     "",
 			flagVerbose:     false,
 			wantExtensions:  []string{".go", ".py"},
-			wantExcludes:    append(filter.DefaultIgnoreDirs, "test"),
+			wantExcludes:    []string{"test"},
 			wantVerbose:     true, // Changed: respect config verbose when flag not set
 		},
 		{
