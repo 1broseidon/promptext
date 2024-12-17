@@ -16,21 +16,6 @@ import (
 	"github.com/atotto/clipboard"
 )
 
-func getAllFiles(root string) ([]string, error) {
-	var files []string
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return err
-		}
-		rel, err := filepath.Rel(root, path)
-		if err != nil {
-			return err
-		}
-		files = append(files, rel)
-		return nil
-	})
-	return files, err
-}
 
 type Config struct {
 	DirPath    string
@@ -120,7 +105,7 @@ func buildVerboseDisplay(projectOutput *format.ProjectOutput) string {
 }
 
 // processFile handles the processing of a single file
-func processFile(path string, config Config, gi *filter.GitIgnore, allFiles []string) (*format.FileInfo, error) {
+func processFile(path string, config Config, gi *filter.GitIgnore) (*format.FileInfo, error) {
 	unifiedFilter := filter.NewUnifiedFilter(gi, config.Extensions, config.Excludes)
 
 	if !unifiedFilter.ShouldProcess(path) {
@@ -144,12 +129,6 @@ func processFile(path string, config Config, gi *filter.GitIgnore, allFiles []st
 }
 
 func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
-	// Get all files first for reference resolution
-	allFiles, err := getAllFiles(config.DirPath)
-	if err != nil {
-		return nil, fmt.Errorf("could not list all files: %w", err)
-	}
-
 	// Initialize project output
 	projectOutput, err := initializeProjectOutput(config)
 	if err != nil {
