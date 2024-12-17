@@ -103,35 +103,40 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 			return nil
 		}
 
-		// Create directory nodes for the full path
+		// Split path into components
 		parts := strings.Split(rel, string(filepath.Separator))
 		currentPath := ""
 		currentNode := rootNode
-		
-		for _, part := range parts[:len(parts)-1] {
-			currentPath = filepath.Join(currentPath, part)
-			if _, exists := dirMap[currentPath]; !exists {
-				newNode := &format.DirectoryNode{
-					Name: part,
-					Type: "dir",
-				}
-				dirMap[currentPath] = newNode
-				currentNode.Children = append(currentNode.Children, newNode)
-			}
-			currentNode = dirMap[currentPath]
-		}
 
-		// Create the final node (file or directory)
-		lastPart := parts[len(parts)-1]
-		newNode := &format.DirectoryNode{
-			Name: lastPart,
-			Type: "file",
+		// Create or get directory nodes for each part of the path
+		for i := 0; i < len(parts); i++ {
+			part := parts[i]
+			if currentPath == "" {
+				currentPath = part
+			} else {
+				currentPath = filepath.Join(currentPath, part)
+			}
+
+			// If this is a directory or if it's the last part and it's a file
+			if i < len(parts)-1 || d.IsDir() {
+				if _, exists := dirMap[currentPath]; !exists {
+					newNode := &format.DirectoryNode{
+						Name: part,
+						Type: "dir",
+					}
+					dirMap[currentPath] = newNode
+					currentNode.Children = append(currentNode.Children, newNode)
+				}
+				currentNode = dirMap[currentPath]
+			} else {
+				// This is a file (last part)
+				fileNode := &format.DirectoryNode{
+					Name: part,
+					Type: "file",
+				}
+				currentNode.Children = append(currentNode.Children, fileNode)
+			}
 		}
-		if d.IsDir() {
-			newNode.Type = "dir"
-			dirMap[rel] = newNode
-		}
-		currentNode.Children = append(currentNode.Children, newNode)
 
 		return nil
 	})
