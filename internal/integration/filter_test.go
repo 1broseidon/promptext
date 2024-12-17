@@ -62,7 +62,9 @@ excludes:
 
 	// Process directory
 	config := processor.Config{
-		DirPath: tmpDir,
+		DirPath:    tmpDir,
+		Extensions: []string{".go"},  // Only include .go files
+		Excludes:   []string{"test.txt", ".gitignore", ".promptext.yml"},  // Explicitly exclude config files
 	}
 
 	result, err := processor.ProcessDirectory(config, false)
