@@ -74,7 +74,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	}
 
 	// Initialize gitignore once
-	gitIgnore, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
+	gi, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
 	if err != nil {
 		return &ProcessResult{}, fmt.Errorf("error reading .gitignore: %w", err)
 	}
