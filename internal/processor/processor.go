@@ -262,12 +262,6 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		fileConfig = &config.FileConfig{}
 	}
 
-	// Initialize gitignore from the specified directory
-	gi, err := gitignore.New(filepath.Join(absPath, ".gitignore"))
-	if err != nil {
-		log.Printf("Warning: Failed to load .gitignore from %s: %v", absPath, err)
-	}
-
 	// Merge file config with command line flags
 	extensions, excludes, verboseFlag := fileConfig.MergeWithFlags(extension, exclude, verbose)
 
