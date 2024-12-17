@@ -1,18 +1,3 @@
-package filter
-
-import (
-    "path/filepath"
-    "strings"
-)
-
-// Pattern represents a parsed path pattern
-type Pattern struct {
-    Original  string
-    Negated   bool
-    IsGlob    bool
-    IsDir     bool
-    Segments  []string
-}
 
 // NewPattern creates and validates a new pattern
 func NewPattern(pattern string) (*Pattern, error) {
