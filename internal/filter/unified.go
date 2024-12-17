@@ -54,6 +54,11 @@ func (uf *UnifiedFilter) GetFileType(path string) string {
         return "test"
     }
     
+    // Check if path contains node_modules
+    if strings.Contains(path, "node_modules/") {
+        return "dependency"
+    }
+
     // Check for entry points with full path support
     for lang, patterns := range entryPointPatterns {
         for _, pattern := range patterns {
