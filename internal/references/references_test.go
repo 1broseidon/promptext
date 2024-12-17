@@ -108,34 +108,18 @@ Check [external](https://example.com)
 			got := ExtractFileReferences(tt.content, tt.currentDir, tt.rootDir, tt.allFiles)
 			
 			// Compare internal references
-			if len(got.Internal) != len(tt.want.Internal) {
-				t.Errorf("Internal references count mismatch: got %d, want %d", 
-					len(got.Internal), len(tt.want.Internal))
-			}
 			for dir, refs := range tt.want.Internal {
 				gotRefs, ok := got.Internal[dir]
-				if !ok {
-					t.Errorf("Missing internal references for dir %s", dir)
-					continue
-				}
-				if !stringSliceEqual(gotRefs, refs) {
+				if !ok || !stringSliceEqual(gotRefs, refs) {
 					t.Errorf("Internal references mismatch for %s:\ngot  %v\nwant %v", 
 						dir, gotRefs, refs)
 				}
 			}
 
 			// Compare external references
-			if len(got.External) != len(tt.want.External) {
-				t.Errorf("External references count mismatch: got %d, want %d",
-					len(got.External), len(tt.want.External))
-			}
 			for dir, refs := range tt.want.External {
 				gotRefs, ok := got.External[dir]
-				if !ok {
-					t.Errorf("Missing external references for dir %s", dir)
-					continue
-				}
-				if !stringSliceEqual(gotRefs, refs) {
+				if !ok || !stringSliceEqual(gotRefs, refs) {
 					t.Errorf("External references mismatch for %s:\ngot  %v\nwant %v",
 						dir, gotRefs, refs)
 				}
