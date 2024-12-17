@@ -407,7 +407,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	} else if !noCopy {
 		// Copy to clipboard if no output file is specified and clipboard is not disabled
 		if err := clipboard.WriteAll(formattedOutput); err != nil {
-			log.Printf("Warning: Failed to copy to clipboard: %v", err)
+			log.Info("Warning: Failed to copy to clipboard: %v", err)
 		} else {
 			// Always print metadata summary and success message in green
 			if info, err := GetMetadataSummary(procConfig, result.TokenCount); err == nil {
