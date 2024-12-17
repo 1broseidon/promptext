@@ -53,17 +53,11 @@ type ProcessResult struct {
 	ClipboardContent string
 }
 
-func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
-	var displayBuilder strings.Builder
+// initializeProjectOutput sets up the initial project output structure
+func initializeProjectOutput(config Config) (*format.ProjectOutput, error) {
 	projectOutput := &format.ProjectOutput{}
 
-	// Get all files first for reference resolution
-	allFiles, err := getAllFiles(config.DirPath)
-	if err != nil {
-		return nil, fmt.Errorf("could not list all files: %w", err)
-	}
-
-	// Get project analysis and convert to format.ProjectAnalysis
+	// Get project analysis
 	analysis := info.AnalyzeProject(config.DirPath)
 	projectOutput.Analysis = &format.ProjectAnalysis{
 		EntryPoints:   analysis.EntryPoints,
@@ -73,23 +67,11 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		Documentation: analysis.Documentation,
 	}
 
-	// Initialize gitignore once
-	gi, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
-	if err != nil {
-		return &ProcessResult{}, fmt.Errorf("error reading .gitignore: %w", err)
-	}
+	return projectOutput, nil
+}
 
-	// Get project information with filtering config
-	infoConfig := &info.Config{
-		Extensions: config.Extensions,
-		Excludes:   config.Excludes,
-	}
-	projectInfo, err := info.GetProjectInfo(config.DirPath, infoConfig, gi)
-	if err != nil {
-		return &ProcessResult{}, fmt.Errorf("error getting project info: %w", err)
-	}
-
-	// Populate ProjectOutput
+// populateProjectInfo adds project information to the output
+func populateProjectInfo(projectOutput *format.ProjectOutput, projectInfo *info.ProjectInfo) {
 	projectOutput.DirectoryTree = projectInfo.DirectoryTree
 
 	if projectInfo.GitInfo != nil {
@@ -107,68 +89,118 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			Dependencies: projectInfo.Metadata.Dependencies,
 		}
 	}
+}
 
-	// Only add to display if verbose
-	if verbose {
-		displayBuilder.WriteString(projectOutput.DirectoryTree.ToMarkdown(0))
-		if projectOutput.GitInfo != nil {
-			displayBuilder.WriteString(fmt.Sprintf("\nBranch: %s\nCommit: %s\nMessage: %s\n",
-				projectOutput.GitInfo.Branch,
-				projectOutput.GitInfo.CommitHash,
-				projectOutput.GitInfo.CommitMessage))
-		}
-		if projectOutput.Metadata != nil {
-			displayBuilder.WriteString(fmt.Sprintf("\nLanguage: %s\nVersion: %s\n",
-				projectOutput.Metadata.Language,
-				projectOutput.Metadata.Version))
-			if len(projectOutput.Metadata.Dependencies) > 0 {
-				displayBuilder.WriteString("Dependencies:\n")
-				for _, dep := range projectOutput.Metadata.Dependencies {
-					displayBuilder.WriteString(fmt.Sprintf("  - %s\n", dep))
-				}
+// buildVerboseDisplay creates the verbose display string
+func buildVerboseDisplay(projectOutput *format.ProjectOutput) string {
+	var displayBuilder strings.Builder
+
+	displayBuilder.WriteString(projectOutput.DirectoryTree.ToMarkdown(0))
+	
+	if projectOutput.GitInfo != nil {
+		displayBuilder.WriteString(fmt.Sprintf("\nBranch: %s\nCommit: %s\nMessage: %s\n",
+			projectOutput.GitInfo.Branch,
+			projectOutput.GitInfo.CommitHash,
+			projectOutput.GitInfo.CommitMessage))
+	}
+	
+	if projectOutput.Metadata != nil {
+		displayBuilder.WriteString(fmt.Sprintf("\nLanguage: %s\nVersion: %s\n",
+			projectOutput.Metadata.Language,
+			projectOutput.Metadata.Version))
+		if len(projectOutput.Metadata.Dependencies) > 0 {
+			displayBuilder.WriteString("Dependencies:\n")
+			for _, dep := range projectOutput.Metadata.Dependencies {
+				displayBuilder.WriteString(fmt.Sprintf("  - %s\n", dep))
 			}
 		}
 	}
 
+	return displayBuilder.String()
+}
+
+// processFile handles the processing of a single file
+func processFile(path string, config Config, gi *gitignore.GitIgnore, allFiles []string) (*format.FileInfo, error) {
+	unifiedFilter := filter.NewUnifiedFilter(gi, config.Extensions, config.Excludes)
+	
+	if !unifiedFilter.ShouldProcess(path) {
+		return nil, nil
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("error reading file %s: %w", path, err)
+	}
+
+	rel, err := filepath.Rel(config.DirPath, path)
+	if err != nil {
+		return nil, fmt.Errorf("error getting relative path for %s: %w", path, err)
+	}
+
+	refs := references.ExtractFileReferences(string(content), filepath.Dir(rel), config.DirPath, allFiles)
+
+	return &format.FileInfo{
+		Path:       rel,
+		Content:    string(content),
+		References: refs,
+	}, nil
+}
+
+func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
+	// Get all files first for reference resolution
+	allFiles, err := getAllFiles(config.DirPath)
+	if err != nil {
+		return nil, fmt.Errorf("could not list all files: %w", err)
+	}
+
+	// Initialize project output
+	projectOutput, err := initializeProjectOutput(config)
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize gitignore
+	gi, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
+	if err != nil {
+		return &ProcessResult{}, fmt.Errorf("error reading .gitignore: %w", err)
+	}
+
+	// Get project information
+	infoConfig := &info.Config{
+		Extensions: config.Extensions,
+		Excludes:   config.Excludes,
+	}
+	projectInfo, err := info.GetProjectInfo(config.DirPath, infoConfig, gi)
+	if err != nil {
+		return &ProcessResult{}, fmt.Errorf("error getting project info: %w", err)
+	}
+
+	// Populate project information
+	populateProjectInfo(projectOutput, projectInfo)
+
+	// Process files
+	var displayContent string
+	if verbose {
+		displayContent = buildVerboseDisplay(projectOutput)
+	}
+
 	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+
+		fileInfo, err := processFile(path, config, gi, allFiles)
 		if err != nil {
 			return err
 		}
 
-		if d.IsDir() {
-			return nil
-		}
-
-		// Create unified filter once
-		unifiedFilter := filter.NewUnifiedFilter(gi, config.Extensions, config.Excludes)
-
-		// Skip if file doesn't match our filters
-		if !unifiedFilter.ShouldProcess(path) {
-			return nil
-		}
-
-		content, err := os.ReadFile(path)
-		if err != nil {
-			return fmt.Errorf("error reading file %s: %w", path, err)
-		}
-
-		// Add file to ProjectOutput
-		rel, err := filepath.Rel(config.DirPath, path)
-		if err != nil {
-			return fmt.Errorf("error getting relative path for %s: %w", path, err)
-		}
-
-		refs := references.ExtractFileReferences(string(content), filepath.Dir(rel), config.DirPath, allFiles)
-
-		projectOutput.Files = append(projectOutput.Files, format.FileInfo{
-			Path:       rel,
-			Content:    string(content),
-			References: refs,
-		})
-
-		// Only add to display if verbose
-		if verbose {
-			displayBuilder.WriteString(fmt.Sprintf("\n### File: %s\n```\n%s\n```\n", path, content))
+		if fileInfo != nil {
+			projectOutput.Files = append(projectOutput.Files, *fileInfo)
+			
+			if verbose {
+				displayContent += fmt.Sprintf("\n### File: %s\n```\n%s\n```\n", 
+					path, fileInfo.Content)
+			}
 		}
 
 		return nil
@@ -180,9 +212,78 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 	return &ProcessResult{
 		ProjectOutput:    projectOutput,
-		DisplayContent:   displayBuilder.String(),
+		DisplayContent:   displayContent,
 		ClipboardContent: "", // Will be set in Run() based on format
 	}, nil
+}
+
+// buildProjectSummary creates the project name summary
+func buildProjectSummary(projectInfo *info.ProjectInfo, config Config) string {
+	var summary strings.Builder
+	summary.WriteString("📦 Project Summary:\n")
+
+	if projectInfo.Metadata != nil && projectInfo.Metadata.Name != "" {
+		summary.WriteString(fmt.Sprintf("   Project: %s\n", projectInfo.Metadata.Name))
+	} else {
+		if absPath, err := filepath.Abs(config.DirPath); err == nil {
+			summary.WriteString(fmt.Sprintf("   Project: %s\n", filepath.Base(absPath)))
+		}
+	}
+	return summary.String()
+}
+
+// buildLanguageInfo creates the language and dependencies summary
+func buildLanguageInfo(metadata *info.ProjectMetadata) string {
+	if metadata == nil {
+		return ""
+	}
+
+	var info strings.Builder
+	info.WriteString(fmt.Sprintf("   Language: %s", metadata.Language))
+	if metadata.Version != "" {
+		info.WriteString(fmt.Sprintf(" %s", metadata.Version))
+	}
+	info.WriteString("\n")
+
+	if len(metadata.Dependencies) > 0 {
+		mainDeps, devDeps := countDependencies(metadata.Dependencies)
+		if devDeps > 0 {
+			info.WriteString(fmt.Sprintf("   Dependencies: %d packages (%d main, %d dev)\n",
+				len(metadata.Dependencies), mainDeps, devDeps))
+		} else {
+			info.WriteString(fmt.Sprintf("   Dependencies: %d packages\n", mainDeps))
+		}
+	}
+
+	return info.String()
+}
+
+// countDependencies counts main and dev dependencies
+func countDependencies(deps []string) (main, dev int) {
+	for _, dep := range deps {
+		if strings.HasPrefix(dep, "[dev] ") {
+			dev++
+		} else {
+			main++
+		}
+	}
+	return main, dev
+}
+
+// countIncludedFiles counts files that match the filter criteria
+func countIncludedFiles(config Config, gi *gitignore.GitIgnore) (int, error) {
+	fileCount := 0
+	err := filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return nil
+		}
+		rel, _ := filepath.Rel(config.DirPath, path)
+		if filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gi) {
+			fileCount++
+		}
+		return nil
+	})
+	return fileCount, err
 }
 
 // GetMetadataSummary returns a concise summary of project metadata
@@ -202,63 +303,32 @@ func GetMetadataSummary(config Config) (string, error) {
 	}
 
 	var summary strings.Builder
-	summary.WriteString("📦 Project Summary:\n")
-
-	// Add project name from metadata if available, otherwise use folder name
-	if projectInfo.Metadata != nil && projectInfo.Metadata.Name != "" {
-		summary.WriteString(fmt.Sprintf("   Project: %s\n", projectInfo.Metadata.Name))
-	} else {
-		absPath, err := filepath.Abs(config.DirPath)
-		if err == nil {
-			summary.WriteString(fmt.Sprintf("   Project: %s\n", filepath.Base(absPath)))
-		}
-	}
-
+	
+	// Build project summary
+	summary.WriteString(buildProjectSummary(projectInfo, config))
+	
+	// Add language and dependencies info
 	if projectInfo.Metadata != nil {
-		summary.WriteString(fmt.Sprintf("   Language: %s", projectInfo.Metadata.Language))
-		if projectInfo.Metadata.Version != "" {
-			summary.WriteString(fmt.Sprintf(" %s", projectInfo.Metadata.Version))
-		}
-		summary.WriteString("\n")
-		if len(projectInfo.Metadata.Dependencies) > 0 {
-			mainDeps := 0
-			devDeps := 0
-			for _, dep := range projectInfo.Metadata.Dependencies {
-				if strings.HasPrefix(dep, "[dev] ") {
-					devDeps++
-				} else {
-					mainDeps++
-				}
-			}
-			if devDeps > 0 {
-				summary.WriteString(fmt.Sprintf("   Dependencies: %d packages (%d main, %d dev)\n",
-					len(projectInfo.Metadata.Dependencies), mainDeps, devDeps))
-			} else {
-				summary.WriteString(fmt.Sprintf("   Dependencies: %d packages\n", mainDeps))
-			}
-		}
+		summary.WriteString(buildLanguageInfo(projectInfo.Metadata))
 	}
 
+	// Add git info
 	if projectInfo.GitInfo != nil {
-		summary.WriteString(fmt.Sprintf("   Branch: %s (%s)\n", projectInfo.GitInfo.Branch, projectInfo.GitInfo.CommitHash))
+		summary.WriteString(fmt.Sprintf("   Branch: %s (%s)\n", 
+			projectInfo.GitInfo.Branch, projectInfo.GitInfo.CommitHash))
 	}
 
-	// Count included files
-	fileCount := 0
-	filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return nil
-		}
-		rel, _ := filepath.Rel(config.DirPath, path)
-		if filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gi) {
-			fileCount++
-		}
-		return nil
-	})
+	// Count and add included files
+	fileCount, err := countIncludedFiles(config, gi)
+	if err != nil {
+		return "", fmt.Errorf("error counting files: %w", err)
+	}
 	summary.WriteString(fmt.Sprintf("   Files: %d included\n", fileCount))
 
+	// Add filtering info if specified
 	if len(config.Extensions) > 0 {
-		summary.WriteString(fmt.Sprintf("   Filtering: %s\n", strings.Join(config.Extensions, ", ")))
+		summary.WriteString(fmt.Sprintf("   Filtering: %s\n", 
+			strings.Join(config.Extensions, ", ")))
 	}
 
 	return summary.String(), nil
