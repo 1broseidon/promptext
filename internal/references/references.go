@@ -61,6 +61,9 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
                     if rel, err := filepath.Rel(rootDir, filepath.Join(rootDir, resolved)); err == nil {
                         refs.Internal[currentDir] = append(refs.Internal[currentDir], rel)
                     }
+                } else {
+                    // If not resolved, consider it external
+                    refs.External[currentDir] = append(refs.External[currentDir], ref)
                 }
             }
         }
@@ -82,8 +85,8 @@ func isExternalReference(ref string) bool {
         return true
     }
     
-    // Check for package names without paths
-    if !strings.Contains(ref, "/") && !strings.Contains(ref, ".") {
+    // Check for package names without paths or with '@' prefix (npm packages)
+    if !strings.Contains(ref, "/") && !strings.Contains(ref, ".") || strings.HasPrefix(ref, "@") {
         return true
     }
     
@@ -95,8 +98,8 @@ func resolveReference(ref, currentDir, rootDir string, allFiles []string) string
     ref = filepath.Clean(ref)
     
     // Handle relative paths
-    if strings.HasPrefix(ref, "./") {
-        ref = strings.TrimPrefix(ref, "./")
+    if strings.HasPrefix(ref, "./") || strings.HasPrefix(ref, "../") {
+        ref = filepath.Join(currentDir, ref)
     }
     
     candidates := []string{
