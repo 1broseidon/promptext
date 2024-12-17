@@ -105,7 +105,7 @@ func (tc *TokenCounter) countCodeTokens(line string) int {
 		beforeComment := line[:idx]
 		afterComment := line[idx:]
 		count += tc.countCodePart(beforeComment)
-		count += 2 // Count comment marker and content separately
+		count += tc.countCodePart(afterComment)
 		return count
 	}
 
