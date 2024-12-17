@@ -347,18 +347,24 @@ func getPythonVersion(root string) string {
 	if content, err := os.ReadFile(filepath.Join(root, "pyproject.toml")); err == nil {
 		lines := strings.Split(string(content), "\n")
 		inToolPoetry := false
+		inDependencies := false
 		for _, line := range lines {
 			line = strings.TrimSpace(line)
 			if line == "[tool.poetry]" {
 				inToolPoetry = true
 				continue
 			}
-			if inToolPoetry && strings.HasPrefix(line, "[") {
-				inToolPoetry = false
+			if line == "[tool.poetry.dependencies]" {
+				inDependencies = true
 				continue
 			}
-			if inToolPoetry && strings.HasPrefix(line, "version = ") {
-				version := strings.Trim(strings.TrimPrefix(line, "version = "), "\"'")
+			if (inToolPoetry || inDependencies) && strings.HasPrefix(line, "[") {
+				inToolPoetry = false
+				inDependencies = false
+				continue
+			}
+			if inDependencies && strings.HasPrefix(line, "python = ") {
+				version := strings.Trim(strings.TrimPrefix(line, "python = "), "\"'^")
 				return version
 			}
 		}
