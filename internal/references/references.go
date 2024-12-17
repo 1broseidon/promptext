@@ -36,10 +36,8 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
             if len(match) < 2 {
                 continue
             }
-            ref := match[1]
-            
             // The captured group might be in match[1] or match[2] depending on pattern
-            ref := ""
+            ref = ""
             for i := 1; i < len(match); i++ {
                 if match[i] != "" {
                     ref = match[i]
