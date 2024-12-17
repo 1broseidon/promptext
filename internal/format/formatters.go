@@ -135,10 +135,23 @@ func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
 			sb.WriteString("\n```\n")
 
 			// Add references section if any exist
-			if len(file.References) > 0 {
+			if file.References != nil && (len(file.References.Internal) > 0 || len(file.References.External) > 0) {
 				sb.WriteString("\n**References:**\n")
-				for _, ref := range file.References {
-					sb.WriteString(fmt.Sprintf("- References `%s`\n", ref))
+				if len(file.References.Internal) > 0 {
+					sb.WriteString("Internal:\n")
+					for dir, refs := range file.References.Internal {
+						for _, ref := range refs {
+							sb.WriteString(fmt.Sprintf("- `%s` references `%s`\n", dir, ref))
+						}
+					}
+				}
+				if len(file.References.External) > 0 {
+					sb.WriteString("External:\n")
+					for dir, refs := range file.References.External {
+						for _, ref := range refs {
+							sb.WriteString(fmt.Sprintf("- `%s` references `%s`\n", dir, ref))
+						}
+					}
 				}
 				sb.WriteString("\n")
 			}
