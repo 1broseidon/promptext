@@ -56,7 +56,11 @@ func main() {
 				"requirements.txt": `pytest==7.3.1
 requests==2.31.0`,
 				"setup.py": `from setuptools import setup
-setup(name="myproject", version="0.1.0")`,
+
+setup(
+    name="myproject",
+    version = "0.1.0"
+)`,
 				"main.py": `def main():
     print("Hello")`,
 			},
