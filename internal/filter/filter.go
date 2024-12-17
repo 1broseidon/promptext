@@ -18,16 +18,16 @@ type Filter struct {
 }
 
 func New(opts Options) *Filter {
-	var filterRules []Rule
+	var filterRules []types.Rule
 	
 	// Add include rules first
 	if len(opts.Includes) > 0 {
-		filterRules = append(filterRules, rules.NewExtensionRule(opts.Includes, Include))
+		filterRules = append(filterRules, rules.NewExtensionRule(opts.Includes, types.Include))
 	}
 	
 	// Add exclude rules
 	if len(opts.Excludes) > 0 {
-		filterRules = append(filterRules, rules.NewPatternRule(opts.Excludes, Exclude))
+		filterRules = append(filterRules, rules.NewPatternRule(opts.Excludes, types.Exclude))
 	}
 	
 	// Add default excludes if enabled
@@ -35,7 +35,7 @@ func New(opts Options) *Filter {
 		filterRules = append(filterRules, rules.DefaultExcludes()...)
 	}
 	
-	return &Filter{rules: rules}
+	return &Filter{rules: filterRules}
 }
 
 // ShouldProcess determines if a path should be processed
