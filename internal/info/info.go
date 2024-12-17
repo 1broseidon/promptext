@@ -291,28 +291,65 @@ func getGoVersion(root string) string {
 }
 
 func getNodeVersion(root string) string {
-	cmd := exec.Command("node", "--version")
-	cmd.Dir = root
-	if out, err := cmd.Output(); err == nil {
-		return strings.TrimSpace(string(out))
+	content, err := os.ReadFile(filepath.Join(root, "package.json"))
+	if err != nil {
+		return ""
+	}
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "\"version\"") {
+			parts := strings.Split(line, "\"")
+			if len(parts) >= 4 {
+				return strings.TrimSpace(parts[3])
+			}
+		}
 	}
 	return ""
 }
 
 func getPythonVersion(root string) string {
-	cmd := exec.Command("python", "--version")
-	cmd.Dir = root
-	if out, err := cmd.Output(); err == nil {
-		return strings.TrimSpace(string(out))
+	// Try setup.py first
+	setupPath := filepath.Join(root, "setup.py")
+	if content, err := os.ReadFile(setupPath); err == nil {
+		lines := strings.Split(string(content), "\n")
+		for _, line := range lines {
+			if strings.Contains(line, "version=") {
+				parts := strings.Split(line, "\"")
+				if len(parts) >= 2 {
+					return strings.Trim(parts[1], "\"'")
+				}
+			}
+		}
+	}
+	
+	// Try pyproject.toml
+	if content, err := os.ReadFile(filepath.Join(root, "pyproject.toml")); err == nil {
+		lines := strings.Split(string(content), "\n")
+		for _, line := range lines {
+			if strings.Contains(line, "version = ") {
+				parts := strings.Split(line, "\"")
+				if len(parts) >= 2 {
+					return strings.Trim(parts[1], "\"'")
+				}
+			}
+		}
 	}
 	return ""
 }
 
 func getRustVersion(root string) string {
-	cmd := exec.Command("rustc", "--version")
-	cmd.Dir = root
-	if out, err := cmd.Output(); err == nil {
-		return strings.TrimSpace(string(out))
+	content, err := os.ReadFile(filepath.Join(root, "Cargo.toml"))
+	if err != nil {
+		return ""
+	}
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "version = ") {
+			parts := strings.Split(line, "\"")
+			if len(parts) >= 2 {
+				return strings.Trim(parts[1], "\"'")
+			}
+		}
 	}
 	return ""
 }
