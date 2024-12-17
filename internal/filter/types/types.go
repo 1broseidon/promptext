@@ -16,17 +16,17 @@ type Rule interface {
 
 // BaseRule provides common functionality
 type BaseRule struct {
-    Pattern string
-    Action  RuleAction
+    Pattern    string
+    ActionType RuleAction
 }
 
 func NewBaseRule(pattern string, action RuleAction) BaseRule {
     return BaseRule{
-        Pattern: pattern,
-        Action:  action,
+        Pattern:    pattern,
+        ActionType: action,
     }
 }
 
 func (r *BaseRule) Action() RuleAction {
-    return r.Action
+    return r.ActionType
 }
