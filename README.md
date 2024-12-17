@@ -10,91 +10,43 @@
 
 </div>
 
-## 🚀 Features
+promptext helps you extract relevant code context from your projects for AI assistants. It intelligently filters files, respects `.gitignore`, and provides clean, formatted output.
 
-- 🔍 Smart file filtering with extension and pattern support
-- 📁 Respects `.gitignore` patterns
-- 🌲 Generates directory tree structure
-- 📊 Auto-detects project metadata (language, version, dependencies)
-- 🎨 Multiple output formats (Markdown, XML, JSON)
-- 📋 Direct clipboard integration
-- ⚙️ Configurable via YAML or CLI flags
+## Quick Install
 
-## 📦 Installation
-
-### Quick Install (Linux/macOS)
 ```bash
+# Linux/macOS
 curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/install.sh | bash
-```
 
-### Manual Install
-Download from [releases page](https://github.com/1broseidon/promptext/releases)
-
-### Build from Source
-```bash
+# Using Go
 go install github.com/1broseidon/promptext/cmd/promptext@latest
 ```
 
-## 🎯 Usage
+Or download from our [releases page](https://github.com/1broseidon/promptext/releases).
 
-Basic usage:
-```bash
-promptext [flags] 
-```
-
-### Key Flags
-```bash
--dir string      Directory to process (default ".")
--ext string      File extensions to include (.go,.js,etc)
--exclude string  Patterns to exclude
--format string   Output format (markdown/xml/json)
--out string      Output file path
--info           Show only project summary
--verbose        Show full file contents
--no-copy        Disable clipboard copy
-```
-
-### Config File
-Create `.promptext.yml` in project root:
-```yaml
-extensions:
-  - .go
-  - .js
-excludes:
-  - vendor/
-  - "*.test.go"
-format: markdown
-verbose: false
-```
-
-## 📝 Examples
+## Basic Usage
 
 ```bash
+# Process current directory
+promptext
+
+# Process specific file types
+promptext -ext .go,.js
+
 # Show project summary
 promptext -info
 
-# Process Go files only
-promptext -ext .go
-
 # Export as XML
 promptext -format xml -out project.xml
-
-# Multiple file types
-promptext -ext ".go,.js,.py"
-
-# Exclude patterns
-promptext -exclude "test/,vendor/"
 ```
 
-## 🔧 Default Ignores
+See our [full documentation](docs/docs.md) for:
+- Advanced configuration
+- Output formats
+- File filtering rules
+- Project analysis features
+- And more!
 
-- Binary files (images, executables, etc)
-- Common directories (node_modules, vendor, etc)
-- Build artifacts and caches
-- IDE directories (.idea, .vscode)
-
-See [full documentation](docs/docs.md) for details.
-
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) for details.
