@@ -42,12 +42,26 @@ func New(opts Options) *Filter {
 func (f *Filter) ShouldProcess(path string) bool {
 	path = filepath.Clean(path)
 	
+	// First check excludes
+	if f.IsExcluded(path) {
+		return false
+	}
+	
+	// Then check includes
 	for _, rule := range f.rules {
-		if rule.Match(path) {
-			return rule.Action() == types.Include
+		if rule.Match(path) && rule.Action() == types.Include {
+			return true
 		}
 	}
 	
+	// If there are include rules but none matched, exclude the file
+	for _, rule := range f.rules {
+		if rule.Action() == types.Include {
+			return false
+		}
+	}
+	
+	// No rules matched, default to include
 	return true
 }
 
