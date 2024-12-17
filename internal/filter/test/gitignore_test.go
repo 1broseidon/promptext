@@ -108,12 +108,12 @@ func TestGitIgnore_ShouldIgnore(t *testing.T) {
 				"Thumbs.db",
 			},
 			paths: map[string]bool{
-				".idea/workspace.xml":     true,
-				".vscode/settings.json":   true,
-				"file.swp":               true,
-				".DS_Store":              true,
-				"src/.DS_Store":          true,
-				"normal.txt":             false,
+				".idea/workspace.xml":   true,
+				".vscode/settings.json": true,
+				"file.swp":              true,
+				".DS_Store":             true,
+				"src/.DS_Store":         true,
+				"normal.txt":            false,
 			},
 		},
 		{
@@ -127,11 +127,11 @@ func TestGitIgnore_ShouldIgnore(t *testing.T) {
 			},
 			paths: map[string]bool{
 				"node_modules/package.json": true,
-				"dist/bundle.js":           true,
-				"build/output":             true,
-				"vendor/module/file.go":    true,
-				"target/debug":             true,
-				"src/file.js":             false,
+				"dist/bundle.js":            true,
+				"build/output":              true,
+				"vendor/module/file.go":     true,
+				"target/debug":              true,
+				"src/file.js":               false,
 			},
 		},
 		{
@@ -162,13 +162,13 @@ func TestGitIgnore_ShouldIgnore(t *testing.T) {
 				"*.cache",
 			},
 			paths: map[string]bool{
-				"error.log":          true,
-				"npm-debug.log":      true,
-				"npm-debug.log.1":    true,
-				".npm/package.json":  true,
-				".cache/files":       true,
-				"style.css.cache":    true,
-				"important.txt":      false,
+				"error.log":         true,
+				"npm-debug.log":     true,
+				"npm-debug.log.1":   true,
+				".npm/package.json": true,
+				".cache/files":      true,
+				"style.css.cache":   true,
+				"important.txt":     false,
 			},
 		},
 		{
@@ -181,11 +181,11 @@ func TestGitIgnore_ShouldIgnore(t *testing.T) {
 				"junit.xml",
 			},
 			paths: map[string]bool{
-				"coverage/lcov.info":     true,
-				"src/module.test.js":     true,
-				"__tests__/utils.js":     true,
-				"component.spec.ts":      true,
-				"src/component.spec.ts":  true,
+				"coverage/lcov.info":    true,
+				"src/module.test.js":    true,
+				"__tests__/utils.js":    true,
+				"component.spec.ts":     true,
+				"src/component.spec.ts": true,
 				"junit.xml":             true,
 				"src/main.js":           false,
 			},
@@ -200,12 +200,12 @@ func TestGitIgnore_ShouldIgnore(t *testing.T) {
 				"tmp/",
 			},
 			paths: map[string]bool{
-				"document~":        true,
-				"backup.bak":       true,
-				"data.tmp":         true,
-				"temp/file":        true,
-				"tmp/cache":        true,
-				"src/file.txt":     false,
+				"document~":    true,
+				"backup.bak":   true,
+				"data.tmp":     true,
+				"temp/file":    true,
+				"tmp/cache":    true,
+				"src/file.txt": false,
 			},
 		},
 	}
@@ -241,7 +241,7 @@ func TestGitIgnore_MatchFunctions(t *testing.T) {
 
 		for _, tt := range tests {
 			if got := gi.matchExact(tt.pattern, tt.path, tt.baseName); got != tt.want {
-				t.Errorf("matchExact(%q, %q, %q) = %v, want %v", 
+				t.Errorf("matchExact(%q, %q, %q) = %v, want %v",
 					tt.pattern, tt.path, tt.baseName, got, tt.want)
 			}
 		}
@@ -261,7 +261,7 @@ func TestGitIgnore_MatchFunctions(t *testing.T) {
 
 		for _, tt := range tests {
 			if got := gi.matchDirectory(tt.pattern, tt.path); got != tt.want {
-				t.Errorf("matchDirectory(%q, %q) = %v, want %v", 
+				t.Errorf("matchDirectory(%q, %q) = %v, want %v",
 					tt.pattern, tt.path, got, tt.want)
 			}
 		}
@@ -283,7 +283,7 @@ func TestGitIgnore_MatchFunctions(t *testing.T) {
 
 		for _, tt := range tests {
 			if got := gi.matchGlobPattern(tt.pattern, tt.path, tt.baseName); got != tt.want {
-				t.Errorf("matchGlobPattern(%q, %q, %q) = %v, want %v", 
+				t.Errorf("matchGlobPattern(%q, %q, %q) = %v, want %v",
 					tt.pattern, tt.path, tt.baseName, got, tt.want)
 			}
 		}
