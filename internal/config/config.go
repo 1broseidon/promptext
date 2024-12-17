@@ -57,8 +57,8 @@ func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bo
 		excludes = append(excludes, parseCommaSeparated(flagExclude)...)
 	}
 
-	// Flag verbose should always override config verbose
-	verbose = flagVerbose
+	// Flag verbose overrides config verbose only if set
+	verbose = fc.Verbose || flagVerbose
 
 	return extensions, excludes, verbose
 }

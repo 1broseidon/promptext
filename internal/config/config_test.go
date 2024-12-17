@@ -121,7 +121,7 @@ func TestMergeWithFlags(t *testing.T) {
 			flagVerbose:     false,
 			wantExtensions:  []string{".go", ".py"},
 			wantExcludes:    append(filter.DefaultIgnoreDirs, "test"),
-			wantVerbose:     false,
+			wantVerbose:     true, // Changed: respect config verbose when flag not set
 		},
 		{
 			name:            "empty config and flags",
@@ -132,6 +132,22 @@ func TestMergeWithFlags(t *testing.T) {
 			wantExtensions:  nil,
 			wantExcludes:    filter.DefaultIgnoreDirs,
 			wantVerbose:     false,
+		},
+		{
+			name: "config verbose true with flag false",
+			config: &FileConfig{
+				Verbose: true,
+			},
+			flagVerbose: false,
+			wantVerbose: true,
+		},
+		{
+			name: "config verbose false with flag true",
+			config: &FileConfig{
+				Verbose: false,
+			},
+			flagVerbose: true,
+			wantVerbose: true,
 		},
 	}
 
