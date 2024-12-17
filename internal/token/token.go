@@ -3,7 +3,6 @@ package token
 import (
 	"regexp"
 	"strings"
-	"unicode"
 )
 
 // TokenCounter provides functionality to estimate token counts for LLM input
