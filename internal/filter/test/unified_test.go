@@ -6,6 +6,9 @@ import (
 	"github.com/1broseidon/promptext/internal/filter"
 )
 
+// Use filter.NewUnifiedFilter instead of just NewUnifiedFilter
+var _ = filter.NewUnifiedFilter
+
 // Test constants to match the package constants
 var (
 	testDefaultIgnoreDirs = []string{
