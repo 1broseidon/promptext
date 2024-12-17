@@ -345,18 +345,20 @@ func getPythonVersion(root string) string {
 	// Try pyproject.toml
 	if content, err := os.ReadFile(filepath.Join(root, "pyproject.toml")); err == nil {
 		lines := strings.Split(string(content), "\n")
+		inToolPoetry := false
 		for _, line := range lines {
-			if strings.Contains(line, "version = ") {
-				if idx := strings.Index(line, "\""); idx != -1 {
-					if endIdx := strings.Index(line[idx+1:], "\""); endIdx != -1 {
-						return line[idx+1 : idx+1+endIdx]
-					}
-				}
-				if idx := strings.Index(line, "'"); idx != -1 {
-					if endIdx := strings.Index(line[idx+1:], "'"); endIdx != -1 {
-						return line[idx+1 : idx+1+endIdx]
-					}
-				}
+			line = strings.TrimSpace(line)
+			if line == "[tool.poetry]" {
+				inToolPoetry = true
+				continue
+			}
+			if inToolPoetry && strings.HasPrefix(line, "[") {
+				inToolPoetry = false
+				continue
+			}
+			if inToolPoetry && strings.HasPrefix(line, "version = ") {
+				version := strings.Trim(strings.TrimPrefix(line, "version = "), "\"'")
+				return version
 			}
 		}
 	}
@@ -457,7 +459,33 @@ func getPythonDependencies(root string) []string {
 		}
 	}
 
-	// Check poetry.lock
+	// Check pyproject.toml for Poetry dependencies
+	if content, err := os.ReadFile(filepath.Join(root, "pyproject.toml")); err == nil {
+		lines := strings.Split(string(content), "\n")
+		inDeps := false
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line == "[tool.poetry.dependencies]" {
+				inDeps = true
+				continue
+			}
+			if inDeps && strings.HasPrefix(line, "[") {
+				inDeps = false
+				continue
+			}
+			if inDeps && line != "" && !strings.HasPrefix(line, "#") {
+				parts := strings.SplitN(line, "=", 2)
+				if len(parts) > 0 {
+					dep := strings.TrimSpace(parts[0])
+					if dep != "python" { // Skip python version constraint
+						depsMap[dep] = true
+					}
+				}
+			}
+		}
+	}
+
+	// Check poetry.lock as fallback
 	if content, err := os.ReadFile(filepath.Join(root, "poetry.lock")); err == nil {
 		lines := strings.Split(string(content), "\n")
 		inPackage := false
