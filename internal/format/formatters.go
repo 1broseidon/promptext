@@ -139,9 +139,12 @@ func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
 
 	// Add directory tree right after metadata
 	if project.DirectoryTree != nil {
-		sb.WriteString("Project Structure:\n```\n")
-		sb.WriteString(project.DirectoryTree.ToMarkdown(0))
-		sb.WriteString("```\n\n")
+		sb.WriteString("Project Structure:\n")
+		// Skip the root node name but process its children
+		for _, child := range project.DirectoryTree.Children {
+			sb.WriteString(child.ToMarkdown(1))
+		}
+		sb.WriteString("\n")
 	}
 
 	// Add source files
