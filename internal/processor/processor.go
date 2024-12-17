@@ -360,6 +360,25 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	log.Debug("Using extensions: %v", extensions)
 	log.Debug("Using excludes: %v", excludes)
 
+	// Log final filter configuration
+	if len(extensions) > 0 {
+		log.Debug("Final file filters:")
+		for _, ext := range extensions {
+			log.Debug("  - Include files with extension: %s", ext)
+		}
+	} else {
+		log.Debug("No extension filters - processing all file types")
+	}
+
+	if len(excludes) > 0 {
+		log.Debug("Final exclusion patterns:")
+		for _, excl := range excludes {
+			log.Debug("  - Exclude: %s", excl)
+		}
+	} else {
+		log.Debug("No custom exclusion patterns")
+	}
+
 	// Create processor configuration
 	procConfig := Config{
 		DirPath:    absPath,
