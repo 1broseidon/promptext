@@ -19,10 +19,10 @@ func TestGetProjectInfo(t *testing.T) {
 
 	// Create test files
 	files := map[string]string{
-		"go.mod":        "module test\n\ngo 1.17\n\nrequire github.com/stretchr/testify v1.8.0",
-		"main.go":       "package main\n\nfunc main() {}\n",
-		"README.md":     "# Test Project",
-		".gitignore":    "*.tmp\n",
+		"go.mod":          "module test\n\ngo 1.17\n\nrequire github.com/stretchr/testify v1.8.0",
+		"main.go":         "package main\n\nfunc main() {}\n",
+		"README.md":       "# Test Project",
+		".gitignore":      "*.tmp\n",
 		"internal/foo.go": "package internal\n",
 	}
 
@@ -107,7 +107,7 @@ func TestGenerateDirectoryTree(t *testing.T) {
 		foundMain := false
 		foundInternal := false
 		foundDocs := false
-		
+
 		for _, child := range tree.Children {
 			switch child.Name {
 			case "main.go":
@@ -118,7 +118,7 @@ func TestGenerateDirectoryTree(t *testing.T) {
 				foundDocs = true
 			}
 		}
-		
+
 		assert.True(t, foundMain, "main.go not found")
 		assert.True(t, foundInternal, "internal/ not found")
 		assert.True(t, foundDocs, "docs/ not found")
@@ -182,12 +182,12 @@ func TestAnalyzeProject(t *testing.T) {
 
 	// Create test files
 	files := map[string]string{
-		"main.go":              "package main\n\nfunc main() {}\n",
-		"internal/core.go":     "package internal\n",
-		"config.yaml":          "key: value\n",
-		"README.md":            "# Test Project",
-		"test/main_test.go":    "package test\n",
-		".gitignore":          "*.tmp\n",
+		"main.go":           "package main\n\nfunc main() {}\n",
+		"internal/core.go":  "package internal\n",
+		"config.yaml":       "key: value\n",
+		"README.md":         "# Test Project",
+		"test/main_test.go": "package test\n",
+		".gitignore":        "*.tmp\n",
 	}
 
 	for name, content := range files {
