@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-
-	"github.com/1broseidon/promptext/internal/references"
 )
 
 type MarkdownFormatter struct{}
@@ -117,34 +115,9 @@ func (m *MarkdownFormatter) formatSourceFiles(sb *strings.Builder, files []FileI
 		sb.WriteString(file.Content)
 		sb.WriteString("\n```\n")
 
-		m.formatFileReferences(sb, file.References)
 	}
 }
 
-func (m *MarkdownFormatter) formatFileReferences(sb *strings.Builder, refs *references.ReferenceMap) {
-	if refs == nil || (len(refs.Internal) == 0 && len(refs.External) == 0) {
-		return
-	}
-
-	sb.WriteString("\n**References:**\n")
-	if len(refs.Internal) > 0 {
-		sb.WriteString("Internal:\n")
-		for dir, refs := range refs.Internal {
-			for _, ref := range refs {
-				sb.WriteString(fmt.Sprintf("- `%s` references `%s`\n", dir, ref))
-			}
-		}
-	}
-	if len(refs.External) > 0 {
-		sb.WriteString("External:\n")
-		for dir, refs := range refs.External {
-			for _, ref := range refs {
-				sb.WriteString(fmt.Sprintf("- `%s` references `%s`\n", dir, ref))
-			}
-		}
-	}
-	sb.WriteString("\n")
-}
 
 func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
 	var sb strings.Builder
