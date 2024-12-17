@@ -144,14 +144,20 @@ func (uf *UnifiedFilter) matchesExcludePatterns(path string) bool {
 
 		// Handle glob patterns
 		if strings.Contains(exclude, "*") {
+			baseName := filepath.Base(path)
+			
+			// For patterns like *.ext, prioritize matching against the base name
+			if strings.HasPrefix(exclude, "*") {
+				if matched, err := filepath.Match(exclude, baseName); err == nil && matched {
+					return true
+				}
+			}
+			
 			// Try matching against full path
 			if matched, err := filepath.Match(exclude, path); err == nil && matched {
 				return true
 			}
-			// Try matching against base name
-			if matched, err := filepath.Match(exclude, filepath.Base(path)); err == nil && matched {
-				return true
-			}
+			
 			// Try matching against each path component
 			parts := strings.Split(path, "/")
 			for _, part := range parts {
