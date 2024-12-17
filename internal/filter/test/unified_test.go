@@ -140,24 +140,24 @@ func TestNewUnifiedFilter(t *testing.T) {
 
 	filter := filter.NewUnifiedFilter(gitIgnore, extensions, excludes)
 
-	if filter.gitIgnore != gitIgnore {
+	if filter.GitIgnore != gitIgnore {
 		t.Error("NewUnifiedFilter did not set gitIgnore correctly")
 	}
 
-	if len(filter.allowedExtensions) != len(extensions) {
-		t.Errorf("NewUnifiedFilter got %d extensions, want %d", len(filter.allowedExtensions), len(extensions))
+	if len(filter.AllowedExtensions) != len(extensions) {
+		t.Errorf("NewUnifiedFilter got %d extensions, want %d", len(filter.AllowedExtensions), len(extensions))
 	}
 
-	if len(filter.configExcludes) != len(excludes) {
-		t.Errorf("NewUnifiedFilter got %d excludes, want %d", len(filter.configExcludes), len(excludes))
+	if len(filter.ConfigExcludes) != len(excludes) {
+		t.Errorf("NewUnifiedFilter got %d excludes, want %d", len(filter.ConfigExcludes), len(excludes))
 	}
 
-	if len(filter.defaultIgnores) != len(testDefaultIgnoreDirs) {
-		t.Errorf("NewUnifiedFilter got %d default ignores, want %d", len(filter.defaultIgnores), len(testDefaultIgnoreDirs))
+	if len(filter.DefaultIgnores) != len(testDefaultIgnoreDirs) {
+		t.Errorf("NewUnifiedFilter got %d default ignores, want %d", len(filter.DefaultIgnores), len(testDefaultIgnoreDirs))
 	}
 
-	if len(filter.defaultIgnoreExts) != len(testDefaultIgnoreExts) {
-		t.Errorf("NewUnifiedFilter got %d default ignore extensions, want %d", len(filter.defaultIgnoreExts), len(testDefaultIgnoreExts))
+	if len(filter.DefaultIgnoreExts) != len(testDefaultIgnoreExts) {
+		t.Errorf("NewUnifiedFilter got %d default ignore extensions, want %d", len(filter.DefaultIgnoreExts), len(testDefaultIgnoreExts))
 	}
 }
 

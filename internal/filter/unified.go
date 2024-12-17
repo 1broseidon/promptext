@@ -26,10 +26,11 @@ var (
 // UnifiedFilter provides backward compatibility with the old API
 type UnifiedFilter struct {
 	chain             *FilterChain
-	defaultIgnores    []string
-	defaultIgnoreExts []string
-	allowedExtensions []string
-	configExcludes    []string
+	DefaultIgnores    []string
+	DefaultIgnoreExts []string
+	AllowedExtensions []string
+	ConfigExcludes    []string
+	GitIgnore         *GitIgnore
 }
 
 // NewUnifiedFilter creates a new UnifiedFilter with all exclusion patterns
@@ -57,10 +58,11 @@ func NewUnifiedFilter(gitIgnore *GitIgnore, extensions, excludes []string) *Unif
 
 	return &UnifiedFilter{
 		chain:             chain,
-		defaultIgnores:    DefaultIgnoreDirs,
-		defaultIgnoreExts: DefaultIgnoreExtensions,
-		allowedExtensions: extensions,
-		configExcludes:    excludes,
+		DefaultIgnores:    DefaultIgnoreDirs,
+		DefaultIgnoreExts: DefaultIgnoreExtensions,
+		AllowedExtensions: extensions,
+		ConfigExcludes:    excludes,
+		GitIgnore:         gitIgnore,
 	}
 }
 
@@ -119,7 +121,7 @@ func (uf *UnifiedFilter) isInNodeModules(path string) bool {
 
 // isInDefaultIgnoreDir checks if the path is in a default ignore directory
 func (uf *UnifiedFilter) isInDefaultIgnoreDir(path string) bool {
-	for _, dir := range uf.defaultIgnores {
+	for _, dir := range uf.DefaultIgnores {
 		if strings.Contains(path, "/"+dir+"/") || strings.HasPrefix(path, dir+"/") || path == dir {
 			return true
 		}
@@ -129,7 +131,7 @@ func (uf *UnifiedFilter) isInDefaultIgnoreDir(path string) bool {
 
 // matchesExcludePatterns checks if the path matches any exclude patterns
 func (uf *UnifiedFilter) matchesExcludePatterns(path string) bool {
-	for _, exclude := range uf.configExcludes {
+	for _, exclude := range uf.ConfigExcludes {
 		// Try exact match first
 		if exclude == path {
 			return true
@@ -153,19 +155,19 @@ func (uf *UnifiedFilter) hasAllowedExtension(path string) bool {
 	ext := filepath.Ext(path)
 
 	// Check against default ignored extensions first
-	for _, ignoreExt := range uf.defaultIgnoreExts {
+	for _, ignoreExt := range uf.DefaultIgnoreExts {
 		if strings.EqualFold(ignoreExt, ext) {
 			return false
 		}
 	}
 
 	// If no allowed extensions specified, include all non-excluded files
-	if len(uf.allowedExtensions) == 0 {
+	if len(uf.AllowedExtensions) == 0 {
 		return true
 	}
 
 	// If allowed extensions specified, only include matching files
-	for _, allowedExt := range uf.allowedExtensions {
+	for _, allowedExt := range uf.AllowedExtensions {
 		if strings.EqualFold(strings.TrimPrefix(allowedExt, "."), strings.TrimPrefix(ext, ".")) {
 			return true
 		}
