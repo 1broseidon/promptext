@@ -656,6 +656,11 @@ func analyzeProject(rootPath string) *ProjectAnalysis {
 		Documentation: make(map[string]string),
 	}
 
+	gi, err := gitignore.New(filepath.Join(rootPath, ".gitignore"))
+	if err != nil {
+		// If we can't load gitignore, proceed without it
+		gi = nil
+	}
 	filter := filter.NewUnifiedFilter(gi, nil, nil)
 
 	filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
