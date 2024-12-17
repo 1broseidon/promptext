@@ -287,7 +287,7 @@ func countDependencies(deps []string) (main, dev int) {
 }
 
 // countIncludedFiles counts files that match the filter criteria
-func countIncludedFiles(config Config, gi *gitignore.GitIgnore) (int, error) {
+func countIncludedFiles(config Config, gi *filter.GitIgnore) (int, error) {
 	fileCount := 0
 	err := filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
