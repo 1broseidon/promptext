@@ -168,7 +168,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			return err
 		}
 
-		fileInfo, err := processFile(path, config, gi, allFiles)
+		fileInfo, err := processFile(path, config, gi)
 		if err != nil {
 			return err
 		}

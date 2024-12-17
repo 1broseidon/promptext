@@ -4,8 +4,6 @@ import (
 	"encoding/xml"
 	"strings"
 	"testing"
-
-	"github.com/1broseidon/promptext/internal/references"
 )
 
 func TestGetFormatter(t *testing.T) {
@@ -122,11 +120,6 @@ func TestMarkdownFormatter_Format(t *testing.T) {
 					{
 						Path:    "test.go",
 						Content: "package main\n\nfunc main() {}\n",
-						References: &references.ReferenceMap{
-							Internal: map[string][]string{
-								"test.go": {"other.go"},
-							},
-						},
 					},
 				},
 			},
