@@ -57,25 +57,25 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
                 if rel, err := filepath.Rel(rootDir, filepath.Join(rootDir, resolved)); err == nil {
                     refs.Internal[currentDir] = append(refs.Internal[currentDir], rel)
                 }
-            } else if isExternalReference(ref) {
-                // If not resolved and is an external reference
-                refs.External[currentDir] = append(refs.External[currentDir], ref)
             } else {
-                // If not resolved and not an external reference, consider it external
-                refs.External[currentDir] = append(refs.External[currentDir], ref)
-            }
-
-            // Ensure that internal references are not incorrectly categorized as external
-            if !isExternalReference(ref) && resolved == "" {
-                // If the reference is not external and not resolved, it might still be internal
-                // Check if the reference is a relative path and exists in the project
-                if strings.HasPrefix(ref, "./") || strings.HasPrefix(ref, "../") {
+                // Not resolved
+                if isExternalReference(ref) {
+                    // Known external reference
+                    refs.External[currentDir] = append(refs.External[currentDir], ref)
+                } else if strings.HasPrefix(ref, "./") || strings.HasPrefix(ref, "../") {
+                    // Attempt to resolve relative path as internal
                     candidate := filepath.Join(currentDir, ref)
                     if matchFile(candidate, rootDir, allFiles) {
                         if rel, err := filepath.Rel(rootDir, filepath.Join(rootDir, candidate)); err == nil {
                             refs.Internal[currentDir] = append(refs.Internal[currentDir], rel)
+                            continue
                         }
                     }
+                    // If still not found, it's external by default
+                    refs.External[currentDir] = append(refs.External[currentDir], ref)
+                } else {
+                    // Default to external if we can't resolve as internal or confirm as external
+                    refs.External[currentDir] = append(refs.External[currentDir], ref)
                 }
             }
         }
