@@ -30,7 +30,7 @@ var (
         // JavaScript/TypeScript imports
         regexp.MustCompile(`(?m)(?:import\s+.*?from\s+['"]([^'"]+)['"]|require\s*\(['"]([^'"]+)['"]\))`),
         // Markdown links - only file links, not URLs
-        regexp.MustCompile(`(?m)\[[^\]]*\]\((?!https?://|mailto:|ftp://)([^)]+)\)`),
+        regexp.MustCompile(`(?m)\[[^\]]*\]\(([^)]+)\)`),
         // Local file references in comments
         regexp.MustCompile(`(?m)(?:\/\/|#)\s*(?:see|ref|reference):\s*([^\s]+)`),
     }
