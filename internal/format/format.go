@@ -4,6 +4,8 @@ import (
 	"encoding/xml"
 	"fmt"
 	"strings"
+
+	"github.com/1broseidon/promptext/internal/references"
 )
 
 type OutputFormat string
