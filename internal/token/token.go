@@ -43,7 +43,6 @@ func (tc *TokenCounter) EstimateTokens(text string) int {
 		// Check for code block delimiters
 		if strings.HasPrefix(line, "```") {
 			inCodeBlock = !inCodeBlock
-			tokenCount++ // Count the delimiter itself
 			continue
 		}
 
@@ -67,17 +66,9 @@ func (tc *TokenCounter) countTextTokens(line string) int {
 	words := tc.wordPattern.FindAllString(line, -1)
 	count += len(words)
 
-	// Count numbers (they often get their own tokens)
-	numbers := tc.numberPattern.FindAllString(line, -1)
-	count += len(numbers)
-
 	// Count symbols (punctuation, markdown characters, etc.)
 	symbols := tc.symbolPattern.FindAllString(line, -1)
 	count += len(symbols)
-
-	// Count significant whitespace
-	spaces := tc.spacingPattern.FindAllString(line, -1)
-	count += len(spaces)
 
 	return count
 }
@@ -104,13 +95,7 @@ func (tc *TokenCounter) countCodeTokens(line string) int {
 		words := tc.wordPattern.FindAllString(part, -1)
 		count += len(words)
 
-		// Count numbers
-		numbers := tc.numberPattern.FindAllString(part, -1)
-		count += len(numbers)
 	}
-
-	// Add 1 for the newline/whitespace
-	count++
 
 	return count
 }
