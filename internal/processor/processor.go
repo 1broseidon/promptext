@@ -162,7 +162,11 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		displayContent = buildVerboseDisplay(projectOutput)
 	}
 
+	log.Debug("\nProcessing directories:")
 	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
+		if d.IsDir() {
+			log.Debug("  Scanning directory: %s", path)
+		}
 		if err != nil || d.IsDir() {
 			return err
 		}
