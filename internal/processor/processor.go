@@ -168,9 +168,6 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 		// Check if directory should be skipped
 		if d.IsDir() {
-			if gi.ShouldIgnore(path) {
-				return filepath.SkipDir
-			}
 			if filepath.Dir(path) == config.DirPath {
 				log.Debug("  Scanning root directory: %s", path)
 			}
@@ -293,16 +290,11 @@ func countIncludedFiles(config Config) (int, error) {
 
 // GetMetadataSummary returns a concise summary of project metadata
 func GetMetadataSummary(config Config, tokenCount int) (string, error) {
-	gi, err := filter.NewGitIgnore(filepath.Join(config.DirPath, ".gitignore"))
-	if err != nil {
-		return "", err
-	}
-
 	infoConfig := &info.Config{
 		Extensions: config.Extensions,
 		Excludes:   config.Excludes,
 	}
-	projectInfo, err := info.GetProjectInfo(config.DirPath, infoConfig, gi)
+	projectInfo, err := info.GetProjectInfo(config.DirPath, infoConfig)
 	if err != nil {
 		return "", err
 	}
@@ -385,16 +377,6 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		log.Debug("No extension filters - processing all file types")
 	}
 
-	// Load gitignore patterns first
-	gi, err := filter.NewGitIgnore(filepath.Join(absPath, ".gitignore"))
-	if err != nil {
-		log.Info("Warning: Failed to load .gitignore: %v", err)
-	} else if gi != nil && len(gi.Patterns) > 0 {
-		log.Debug("Gitignore patterns:")
-		for _, pattern := range gi.Patterns {
-			log.Debug("  - Ignore: %s", pattern)
-		}
-	}
 
 	if len(excludes) > 0 {
 		log.Debug("Custom exclusion patterns:")
