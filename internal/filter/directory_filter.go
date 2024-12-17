@@ -45,7 +45,7 @@ func (df *DirectoryFilter) Match(path string) (bool, error) {
             // Exact match or directory prefix match
             if strings.HasSuffix(pattern, "/") {
                 dirPattern := strings.TrimSuffix(pattern, "/") + "/"
-                if strings.Contains(normalizedPath, dirPattern) {
+                if strings.HasPrefix(normalizedPath, dirPattern) {
                     return true, nil
                 }
             } else {
