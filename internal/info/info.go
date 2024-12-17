@@ -313,10 +313,17 @@ func getPythonVersion(root string) string {
 	if content, err := os.ReadFile(setupPath); err == nil {
 		lines := strings.Split(string(content), "\n")
 		for _, line := range lines {
-			if strings.Contains(line, "version=") {
-				parts := strings.Split(line, "\"")
-				if len(parts) >= 2 {
-					return strings.Trim(parts[1], "\"'")
+			if strings.Contains(line, "version=") || strings.Contains(line, "version =") {
+				// Extract version from quotes, handling both single and double quotes
+				if idx := strings.Index(line, "\""); idx != -1 {
+					if endIdx := strings.Index(line[idx+1:], "\""); endIdx != -1 {
+						return line[idx+1 : idx+1+endIdx]
+					}
+				}
+				if idx := strings.Index(line, "'"); idx != -1 {
+					if endIdx := strings.Index(line[idx+1:], "'"); endIdx != -1 {
+						return line[idx+1 : idx+1+endIdx]
+					}
 				}
 			}
 		}
@@ -327,9 +334,15 @@ func getPythonVersion(root string) string {
 		lines := strings.Split(string(content), "\n")
 		for _, line := range lines {
 			if strings.Contains(line, "version = ") {
-				parts := strings.Split(line, "\"")
-				if len(parts) >= 2 {
-					return strings.Trim(parts[1], "\"'")
+				if idx := strings.Index(line, "\""); idx != -1 {
+					if endIdx := strings.Index(line[idx+1:], "\""); endIdx != -1 {
+						return line[idx+1 : idx+1+endIdx]
+					}
+				}
+				if idx := strings.Index(line, "'"); idx != -1 {
+					if endIdx := strings.Index(line[idx+1:], "'"); endIdx != -1 {
+						return line[idx+1 : idx+1+endIdx]
+					}
 				}
 			}
 		}
