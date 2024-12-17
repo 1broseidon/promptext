@@ -44,12 +44,15 @@ func (df *DirectoryFilter) Match(path string) (bool, error) {
         } else {
             // Exact match or directory prefix match
             if strings.HasSuffix(pattern, "/") {
-                // For directory patterns, check if it's at the start or after a slash
                 dirPattern := strings.TrimSuffix(pattern, "/")
                 parts := strings.Split(normalizedPath, "/")
-                for _, part := range parts {
+                // Check if any path component matches the directory pattern
+                for i, part := range parts {
                     if part == dirPattern {
-                        return true, nil
+                        // Ensure it's a directory component (not the last part unless the path ends with /)
+                        if i < len(parts)-1 || strings.HasSuffix(normalizedPath, "/") {
+                            return true, nil
+                        }
                     }
                 }
             } else if pattern == normalizedPath {
