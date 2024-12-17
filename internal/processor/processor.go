@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/1broseidon/promptext/internal/config"
+	"github.com/1broseidon/promptext/internal/token"
 	"github.com/1broseidon/promptext/internal/filter"
 	"github.com/1broseidon/promptext/internal/format"
 	"github.com/1broseidon/promptext/internal/gitignore"
@@ -51,6 +52,7 @@ type ProcessResult struct {
 	ProjectOutput    *format.ProjectOutput
 	DisplayContent   string
 	ClipboardContent string
+	TokenCount       int
 }
 
 // initializeProjectOutput sets up the initial project output structure
@@ -178,6 +180,9 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	// Populate project information
 	populateProjectInfo(projectOutput, projectInfo)
 
+	// Create token counter
+	tokenCounter := token.NewTokenCounter()
+
 	// Process files
 	var displayContent string
 	if verbose {
@@ -210,10 +215,22 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		return &ProcessResult{}, fmt.Errorf("error walking directory: %w", err)
 	}
 
+	// Format the output for token counting
+	formatter, err := format.GetFormatter("markdown") // Default to markdown for token counting
+	if err != nil {
+		return nil, fmt.Errorf("error creating formatter: %w", err)
+	}
+
+	formattedOutput, err := formatter.Format(projectOutput)
+	if err != nil {
+		return nil, fmt.Errorf("error formatting output: %w", err)
+	}
+
 	return &ProcessResult{
 		ProjectOutput:    projectOutput,
 		DisplayContent:   displayContent,
-		ClipboardContent: "", // Will be set in Run() based on format
+		ClipboardContent: formattedOutput,
+		TokenCount:       tokenCounter.EstimateTokens(formattedOutput),
 	}, nil
 }
 
@@ -287,7 +304,7 @@ func countIncludedFiles(config Config, gi *gitignore.GitIgnore) (int, error) {
 }
 
 // GetMetadataSummary returns a concise summary of project metadata
-func GetMetadataSummary(config Config) (string, error) {
+func GetMetadataSummary(config Config, tokenCount int) (string, error) {
 	gi, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
 	if err != nil {
 		return "", err
@@ -331,6 +348,11 @@ func GetMetadataSummary(config Config) (string, error) {
 			strings.Join(config.Extensions, ", ")))
 	}
 
+	// Add token count to summary
+	if tokenCount > 0 {
+		summary.WriteString(fmt.Sprintf("   Tokens: ~%d\n", tokenCount))
+	}
+
 	return summary.String(), nil
 }
 
@@ -366,7 +388,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 
 	if infoOnly {
 		// Only display project summary
-		if info, err := GetMetadataSummary(procConfig); err == nil {
+		if info, err := GetMetadataSummary(procConfig, 0); err == nil {
 			fmt.Printf("\033[32m%s\033[0m\n", info)
 		} else {
 			return fmt.Errorf("error getting project info: %v", err)
@@ -397,7 +419,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 			return fmt.Errorf("error writing to output file: %w", err)
 		}
 		// Always print metadata summary and success message in green
-		if info, err := GetMetadataSummary(procConfig); err == nil {
+		if info, err := GetMetadataSummary(procConfig, result.TokenCount); err == nil {
 			fmt.Printf("\033[32m%s   ✓ code context written to %s (%s format)\033[0m\n",
 				info, outFile, outputFormat)
 		}
