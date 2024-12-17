@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/1broseidon/promptext/internal/filter"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,12 +43,9 @@ func TestGetProjectInfo(t *testing.T) {
 		Excludes:   []string{},
 	}
 
-	// Initialize gitignore
-	gi, _ := filter.NewGitIgnore(filepath.Join(tmpDir, ".gitignore"))
-
 	// Test GetProjectInfo
 	t.Run("basic project structure", func(t *testing.T) {
-		info, err := GetProjectInfo(tmpDir, config, gi)
+		info, err := GetProjectInfo(tmpDir, config)
 		assert.NoError(t, err)
 		assert.NotNil(t, info)
 		assert.NotNil(t, info.DirectoryTree)
@@ -92,10 +88,8 @@ func TestGenerateDirectoryTree(t *testing.T) {
 		Excludes:   []string{},
 	}
 
-	gi, _ := filter.NewGitIgnore("")
-
 	t.Run("directory tree generation", func(t *testing.T) {
-		tree, err := generateDirectoryTree(tmpDir, config, gi)
+		tree, err := generateDirectoryTree(tmpDir, config)
 		assert.NoError(t, err)
 		assert.NotNil(t, tree)
 

@@ -1,4 +1,7 @@
+extensions:
+  - .go
 excludes:
   - samples/
   - dist/
 verbose: true
+debug: true

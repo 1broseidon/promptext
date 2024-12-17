@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	
+
 	"github.com/1broseidon/promptext/internal/log"
 	"gopkg.in/yaml.v3"
 )
