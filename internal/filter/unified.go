@@ -3,8 +3,6 @@ package filter
 import (
 	"path/filepath"
 	"strings"
-
-	"github.com/1broseidon/promptext/internal/gitignore"
 )
 
 // Language-specific patterns
@@ -29,7 +27,7 @@ var docPatterns = []string{
 
 // UnifiedFilter combines all filtering rules into a single structure
 type UnifiedFilter struct {
-	gitIgnore         *gitignore.GitIgnore
+	gitIgnore         *GitIgnore
 	configExcludes    []string
 	allowedExtensions []string
 	defaultIgnores    []string
@@ -37,7 +35,7 @@ type UnifiedFilter struct {
 }
 
 // NewUnifiedFilter creates a new UnifiedFilter with all exclusion patterns
-func NewUnifiedFilter(gitIgnore *gitignore.GitIgnore, extensions, excludes []string) *UnifiedFilter {
+func NewUnifiedFilter(gitIgnore *GitIgnore, extensions, excludes []string) *UnifiedFilter {
 	return &UnifiedFilter{
 		gitIgnore:         gitIgnore,
 		configExcludes:    excludes,

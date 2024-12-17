@@ -10,7 +10,6 @@ import (
 
 	"github.com/1broseidon/promptext/internal/filter"
 	"github.com/1broseidon/promptext/internal/format"
-	"github.com/1broseidon/promptext/internal/gitignore"
 )
 
 // Config holds directory processing configuration
@@ -42,7 +41,7 @@ type ProjectMetadata struct {
 }
 
 // GetProjectInfo gathers all available information about the project
-func GetProjectInfo(rootPath string, config *Config, gitIgnore *gitignore.GitIgnore) (*ProjectInfo, error) {
+func GetProjectInfo(rootPath string, config *Config, gitIgnore *filter.GitIgnore) (*ProjectInfo, error) {
 	info := &ProjectInfo{}
 
 	// Get directory tree
@@ -67,7 +66,7 @@ func GetProjectInfo(rootPath string, config *Config, gitIgnore *gitignore.GitIgn
 	return info, nil
 }
 
-func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.GitIgnore) (*format.DirectoryNode, error) {
+func generateDirectoryTree(root string, config *Config, gitIgnore *filter.GitIgnore) (*format.DirectoryNode, error) {
 	rootNode := &format.DirectoryNode{
 		Name: filepath.Base(root),
 		Type: "dir",

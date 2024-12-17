@@ -1,6 +1,5 @@
 package filter
 
-import "github.com/1broseidon/promptext/internal/gitignore"
 
 // DefaultIgnoreExtensions contains file extensions that should be ignored by default
 var DefaultIgnoreExtensions = []string{
@@ -34,7 +33,7 @@ var DefaultIgnoreDirs = []string{
 
 // ShouldProcessFile is maintained for backward compatibility
 // Use UnifiedFilter.ShouldProcess instead for new code
-func ShouldProcessFile(path string, extensions, excludes []string, gitIgnore *gitignore.GitIgnore) bool {
+func ShouldProcessFile(path string, extensions, excludes []string, gitIgnore *GitIgnore) bool {
 	filter := NewUnifiedFilter(gitIgnore, extensions, excludes)
 	return filter.ShouldProcess(path)
 }
