@@ -18,19 +18,19 @@ import (
 )
 
 func getAllFiles(root string) ([]string, error) {
-    var files []string
-    err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-        if err != nil || d.IsDir() {
-            return err
-        }
-        rel, err := filepath.Rel(root, path)
-        if err != nil {
-            return err
-        }
-        files = append(files, rel)
-        return nil
-    })
-    return files, err
+	var files []string
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		files = append(files, rel)
+		return nil
+	})
+	return files, err
 }
 
 type Config struct {
@@ -66,11 +66,11 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	// Get project analysis and convert to format.ProjectAnalysis
 	analysis := info.AnalyzeProject(config.DirPath)
 	projectOutput.Analysis = &format.ProjectAnalysis{
-		EntryPoints:    analysis.EntryPoints,
-		ConfigFiles:    analysis.ConfigFiles,
-		CoreFiles:      analysis.CoreFiles,
-		TestFiles:      analysis.TestFiles,
-		Documentation:  analysis.Documentation,
+		EntryPoints:   analysis.EntryPoints,
+		ConfigFiles:   analysis.ConfigFiles,
+		CoreFiles:     analysis.CoreFiles,
+		TestFiles:     analysis.TestFiles,
+		Documentation: analysis.Documentation,
 	}
 
 	// Initialize gitignore once
@@ -217,27 +217,20 @@ func GetMetadataSummary(config Config) (string, error) {
 	if projectInfo.Metadata != nil {
 		summary.WriteString(fmt.Sprintf("   Language: %s %s\n", projectInfo.Metadata.Language, projectInfo.Metadata.Version))
 		if len(projectInfo.Metadata.Dependencies) > 0 {
-			mainDeps := []string{}
-			devDeps := []string{}
+			mainDeps := 0
+			devDeps := 0
 			for _, dep := range projectInfo.Metadata.Dependencies {
 				if strings.HasPrefix(dep, "[dev] ") {
-					devDeps = append(devDeps, strings.TrimPrefix(dep, "[dev] "))
+					devDeps++
 				} else {
-					mainDeps = append(mainDeps, dep)
+					mainDeps++
 				}
 			}
-			summary.WriteString(fmt.Sprintf("   Dependencies: %d packages total\n", len(projectInfo.Metadata.Dependencies)))
-			if len(mainDeps) > 0 {
-				summary.WriteString("   Main dependencies:\n")
-				for _, dep := range mainDeps {
-					summary.WriteString(fmt.Sprintf("     - %s\n", dep))
-				}
-			}
-			if len(devDeps) > 0 {
-				summary.WriteString("   Dev dependencies:\n")
-				for _, dep := range devDeps {
-					summary.WriteString(fmt.Sprintf("     - %s\n", dep))
-				}
+			if devDeps > 0 {
+				summary.WriteString(fmt.Sprintf("   Dependencies: %d packages (%d main, %d dev)\n",
+					len(projectInfo.Metadata.Dependencies), mainDeps, devDeps))
+			} else {
+				summary.WriteString(fmt.Sprintf("   Dependencies: %d packages\n", mainDeps))
 			}
 		}
 	}
