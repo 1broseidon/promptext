@@ -9,12 +9,11 @@ import (
 	"strings"
 
 	"github.com/1broseidon/promptext/internal/config"
-	"github.com/1broseidon/promptext/internal/token"
 	"github.com/1broseidon/promptext/internal/filter"
 	"github.com/1broseidon/promptext/internal/format"
-	"github.com/1broseidon/promptext/internal/gitignore"
 	"github.com/1broseidon/promptext/internal/info"
 	"github.com/1broseidon/promptext/internal/references"
+	"github.com/1broseidon/promptext/internal/token"
 	"github.com/atotto/clipboard"
 )
 
@@ -98,14 +97,14 @@ func buildVerboseDisplay(projectOutput *format.ProjectOutput) string {
 	var displayBuilder strings.Builder
 
 	displayBuilder.WriteString(projectOutput.DirectoryTree.ToMarkdown(0))
-	
+
 	if projectOutput.GitInfo != nil {
 		displayBuilder.WriteString(fmt.Sprintf("\nBranch: %s\nCommit: %s\nMessage: %s\n",
 			projectOutput.GitInfo.Branch,
 			projectOutput.GitInfo.CommitHash,
 			projectOutput.GitInfo.CommitMessage))
 	}
-	
+
 	if projectOutput.Metadata != nil {
 		displayBuilder.WriteString(fmt.Sprintf("\nLanguage: %s\nVersion: %s\n",
 			projectOutput.Metadata.Language,
@@ -124,7 +123,7 @@ func buildVerboseDisplay(projectOutput *format.ProjectOutput) string {
 // processFile handles the processing of a single file
 func processFile(path string, config Config, gi *gitignore.GitIgnore, allFiles []string) (*format.FileInfo, error) {
 	unifiedFilter := filter.NewUnifiedFilter(gi, config.Extensions, config.Excludes)
-	
+
 	if !unifiedFilter.ShouldProcess(path) {
 		return nil, nil
 	}
@@ -201,9 +200,9 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 		if fileInfo != nil {
 			projectOutput.Files = append(projectOutput.Files, *fileInfo)
-			
+
 			if verbose {
-				displayContent += fmt.Sprintf("\n### File: %s\n```\n%s\n```\n", 
+				displayContent += fmt.Sprintf("\n### File: %s\n```\n%s\n```\n",
 					path, fileInfo.Content)
 			}
 		}
@@ -320,10 +319,10 @@ func GetMetadataSummary(config Config, tokenCount int) (string, error) {
 	}
 
 	var summary strings.Builder
-	
+
 	// Build project summary
 	summary.WriteString(buildProjectSummary(projectInfo, config))
-	
+
 	// Add language and dependencies info
 	if projectInfo.Metadata != nil {
 		summary.WriteString(buildLanguageInfo(projectInfo.Metadata))
@@ -331,7 +330,7 @@ func GetMetadataSummary(config Config, tokenCount int) (string, error) {
 
 	// Add git info
 	if projectInfo.GitInfo != nil {
-		summary.WriteString(fmt.Sprintf("   Branch: %s (%s)\n", 
+		summary.WriteString(fmt.Sprintf("   Branch: %s (%s)\n",
 			projectInfo.GitInfo.Branch, projectInfo.GitInfo.CommitHash))
 	}
 
@@ -344,7 +343,7 @@ func GetMetadataSummary(config Config, tokenCount int) (string, error) {
 
 	// Add filtering info if specified
 	if len(config.Extensions) > 0 {
-		summary.WriteString(fmt.Sprintf("   Filtering: %s\n", 
+		summary.WriteString(fmt.Sprintf("   Filtering: %s\n",
 			strings.Join(config.Extensions, ", ")))
 	}
 
