@@ -16,10 +16,7 @@ func NewExtensionRule(exts []string, action types.RuleAction) types.Rule {
         extMap[ext] = true
     }
     return &ExtensionRule{
-        BaseRule: types.BaseRule{
-            pattern: "",
-            action:  action,
-        },
+        BaseRule: types.NewBaseRule("", action),
         extensions: extMap,
     }
 }

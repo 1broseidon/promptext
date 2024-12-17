@@ -13,10 +13,7 @@ type PatternRule struct {
 
 func NewPatternRule(patterns []string, action types.RuleAction) types.Rule {
     return &PatternRule{
-        BaseRule: types.BaseRule{
-            pattern: "",
-            action:  action,
-        },
+        BaseRule: types.NewBaseRule("", action),
         patterns: patterns,
     }
 }
