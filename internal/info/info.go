@@ -103,31 +103,35 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 			return nil
 		}
 
-		// Get parent directory path
-		parent := filepath.Dir(rel)
-		if parent == "." {
-			parent = ""
+		// Create directory nodes for the full path
+		parts := strings.Split(rel, string(filepath.Separator))
+		currentPath := ""
+		currentNode := rootNode
+		
+		for i, part := range parts[:len(parts)-1] {
+			currentPath = filepath.Join(currentPath, part)
+			if _, exists := dirMap[currentPath]; !exists {
+				newNode := &format.DirectoryNode{
+					Name: part,
+					Type: "dir",
+				}
+				dirMap[currentPath] = newNode
+				currentNode.Children = append(currentNode.Children, newNode)
+			}
+			currentNode = dirMap[currentPath]
 		}
 
-		// Create or get parent node
-		parentNode, exists := dirMap[parent]
-		if !exists {
-			// This shouldn't happen as we process directories first
-			parentNode = rootNode
-		}
-
-		// Create new node
+		// Create the final node (file or directory)
+		lastPart := parts[len(parts)-1]
 		newNode := &format.DirectoryNode{
-			Name: filepath.Base(path),
+			Name: lastPart,
 			Type: "file",
 		}
 		if d.IsDir() {
 			newNode.Type = "dir"
 			dirMap[rel] = newNode
 		}
-
-		// Add to parent's children
-		parentNode.Children = append(parentNode.Children, newNode)
+		currentNode.Children = append(currentNode.Children, newNode)
 
 		return nil
 	})
