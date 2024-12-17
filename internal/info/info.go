@@ -656,10 +656,18 @@ func getDocDescription(path string) string {
 }
 
 func isCoreFile(path string) bool {
+	// Skip node_modules
+	if strings.Contains(path, "node_modules/") {
+		return false
+	}
+	
 	dir := filepath.Dir(path)
+	// Only consider files in these special directories as core
 	return strings.Contains(dir, "internal/") ||
 		strings.Contains(dir, "pkg/") ||
-		strings.Contains(dir, "lib/")
+		strings.Contains(dir, "src/") ||
+		strings.Contains(dir, "lib/") ||
+		strings.Contains(dir, "core/")
 }
 
 func getCoreDescription(_ string) string {
