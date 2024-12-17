@@ -21,9 +21,6 @@ func NewReferenceMap() *ReferenceMap {
 	}
 }
 
-func isGoStdlibPackage(pkg string) bool {
-	return !strings.Contains(pkg, ".") && strings.Contains(pkg, "/") && pkg == strings.ToLower(pkg)
-}
 
 // ExtractFileReferences finds references to other files within the given content
 func ExtractFileReferences(content, currentDir, rootDir string, allFiles []string) *ReferenceMap {
@@ -36,24 +33,6 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 				continue
 			}
 
-			// Handle Go import blocks
-			if pattern == referencePatterns[1] && len(match) > 2 && match[2] != "" {
-				importBlock := match[2]
-				importLines := strings.Split(importBlock, "\n")
-				for _, line := range importLines {
-					line = strings.TrimSpace(line)
-					if line == "" {
-						continue
-					}
-					if strings.HasPrefix(line, "\"") && strings.HasSuffix(line, "\"") {
-						ref := strings.Trim(line, "\"")
-						if ref != "" && !isGoStdlibPackage(ref) {
-							addReference(refs, ref, currentDir, rootDir, allFiles)
-						}
-					}
-				}
-				continue
-			}
 
 			// Get the first non-empty capture group
 			var ref string
@@ -73,109 +52,14 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 				ref = ref[:idx]
 			}
 
-			// Handle Go single-line imports
-			if pattern == referencePatterns[0] {
-				if isGoStdlibPackage(ref) {
-					continue
-				}
-				addReference(refs, ref, currentDir, rootDir, allFiles)
-				continue
-			}
-
-			// Handle Python relative imports
-			if strings.HasPrefix(ref, ".") && !strings.Contains(ref, "/") {
-				parts := strings.Split(ref, " ")
-				modPath := strings.TrimSpace(parts[0])
-
-				// Convert relative import path to filesystem path 
-				levels := strings.Count(modPath, ".") - 1
-				targetDir := currentDir
-				for i := 0; i < levels; i++ {
-					targetDir = filepath.Dir(targetDir)
-				}
-				modPath = strings.TrimLeft(modPath, ".")
-				if modPath != "" {
-					modPath = filepath.Join(targetDir, strings.Replace(modPath, ".", "/", -1))
-				} else {
-					modPath = targetDir
-				}
-
-				// Try to resolve the module path
-				resolved := resolveReference(modPath, currentDir, rootDir, allFiles)
-				if resolved != "" {
-					if _, ok := refs.Internal[currentDir]; !ok {
-						refs.Internal[currentDir] = []string{}
-					}
-					refs.Internal[currentDir] = append(refs.Internal[currentDir], resolved)
-					continue
-				}
-			}
-
-			// Handle Python from ... import ...
-			if pattern == referencePatterns[3] && len(match) > 2 {
-				baseModule := match[1]
-				importedNames := strings.TrimSpace(match[2])
-				names := strings.Split(importedNames, ",")
-
-				targetDir := currentDir
-				if !strings.HasPrefix(baseModule, ".") {
-					// For non-relative imports, use parent directory as base
-					targetDir = filepath.Dir(currentDir)
-				} else if strings.HasPrefix(baseModule, ".") {
-					// For relative imports, calculate target directory
-					levels := strings.Count(baseModule, ".")
-					for i := 0; i < levels; i++ {
-						targetDir = filepath.Dir(targetDir)
-					}
-					baseModule = strings.TrimLeft(baseModule, ".")
-				}
-
-				for _, name := range names {
-					name = strings.TrimSpace(name)
-					if name == "" || name == "*" {
-						continue
-					}
-
-					modPath := filepath.Join(targetDir, strings.Replace(baseModule, ".", "/", -1))
-					if baseModule != "" {
-						modPath = filepath.Join(modPath, name)
-					} else {
-						modPath = filepath.Join(targetDir, name)
-					}
-
-					resolved := resolveReference(modPath, targetDir, rootDir, allFiles)
-					if resolved != "" {
-						if _, ok := refs.Internal[currentDir]; !ok {
-							refs.Internal[currentDir] = []string{}
-						}
-						refs.Internal[currentDir] = append(refs.Internal[currentDir], resolved)
-					} else {
-						// Combine baseModule and name for external reference
-						addReference(refs, baseModule, currentDir, rootDir, allFiles)
-					}
-				}
-				continue
-			}
-
-			// Handle Python import ...
-			if pattern == referencePatterns[2] {
-				resolved := resolveReference(ref, currentDir, rootDir, allFiles)
-				if resolved != "" {
-					if _, ok := refs.Internal[currentDir]; !ok {
-						refs.Internal[currentDir] = []string{}
-					}
-					refs.Internal[currentDir] = append(refs.Internal[currentDir], resolved)
-					continue
-				}
-				if resolved == "" {
-					addReference(refs, ref, currentDir, rootDir, allFiles)					
-				}
-				continue
-			}
 
 			addReference(refs, ref, currentDir, rootDir, allFiles)
 		}
 	}
+
+	// Remove empty keys from the maps
+	if len(refs.Internal[currentDir]) == 0 { delete(refs.Internal, currentDir) }
+	if len(refs.External[currentDir]) == 0 { delete(refs.External, currentDir) }
 
 	return refs
 }
