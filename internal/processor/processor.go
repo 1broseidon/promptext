@@ -204,10 +204,14 @@ func GetMetadataSummary(config Config) (string, error) {
 	var summary strings.Builder
 	summary.WriteString("📦 Project Summary:\n")
 
-	// Add root folder name
-	absPath, err := filepath.Abs(config.DirPath)
-	if err == nil {
-		summary.WriteString(fmt.Sprintf("   Project: %s\n", filepath.Base(absPath)))
+	// Add project name from metadata if available, otherwise use folder name
+	if projectInfo.Metadata != nil && projectInfo.Metadata.Name != "" {
+		summary.WriteString(fmt.Sprintf("   Project: %s\n", projectInfo.Metadata.Name))
+	} else {
+		absPath, err := filepath.Abs(config.DirPath)
+		if err == nil {
+			summary.WriteString(fmt.Sprintf("   Project: %s\n", filepath.Base(absPath)))
+		}
 	}
 
 	if projectInfo.Metadata != nil {

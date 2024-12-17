@@ -35,6 +35,7 @@ type GitInfo struct {
 
 // ProjectMetadata holds project-specific information
 type ProjectMetadata struct {
+	Name         string
 	Language     string
 	Version      string
 	Dependencies []string
@@ -355,6 +356,9 @@ func getPythonVersion(root string) string {
 			if inToolPoetry && strings.HasPrefix(line, "[") {
 				inToolPoetry = false
 				continue
+			}
+			if inToolPoetry && strings.HasPrefix(line, "name = ") {
+				metadata.Name = strings.Trim(strings.TrimPrefix(line, "name = "), "\"'")
 			}
 			if inToolPoetry && strings.HasPrefix(line, "version = ") {
 				version := strings.Trim(strings.TrimPrefix(line, "version = "), "\"'")
