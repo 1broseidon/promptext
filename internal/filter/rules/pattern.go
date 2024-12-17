@@ -7,11 +7,11 @@ import (
 )
 
 type PatternRule struct {
-    filter.BaseRule
+    BaseRule
     patterns []string
 }
 
-func NewPatternRule(patterns []string, action filter.RuleAction) *PatternRule {
+func NewPatternRule(patterns []string, action filter.RuleAction) Rule {
     return &PatternRule{
         BaseRule: filter.BaseRule{action: action},
         patterns: patterns,

@@ -1,4 +1,9 @@
-package filter
+package rules
+
+type Rule interface {
+    Match(path string) bool
+    Action() RuleAction
+}
 
 type RuleAction int
 
@@ -7,12 +12,6 @@ const (
     Exclude
     Skip
 )
-
-// Rule defines a single filtering rule
-type Rule interface {
-    Match(path string) bool
-    Action() RuleAction
-}
 
 // BaseRule provides common functionality
 type BaseRule struct {

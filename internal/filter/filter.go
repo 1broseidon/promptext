@@ -3,28 +3,35 @@ package filter
 import (
 	"path/filepath"
 	"strings"
+	"github.com/1broseidon/promptext/internal/filter/rules"
 )
+
+type Options struct {
+	Includes      []string
+	Excludes      []string
+	IgnoreDefault bool
+}
 
 type Filter struct {
 	rules []Rule
 }
 
 func New(opts Options) *Filter {
-	var rules []Rule
+	var filterRules []Rule
 	
 	// Add include rules first
 	if len(opts.Includes) > 0 {
-		rules = append(rules, NewExtensionRule(opts.Includes, Include))
+		filterRules = append(filterRules, rules.NewExtensionRule(opts.Includes, Include))
 	}
 	
 	// Add exclude rules
 	if len(opts.Excludes) > 0 {
-		rules = append(rules, NewPatternRule(opts.Excludes, Exclude))
+		filterRules = append(filterRules, rules.NewPatternRule(opts.Excludes, Exclude))
 	}
 	
 	// Add default excludes if enabled
 	if opts.IgnoreDefault {
-		rules = append(rules, DefaultExcludes()...)
+		filterRules = append(filterRules, rules.DefaultExcludes()...)
 	}
 	
 	return &Filter{rules: rules}

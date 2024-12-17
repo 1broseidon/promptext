@@ -6,11 +6,11 @@ import (
 )
 
 type ExtensionRule struct {
-    filter.BaseRule
+    BaseRule
     extensions map[string]bool
 }
 
-func NewExtensionRule(exts []string, action filter.RuleAction) *ExtensionRule {
+func NewExtensionRule(exts []string, action filter.RuleAction) Rule {
     extMap := make(map[string]bool)
     for _, ext := range exts {
         extMap[ext] = true
