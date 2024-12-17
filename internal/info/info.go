@@ -422,112 +422,136 @@ func getNodeDependencies(root string) []string {
 	return deps
 }
 
+// getPythonDependencies returns all Python dependencies from various sources
 func getPythonDependencies(root string) []string {
-	var allDeps []string
 	depsMap := make(map[string]bool)
 
-	// Check requirements.txt
-	if content, err := os.ReadFile(filepath.Join(root, "requirements.txt")); err == nil {
-		lines := strings.Split(string(content), "\n")
-		for _, line := range lines {
-			line = strings.TrimSpace(line)
-			if line != "" && !strings.HasPrefix(line, "#") {
-				dep := strings.Split(line, "==")[0]
-				depsMap[dep] = true
-			}
-		}
-	}
-
-	// Check pyproject.toml for Poetry dependencies
-	if content, err := os.ReadFile(filepath.Join(root, "pyproject.toml")); err == nil {
-		lines := strings.Split(string(content), "\n")
-		inMainDeps := false
-		inDevDeps := false
-		for _, line := range lines {
-			line = strings.TrimSpace(line)
-			if line == "[tool.poetry.dependencies]" {
-				inMainDeps = true
-				inDevDeps = false
-				continue
-			}
-			if line == "[tool.poetry.group.dev.dependencies]" {
-				inMainDeps = false
-				inDevDeps = true
-				continue
-			}
-			if (inMainDeps || inDevDeps) && strings.HasPrefix(line, "[") {
-				inMainDeps = false
-				inDevDeps = false
-				continue
-			}
-			if (inMainDeps || inDevDeps) && line != "" && !strings.HasPrefix(line, "#") {
-				parts := strings.SplitN(line, "=", 2)
-				if len(parts) > 0 {
-					dep := strings.TrimSpace(parts[0])
-					if dep != "python" { // Skip python version constraint
-						if inDevDeps {
-							depsMap["[dev] "+dep] = true
-						} else {
-							depsMap[dep] = true
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Try poetry.lock as alternative source
-	if content, err := os.ReadFile(filepath.Join(root, "poetry.lock")); err == nil && len(depsMap) == 0 {
-		lines := strings.Split(string(content), "\n")
-		for _, line := range lines {
-			if strings.HasPrefix(line, "name = ") {
-				name := strings.Trim(strings.TrimPrefix(line, "name = "), "\"")
-				depsMap[name] = true
-			}
-		}
-	}
-
-	// Check poetry.lock as fallback
-	if content, err := os.ReadFile(filepath.Join(root, "poetry.lock")); err == nil {
-		lines := strings.Split(string(content), "\n")
-		inPackage := false
-		for _, line := range lines {
-			line = strings.TrimSpace(line)
-			if strings.HasPrefix(line, "[[package]]") {
-				inPackage = true
-				continue
-			}
-			if inPackage && strings.HasPrefix(line, "name = ") {
-				name := strings.Trim(strings.TrimPrefix(line, "name = "), "\"")
-				depsMap[name] = true
-				inPackage = false
-			}
-		}
-	}
-
-	// Check virtual environment
-	venvDirs := []string{".venv", "venv"}
-	for _, venvDir := range venvDirs {
-		sitePackages := filepath.Join(root, venvDir, "lib", "python3.*", "site-packages")
-		matches, err := filepath.Glob(sitePackages)
-		if err == nil && len(matches) > 0 {
-			// Found a site-packages directory
-			entries, err := os.ReadDir(matches[0])
-			if err == nil {
-				for _, entry := range entries {
-					if entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
-						depsMap[entry.Name()] = true
-					}
-				}
-			}
-		}
-	}
+	// Collect dependencies from each source
+	getPipDependencies(root, depsMap)
+	getPoetryDependencies(root, depsMap)
+	getPoetryLockDependencies(root, depsMap)
+	getVenvDependencies(root, depsMap)
 
 	// Convert map to slice
+	var allDeps []string
 	for dep := range depsMap {
 		allDeps = append(allDeps, dep)
 	}
 	return allDeps
+}
+
+// getPipDependencies reads dependencies from requirements.txt
+func getPipDependencies(root string, depsMap map[string]bool) {
+	content, err := os.ReadFile(filepath.Join(root, "requirements.txt"))
+	if err != nil {
+		return
+	}
+
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "#") {
+			dep := strings.Split(line, "==")[0]
+			depsMap[dep] = true
+		}
+	}
+}
+
+// getPoetryDependencies reads dependencies from pyproject.toml
+func getPoetryDependencies(root string, depsMap map[string]bool) {
+	content, err := os.ReadFile(filepath.Join(root, "pyproject.toml"))
+	if err != nil {
+		return
+	}
+
+	lines := strings.Split(string(content), "\n")
+	inMainDeps := false
+	inDevDeps := false
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		
+		switch line {
+		case "[tool.poetry.dependencies]":
+			inMainDeps = true
+			inDevDeps = false
+			continue
+		case "[tool.poetry.group.dev.dependencies]":
+			inMainDeps = false
+			inDevDeps = true
+			continue
+		}
+
+		if (inMainDeps || inDevDeps) && strings.HasPrefix(line, "[") {
+			inMainDeps = false
+			inDevDeps = false
+			continue
+		}
+
+		if (inMainDeps || inDevDeps) && line != "" && !strings.HasPrefix(line, "#") {
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) > 0 {
+				dep := strings.TrimSpace(parts[0])
+				if dep != "python" { // Skip python version constraint
+					if inDevDeps {
+						depsMap["[dev] "+dep] = true
+					} else {
+						depsMap[dep] = true
+					}
+				}
+			}
+		}
+	}
+}
+
+// getPoetryLockDependencies reads dependencies from poetry.lock
+func getPoetryLockDependencies(root string, depsMap map[string]bool) {
+	content, err := os.ReadFile(filepath.Join(root, "poetry.lock"))
+	if err != nil {
+		return
+	}
+
+	lines := strings.Split(string(content), "\n")
+	inPackage := false
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		
+		if strings.HasPrefix(line, "[[package]]") {
+			inPackage = true
+			continue
+		}
+
+		if inPackage && strings.HasPrefix(line, "name = ") {
+			name := strings.Trim(strings.TrimPrefix(line, "name = "), "\"")
+			depsMap[name] = true
+			inPackage = false
+		}
+	}
+}
+
+// getVenvDependencies reads dependencies from virtual environment
+func getVenvDependencies(root string, depsMap map[string]bool) {
+	venvDirs := []string{".venv", "venv"}
+	
+	for _, venvDir := range venvDirs {
+		sitePackages := filepath.Join(root, venvDir, "lib", "python3.*", "site-packages")
+		matches, err := filepath.Glob(sitePackages)
+		if err != nil || len(matches) == 0 {
+			continue
+		}
+
+		entries, err := os.ReadDir(matches[0])
+		if err != nil {
+			continue
+		}
+
+		for _, entry := range entries {
+			if entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
+				depsMap[entry.Name()] = true
+			}
+		}
+	}
 }
 
 func getRustDependencies(root string) []string {
