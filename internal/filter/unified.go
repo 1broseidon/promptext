@@ -95,47 +95,47 @@ func (uf *UnifiedFilter) GetFileType(path string) string {
     return "source"
 }
 
-// ShouldProcess determines if a file should be processed based on all rules
-func (uf *UnifiedFilter) ShouldProcess(path string) bool {
-	// Quick check for node_modules first
-	if strings.Contains(path, "node_modules/") {
-		return false
-	}
+// isInNodeModules checks if the path is within node_modules
+func (uf *UnifiedFilter) isInNodeModules(path string) bool {
+	return strings.Contains(path, "node_modules/")
+}
 
-	// Check default ignore directories
+// isInDefaultIgnoreDir checks if the path is in a default ignore directory
+func (uf *UnifiedFilter) isInDefaultIgnoreDir(path string) bool {
 	for _, dir := range uf.defaultIgnores {
 		if strings.Contains(path, "/"+dir+"/") || strings.HasPrefix(path, dir+"/") || path == dir {
-			return false
+			return true
 		}
 	}
+	return false
+}
 
-	// Check gitignore patterns 
-	if uf.gitIgnore != nil && uf.gitIgnore.ShouldIgnore(path) {
-		return false
-	}
-
-	// Check exclude patterns from config
+// matchesExcludePatterns checks if the path matches any exclude patterns
+func (uf *UnifiedFilter) matchesExcludePatterns(path string) bool {
 	for _, exclude := range uf.configExcludes {
 		// Try exact match first
 		if exclude == path {
-			return false
+			return true
 		}
 
 		// Try glob pattern match
 		if matched, err := filepath.Match(exclude, filepath.Base(path)); err == nil && matched {
-			return false
+			return true
 		}
 
 		// Try path contains pattern
 		if strings.Contains(path, exclude) {
-			return false
+			return true
 		}
 	}
+	return false
+}
 
-	// 2. After exclusions, check extensions
-
-	// Get file extension and check against default ignored extensions first
+// hasAllowedExtension checks if the file has an allowed extension
+func (uf *UnifiedFilter) hasAllowedExtension(path string) bool {
 	ext := filepath.Ext(path)
+	
+	// Check against default ignored extensions first
 	for _, ignoreExt := range uf.defaultIgnoreExts {
 		if strings.EqualFold(ignoreExt, ext) {
 			return false
@@ -155,4 +155,29 @@ func (uf *UnifiedFilter) ShouldProcess(path string) bool {
 	}
 
 	return false
+}
+
+// ShouldProcess determines if a file should be processed based on all rules
+func (uf *UnifiedFilter) ShouldProcess(path string) bool {
+	// Quick checks for common exclusions
+	if uf.isInNodeModules(path) {
+		return false
+	}
+
+	if uf.isInDefaultIgnoreDir(path) {
+		return false
+	}
+
+	// Check gitignore patterns
+	if uf.gitIgnore != nil && uf.gitIgnore.ShouldIgnore(path) {
+		return false
+	}
+
+	// Check exclude patterns from config
+	if uf.matchesExcludePatterns(path) {
+		return false
+	}
+
+	// Finally check file extensions
+	return uf.hasAllowedExtension(path)
 }
