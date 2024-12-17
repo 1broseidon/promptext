@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/1broseidon/promptext/internal/references"
 )
 
 type MarkdownFormatter struct{}
