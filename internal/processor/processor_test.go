@@ -61,7 +61,7 @@ setup(name="myproject", version="0.1.0")`,
     print("Hello")`,
 			},
 			expectedLang:    "Python",
-			expectedVersion: "Python 3.12.4",
+			expectedVersion: "",  // No version in requirements.txt
 		},
 		{
 			name: "Node.js Project",
@@ -73,10 +73,15 @@ setup(name="myproject", version="0.1.0")`,
     "express": "^4.17.1"
   }
 }`,
+				"setup.py": `from setuptools import setup
+setup(
+    name="myproject",
+    version="0.1.0"
+)`,
 				"index.js": `console.log("Hello");`,
 			},
 			expectedLang:    "JavaScript/Node.js",
-			expectedVersion: "v20.14.0",
+			expectedVersion: "1.0.0",  // Version from package.json
 		},
 		{
 			name: "Rust Project",
@@ -90,7 +95,7 @@ edition = "2021"`,
 }`,
 			},
 			expectedLang:    "Rust",
-			expectedVersion: "rustc 1.83.0 (90b35a623 2024-11-26)",
+			expectedVersion: "0.1.0",  // Version from Cargo.toml
 		},
 	}
 
