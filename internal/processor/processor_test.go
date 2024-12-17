@@ -55,12 +55,20 @@ func main() {
 			files: map[string]string{
 				"requirements.txt": `pytest==7.3.1
 requests==2.31.0`,
+				"poetry.lock": `[[package]]
+name = "black"
+version = "22.3.0"
+
+[[package]]
+name = "flask"
+version = "2.0.1"`,
 				"setup.py": `from setuptools import setup
 
 setup(
     name="myproject",
     version = "0.1.0"
 )`,
+				".venv/lib/python3.9/site-packages/django": ``,
 				"main.py": `def main():
     print("Hello")`,
 			},

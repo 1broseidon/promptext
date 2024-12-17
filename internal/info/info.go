@@ -440,20 +440,62 @@ func getNodeDependencies(root string) []string {
 }
 
 func getPythonDependencies(root string) []string {
-	content, err := os.ReadFile(filepath.Join(root, "requirements.txt"))
-	if err != nil {
-		return nil
-	}
+	var allDeps []string
+	depsMap := make(map[string]bool)
 
-	var deps []string
-	lines := strings.Split(string(content), "\n")
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line != "" && !strings.HasPrefix(line, "#") {
-			deps = append(deps, strings.Split(line, "==")[0])
+	// Check requirements.txt
+	if content, err := os.ReadFile(filepath.Join(root, "requirements.txt")); err == nil {
+		lines := strings.Split(string(content), "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line != "" && !strings.HasPrefix(line, "#") {
+				dep := strings.Split(line, "==")[0]
+				depsMap[dep] = true
+			}
 		}
 	}
-	return deps
+
+	// Check poetry.lock
+	if content, err := os.ReadFile(filepath.Join(root, "poetry.lock")); err == nil {
+		lines := strings.Split(string(content), "\n")
+		inPackage := false
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "[[package]]") {
+				inPackage = true
+				continue
+			}
+			if inPackage && strings.HasPrefix(line, "name = ") {
+				name := strings.Trim(strings.TrimPrefix(line, "name = "), "\"")
+				depsMap[name] = true
+				inPackage = false
+			}
+		}
+	}
+
+	// Check virtual environment
+	venvDirs := []string{".venv", "venv"}
+	for _, venvDir := range venvDirs {
+		sitePackages := filepath.Join(root, venvDir, "lib", "python3.*", "site-packages")
+		matches, err := filepath.Glob(sitePackages)
+		if err == nil && len(matches) > 0 {
+			// Found a site-packages directory
+			entries, err := os.ReadDir(matches[0])
+			if err == nil {
+				for _, entry := range entries {
+					if entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
+						depsMap[entry.Name()] = true
+					}
+				}
+			}
+		}
+	}
+
+	// Convert map to slice
+	for dep := range depsMap {
+		allDeps = append(allDeps, dep)
+	}
+	return allDeps
 }
 
 func getRustDependencies(root string) []string {
