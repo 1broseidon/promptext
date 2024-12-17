@@ -1,156 +1,104 @@
+<div align="center">
+
 # promptext
 
-A command-line tool for extracting and formatting code context from projects, designed to help prepare context for AI coding assistants.
+📝 Smart code context extractor for AI assistants
 
-## Features
+[![Go Report Card](https://goreportcard.com/badge/github.com/1broseidon/promptext)](https://goreportcard.com/report/github.com/1broseidon/promptext)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Release](https://img.shields.io/github/release/1broseidon/promptext.svg)](https://github.com/1broseidon/promptext/releases/latest)
 
-- 🔍 Smart file filtering based on extensions and patterns
-- 📁 Respects .gitignore patterns
-- 🌲 Generates formatted directory tree structure
-- 📋 Automatic clipboard copying
-- ⚙️ Configurable via YAML or command-line flags
-- 📊 Project metadata detection (language, version, dependencies)
-- 🎨 Colored terminal output
+</div>
 
-## Installation
+## 🚀 Features
 
-### Installation
+- 🔍 Smart file filtering with extension and pattern support
+- 📁 Respects `.gitignore` patterns
+- 🌲 Generates directory tree structure
+- 📊 Auto-detects project metadata (language, version, dependencies)
+- 🎨 Multiple output formats (Markdown, XML, JSON)
+- 📋 Direct clipboard integration
+- ⚙️ Configurable via YAML or CLI flags
 
-#### Quick Install (Linux and macOS)
+## 📦 Installation
 
+### Quick Install (Linux/macOS)
 ```bash
 curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/install.sh | bash
 ```
 
-This will automatically download and install the latest version of promptext for your system.
+### Manual Install
+Download from [releases page](https://github.com/1broseidon/promptext/releases)
 
-#### Build from Source
-
-1. Install Go 1.22 or later
-2. Clone and build:
+### Build from Source
 ```bash
-git clone https://github.com/1broseidon/promptext.git
-cd promptext
-go install ./cmd/promptext
+go install github.com/1broseidon/promptext/cmd/promptext@latest
 ```
 
-The binary will be installed to your `$GOPATH/bin` directory.
-
-#### Manual Installation
-
-Download the latest release for your platform from the [releases page](https://github.com/1broseidon/promptext/releases).
-
-#### Development Build
-
-For development:
-```bash
-# Clone repository
-git clone https://github.com/1broseidon/promptext.git
-cd promptext
-
-# Build locally
-go build -o promptext cmd/promptext/main.go
-
-# Create a release with GoReleaser (requires GoReleaser installed)
-goreleaser release --snapshot --clean
-```
-
-## Usage
+## 🎯 Usage
 
 Basic usage:
 ```bash
-promptext [flags]
+promptext [flags] 
 ```
 
-### Command Line Flags
+### Key Flags
+```bash
+-dir string      Directory to process (default ".")
+-ext string      File extensions to include (.go,.js,etc)
+-exclude string  Patterns to exclude
+-format string   Output format (markdown/xml/json)
+-out string      Output file path
+-info           Show only project summary
+-verbose        Show full file contents
+-no-copy        Disable clipboard copy
+```
 
-- `-dir string`: Directory path to process (default ".")
-- `-ext string`: File extensions to filter (e.g., ".go,.js")
-- `-exclude string`: Patterns to exclude (comma-separated)
-- `-no-copy`: Disable automatic copying to clipboard
-- `-info`: Only display project summary
-- `-verbose`: Show full code content in terminal
-
-### Configuration File
-
-You can create a `.promptext.yml` file in your project root to set default options:
-
+### Config File
+Create `.promptext.yml` in project root:
 ```yaml
 extensions:
   - .go
-  - .md
+  - .js
 excludes:
   - vendor/
-  - '*.test.go'
-  - tmp/
+  - "*.test.go"
+format: markdown
 verbose: false
 ```
 
-Command-line flags take precedence over configuration file settings.
+## 📝 Examples
 
-### Examples
-
-Display project summary:
 ```bash
+# Show project summary
 promptext -info
-```
 
-Process only Go files:
-```bash
+# Process Go files only
 promptext -ext .go
-```
 
-Process multiple file types:
-```bash
+# Export as XML
+promptext -format xml -out project.xml
+
+# Multiple file types
 promptext -ext ".go,.js,.py"
+
+# Exclude patterns
+promptext -exclude "test/,vendor/"
 ```
 
-Exclude specific patterns:
-```bash
-promptext -exclude "test/,vendor/,*.test.go"
-```
+## 🔧 Default Ignores
 
-Show full content in terminal:
-```bash
-promptext -verbose
-```
+- Binary files (images, executables, etc)
+- Common directories (node_modules, vendor, etc)
+- Build artifacts and caches
+- IDE directories (.idea, .vscode)
 
-## Output Format
+See [documentation](docs/filters.md) for full list.
 
-The tool generates a formatted output containing:
+## 🤝 Contributing
 
-1. Project Structure (directory tree)
-2. Git Information (if available)
-   - Branch
-   - Latest commit hash
-   - Commit message
-3. Project Metadata
-   - Language and version
-   - Dependencies count
-4. File Contents (when not using -info flag)
-   - Path to each file
-   - File contents in markdown code blocks
+Contributions welcome! Please read our [Contributing Guide](CONTRIBUTING.md).
 
-## Default Ignored Directories
+## 📄 License
 
-The following directories are ignored by default:
-- .git
-- node_modules
-- vendor
-- .idea
-- .vscode
-- __pycache__
-- .pytest_cache
-- dist
-- build
-- coverage
-- bin
-- .terraform
-
-## License
-
-MIT License
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+MIT License - see [LICENSE](LICENSE) for details.
