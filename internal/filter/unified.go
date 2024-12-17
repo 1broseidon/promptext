@@ -137,14 +137,33 @@ func (uf *UnifiedFilter) matchesExcludePatterns(path string) bool {
 			return true
 		}
 
-		// Try glob pattern match
-		if matched, err := filepath.Match(exclude, filepath.Base(path)); err == nil && matched {
+		// Handle directory prefix patterns (ending with /)
+		if strings.HasSuffix(exclude, "/") && strings.Contains(path, exclude) {
 			return true
 		}
 
-		// Try path contains pattern
-		if strings.Contains(path, exclude) {
-			return true
+		// Handle glob patterns
+		if strings.Contains(exclude, "*") {
+			// Try matching against full path
+			if matched, err := filepath.Match(exclude, path); err == nil && matched {
+				return true
+			}
+			// Try matching against base name
+			if matched, err := filepath.Match(exclude, filepath.Base(path)); err == nil && matched {
+				return true
+			}
+			// Try matching against each path component
+			parts := strings.Split(path, "/")
+			for _, part := range parts {
+				if matched, err := filepath.Match(exclude, part); err == nil && matched {
+					return true
+				}
+			}
+		} else {
+			// For non-glob patterns, check if the path contains the pattern
+			if strings.Contains(path, exclude) {
+				return true
+			}
 		}
 	}
 	return false
