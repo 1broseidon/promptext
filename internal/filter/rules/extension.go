@@ -13,6 +13,9 @@ type ExtensionRule struct {
 func NewExtensionRule(exts []string, action types.RuleAction) types.Rule {
     extMap := make(map[string]bool)
     for _, ext := range exts {
+        if !strings.HasPrefix(ext, ".") {
+            ext = "." + ext
+        }
         extMap[ext] = true
     }
     return &ExtensionRule{
@@ -23,5 +26,8 @@ func NewExtensionRule(exts []string, action types.RuleAction) types.Rule {
 
 func (r *ExtensionRule) Match(path string) bool {
     ext := filepath.Ext(path)
+    if ext == "" {
+        return false
+    }
     return r.extensions[ext]
 }
