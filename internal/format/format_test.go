@@ -267,7 +267,7 @@ func TestDirectoryNode_ToMarkdown(t *testing.T) {
 					},
 				},
 			},
-			want: "└── file1.txt\n└── dir1/\n  └── file2.txt\n",
+			want: "└── root/\n  └── file1.txt\n  └── dir1/\n    └── file2.txt\n",
 		},
 	}
 
