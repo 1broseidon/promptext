@@ -22,7 +22,7 @@ func NewReferenceMap() *ReferenceMap {
 }
 
 func isGoStdlibPackage(pkg string) bool {
-	return !strings.Contains(pkg, ".") && !strings.Contains(pkg, "/") && pkg == strings.ToLower(pkg)
+	return !strings.Contains(pkg, ".") && strings.Contains(pkg, "/") && pkg == strings.ToLower(pkg)
 }
 
 // ExtractFileReferences finds references to other files within the given content
@@ -64,7 +64,7 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 				}
 			}
 
-			if ref == "" || ref == "." || ref == ".." || isGoStdlibPackage(ref) {
+			if ref == "" || ref == "." || ref == ".." {
 				continue
 			}
 
@@ -221,11 +221,6 @@ func isExternalReference(ref string) bool {
 		return true
 	}
 
-	// Check for standard library packages and other external packages
-	if !strings.Contains(ref, "/") && !strings.Contains(ref, ".") && !strings.HasPrefix(ref, ".") {
-		// Standard library packages
-		return true
-	}
 	if strings.HasPrefix(ref, "@") || strings.HasPrefix(ref, "github.com/") || strings.HasPrefix(ref, "golang.org/") || strings.HasPrefix(ref, "gopkg.in/") {
 		return true
 	}
