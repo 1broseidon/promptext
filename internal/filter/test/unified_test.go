@@ -12,18 +12,18 @@ var _ = filter.NewUnifiedFilter
 // Test constants to match the package constants
 var (
 	testDefaultIgnoreDirs = []string{
-		".git",
-		"node_modules",
-		"vendor",
-		".idea",
-		".vscode",
-		"__pycache__",
-		".pytest_cache",
-		"dist",
-		"build",
-		"coverage",
-		"bin",
-		".terraform",
+		".git/",
+		"node_modules/",
+		"vendor/",
+		".idea/",
+		".vscode/",
+		"__pycache__/",
+		".pytest_cache/",
+		"dist/",
+		"build/",
+		"coverage/",
+		"bin/",
+		".terraform/",
 	}
 
 	testDefaultIgnoreExts = []string{
