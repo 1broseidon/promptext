@@ -12,7 +12,6 @@ import (
 	"github.com/1broseidon/promptext/internal/filter"
 	"github.com/1broseidon/promptext/internal/format"
 	"github.com/1broseidon/promptext/internal/info"
-	"github.com/1broseidon/promptext/internal/references"
 	"github.com/1broseidon/promptext/internal/token"
 	"github.com/atotto/clipboard"
 )
@@ -138,12 +137,9 @@ func processFile(path string, config Config, gi *filter.GitIgnore, allFiles []st
 		return nil, fmt.Errorf("error getting relative path for %s: %w", path, err)
 	}
 
-	refs := references.ExtractFileReferences(string(content), filepath.Dir(rel), config.DirPath, allFiles)
-
 	return &format.FileInfo{
-		Path:       rel,
-		Content:    string(content),
-		References: refs,
+		Path:    rel,
+		Content: string(content),
 	}, nil
 }
 

@@ -4,8 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"strings"
-
-	"github.com/1broseidon/promptext/internal/references"
 )
 
 type OutputFormat string
@@ -97,9 +95,8 @@ type Metadata struct {
 }
 
 type FileInfo struct {
-	Path       string            `xml:"path,attr"`
-	Content    string           `xml:"content"`
-	References *references.ReferenceMap `xml:"references,omitempty"`
+	Path    string `xml:"path,attr"`
+	Content string `xml:"content"`
 }
 
 // Formatter interface for different output formats
