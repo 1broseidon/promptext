@@ -8,21 +8,21 @@ import (
 // TokenCounter provides functionality to estimate token counts for LLM input
 type TokenCounter struct {
 	// Pre-compiled patterns for token splitting
-	wordPattern     *regexp.Regexp
-	numberPattern   *regexp.Regexp
-	symbolPattern   *regexp.Regexp
-	spacingPattern  *regexp.Regexp
-	markdownPattern *regexp.Regexp
+	// wordPattern     *regexp.Regexp // Not used anymore
+	// numberPattern   *regexp.Regexp // Not used anymore
+	// symbolPattern   *regexp.Regexp // Not used anymore
+	// spacingPattern  *regexp.Regexp // Not used anymore
+	// markdownPattern *regexp.Regexp // Not used anymore
 }
 
 // NewTokenCounter creates a new TokenCounter instance
 func NewTokenCounter() *TokenCounter {
 	return &TokenCounter{
-		wordPattern:     regexp.MustCompile(`[a-zA-Z_]\w*`),
-		numberPattern:   regexp.MustCompile(`\d+`),
-		symbolPattern:   regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{};:'",.<>/?\\|` + "`" + `~]`),
-		spacingPattern:  regexp.MustCompile(`\s+`),
-		markdownPattern: regexp.MustCompile(`(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\))`),
+		// wordPattern:     regexp.MustCompile(`[a-zA-Z_]\w*`), // Not used anymore
+		// numberPattern:   regexp.MustCompile(`\d+`), // Not used anymore
+		// symbolPattern:   regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{};:'",.<>/?\\|` + "`" + `~]`), // Not used anymore
+		// spacingPattern:  regexp.MustCompile(`\s+`), // Not used anymore
+		// markdownPattern: regexp.MustCompile(`(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\))`), // Not used anymore
 	}
 }
 
@@ -48,100 +48,59 @@ func (tc *TokenCounter) EstimateTokens(text string) int {
 		}
 
 		if inCodeBlock {
-			// Code tends to be tokenized more granularly
-			tokenCount += tc.countCodeTokens(line)
+			tokenCount += len(tokenizeCode(line))
 		} else {
-			// Regular text/markdown
-			tokenCount += tc.countTextTokens(line)
+			line = stripMarkdown(line)
+			tokenCount += len(tokenizeText(line))
 		}
 	}
 
 	return tokenCount
 }
 
-// countTextTokens handles regular text and markdown
-func (tc *TokenCounter) countTextTokens(line string) int {
-	count := 0
-
-	// Handle markdown formatting first
-	line = tc.markdownPattern.ReplaceAllStringFunc(line, func(match string) string {
-		if strings.HasPrefix(match, "[") {
-			// For links, count both text and URL
-			count += 2
-		} else {
-			// For bold/italic, count as one plus the words inside
-			inner := strings.Trim(match, "*")
-			words := tc.wordPattern.FindAllString(inner, -1)
-			count += len(words)
-		}
-		return ""
-	})
-
-	// Split remaining text into tokens
-	tokens := strings.Fields(line)
-	for _, token := range tokens {
-		// Count words
-		words := tc.wordPattern.FindAllString(token, -1)
-		count += len(words)
-
-		// Count numbers
-		numbers := tc.numberPattern.FindAllString(token, -1)
-		count += len(numbers)
-
-		// Count symbols individually
-		symbols := tc.symbolPattern.FindAllString(token, -1)
-		count += len(symbols)
-	}
-
-	return count
+func stripMarkdown(line string) string {
+    // Replace links like [text](url) with "text url"
+    line = regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`).ReplaceAllString(line, "$1 $2")
+    // Replace bold/italic markers with just spaces
+    // For example, "**bold**" -> "bold", "*italic*" -> "italic"
+    line = regexp.MustCompile(`\*{1,2}([^\*]+)\*{1,2}`).ReplaceAllString(line, "$1")
+    return line
 }
 
-// countCodeTokens handles code with more granular tokenization
-func (tc *TokenCounter) countCodeTokens(line string) int {
-	count := 0
-
-	// Handle comments
-	if idx := strings.Index(line, "//"); idx >= 0 {
-		beforeComment := line[:idx]
-		afterComment := line[idx:]
-		count += tc.countCodePart(beforeComment)
-		count += tc.countCodePart(afterComment)
-		return count
-	}
-
-	return tc.countCodePart(line)
+func tokenizeText(line string) []string {
+    // Split by any non-alphanumeric character, preserving apostrophes and underscores in words.
+    // For simplicity, let's consider tokens as sequences of letters/numbers or single punctuation.
+    return regexp.MustCompile(`[A-Za-z0-9]+|[^\sA-Za-z0-9]`).FindAllString(line, -1)
 }
 
-func (tc *TokenCounter) countCodePart(code string) int {
-	count := 0
+func tokenizeCode(line string) []string {
+    tokens := []string{}
 
-	// Handle string literals
-	stringPattern := regexp.MustCompile(`"[^"]*"`)
-	code = stringPattern.ReplaceAllStringFunc(code, func(match string) string {
-		count += 2 // Count quotes and content separately
-		return ""
-	})
+    // Handle comments first: Split by "//"
+    parts := strings.SplitN(line, "//", 2)
+    codePart := parts[0]
+    var commentPart string
+    if len(parts) > 1 {
+        commentPart = parts[1]
+    }
 
-	// Split remaining code into tokens
-	tokens := strings.Fields(code)
-	for _, token := range tokens {
-		// Count identifiers
-		words := tc.wordPattern.FindAllString(token, -1)
-		count += len(words)
+    // Extract string literals in code
+    stringPattern := regexp.MustCompile(`"[^"]*"`)
+    codePart = stringPattern.ReplaceAllStringFunc(codePart, func(match string) string {
+        // We'll treat the entire string literal as one token.
+        tokens = append(tokens, match)
+        return " "
+    })
 
-		// Count numbers separately
-		numbers := tc.numberPattern.FindAllString(token, -1)
-		count += len(numbers)
+    // Now tokenize the remaining code (identifiers, numbers, symbols)
+    codeTokens := regexp.MustCompile(`[A-Za-z0-9]+|[^\sA-Za-z0-9]`).FindAllString(codePart, -1)
+    tokens = append(tokens, codeTokens...)
 
-		// Count symbols individually
-		symbols := tc.symbolPattern.FindAllString(token, -1)
-		count += len(symbols)
-	}
+    // Tokenize the comment part if exists
+    if commentPart != "" {
+        commentTokens := regexp.MustCompile(`[A-Za-z0-9]+|[^\sA-Za-z0-9]`).FindAllString(commentPart, -1)
+        tokens = append(tokens, commentTokens...)
+    }
 
-	// Add extra token for newlines in code blocks
-	if strings.Contains(code, "\n") {
-		count++
-	}
-
-	return count
+    return tokens
 }

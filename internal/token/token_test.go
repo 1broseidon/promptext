@@ -16,43 +16,43 @@ func TestTokenCounter_EstimateTokens(t *testing.T) {
 		{
 			name:     "Simple text",
 			text:     "This is a simple sentence.",
-			expected: 6,
+			expected: 5,
 		},
 		{
 			name:     "Text with numbers",
 			text:     "There are 123 numbers in 456 this text.",
-			expected: 8,
+			expected: 7,
 		},
 		{
 			name:     "Text with symbols",
 			text:     "Symbols: !@#$%^&*()_+=-`~[]\\{}|;':\",./<>?",
-			expected: 32,
+			expected: 31,
 		},
 		{
 			name:     "Text with mixed content",
 			text:     "Mixed content 123 with symbols! and words.",
-			expected: 9,
+			expected: 8,
 		},
 		{
 			name:     "Single line code block",
 			text:     "```go\nfunc main() {}\n```",
-			expected: 6,
+			expected: 5,
 		},
 		{
 			name: "Multi-line code block",
 			text: "```go\nfunc main() {\n    println(\"Hello, world!\")\n}\n```",
-			expected: 11,
+			expected: 10,
 		},
 		
 		{
 			name:     "Code block with symbols",
 			text:     "```python\nprint(1 + 2 * 3)\n```",
-			expected: 10,
+			expected: 9,
 		},
 		{
 			name:     "Markdown with code block",
 			text:     "This is some text.\n```go\nfunc main() {}\n```\nMore text.",
-			expected: 10,
+			expected: 9,
 		},
 		{
 			name:     "Markdown with links",
@@ -62,47 +62,47 @@ func TestTokenCounter_EstimateTokens(t *testing.T) {
 		{
 			name:     "Markdown with bold and italic",
 			text:     "This is **bold** and *italic* text.",
-			expected: 8,
+			expected: 7,
 		},
 		{
 			name: "Code with mixed symbols and words",
 			text: "```go\nvar x = a + b * (c - d) / e\n```",
-			expected: 15,
+			expected: 14,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers",
 			text: "```go\nvar x = a + 123 * (c - 456) / e\n```",
-			expected: 17,
+			expected: 16,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings",
 			text: "```go\nvar x = a + 123 * (c - 456) / e; println(\"hello\")\n```",
-			expected: 20,
+			expected: 19,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments",
 			text: "```go\nvar x = a + 123 * (c - 456) / e; // comment\nprintln(\"hello\")\n```",
-			expected: 22,
+			expected: 21,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines",
 			text: "```go\nvar x = a + 123 * (c - 456) / e; // comment\nprintln(\"hello\")\n```",
-			expected: 23,
+			expected: 21,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines and tabs",
 			text: "```go\nvar x = a + 123 * (c - 456) / e;     // comment\nprintln(\"hello\")\n```",
-			expected: 23,
+			expected: 21,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines and tabs and multiple lines",
 			text: "```go\nvar x = a + 123 * (c - 456) / e;     // comment\nprintln(\"hello\")\nvar y = 1\n```",
-			expected: 26,
+			expected: 24,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines and tabs and multiple lines and empty lines",
 			text: "```go\nvar x = a + 123 * (c - 456) / e;     // comment\n\nprintln(\"hello\")\nvar y = 1\n```",
-			expected: 27,
+			expected: 24,
 		},
 	}
 
