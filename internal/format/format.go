@@ -76,7 +76,7 @@ func (d *DirectoryNode) ToMarkdown(level int) string {
 
 	// Process children
 	if d.Children != nil {
-		for i, child := range d.Children {
+		for _, child := range d.Children {
 			// For root level, don't increment the level
 			nextLevel := level
 			if level > 0 {
