@@ -8,12 +8,6 @@ import (
 )
 
 // Language-specific patterns
-// DefaultIgnoreDirs contains common directories that should be ignored
-var DefaultIgnoreDirs = []string{
-	".git", ".idea", ".vscode", "node_modules",
-	"build", "dist", "target", "__pycache__",
-}
-
 var entryPointPatterns = map[string][]string{
     "Go":      {"main.go", "cmd/*/main.go"},
     "Python":  {"__main__.py", "app.py", "main.py"},
