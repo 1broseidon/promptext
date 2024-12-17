@@ -44,7 +44,7 @@ func (f *Filter) ShouldProcess(path string) bool {
 	
 	for _, rule := range f.rules {
 		if rule.Match(path) {
-			return rule.Action() == Include
+			return rule.Action() == types.Include
 		}
 	}
 	
@@ -56,7 +56,7 @@ func (f *Filter) IsExcluded(path string) bool {
 	path = filepath.Clean(path)
 	
 	for _, rule := range f.rules {
-		if rule.Match(path) && rule.Action() == Exclude {
+		if rule.Match(path) && rule.Action() == types.Exclude {
 			return true
 		}
 	}
