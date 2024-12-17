@@ -3,7 +3,6 @@ package processor
 import (
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,7 +15,6 @@ import (
 	"github.com/1broseidon/promptext/internal/token"
 	"github.com/atotto/clipboard"
 )
-
 
 type Config struct {
 	DirPath    string

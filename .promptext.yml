@@ -1,4 +1,4 @@
 excludes:
   - samples/
   - dist/
-verbose: false
+verbose: true
