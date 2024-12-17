@@ -2,7 +2,7 @@ package filter_test
 
 import (
 	"testing"
-	
+
 	"github.com/1broseidon/promptext/internal/filter"
 )
 
@@ -104,7 +104,7 @@ func TestUnifiedFilter_ShouldProcess(t *testing.T) {
 }
 
 func TestNewUnifiedFilter(t *testing.T) {
-	gitIgnore := &GitIgnore{}
+	gitIgnore := &filter.GitIgnore{}
 	extensions := []string{".go", ".md"}
 	excludes := []string{"vendor/"}
 
