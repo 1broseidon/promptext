@@ -98,7 +98,15 @@ func generateDirectoryTree(root string, config *Config) (*format.DirectoryNode, 
 			return nil
 		}
 
-		// Always process directories, but check filter for files
+		// Check if path should be excluded
+		if f.IsExcluded(rel) {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// For files, only include those that pass the filter
 		if !d.IsDir() && !f.ShouldProcess(rel) {
 			return nil
 		}
