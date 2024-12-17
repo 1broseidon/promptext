@@ -43,7 +43,12 @@ func (gi *GitIgnore) matchExact(pattern, path, baseName string) bool {
 func (gi *GitIgnore) matchDirectory(pattern, path string) bool {
 	if strings.HasSuffix(pattern, "/") {
 		dirPattern := strings.TrimSuffix(pattern, "/")
-		return strings.Contains(path, dirPattern)
+		parts := strings.Split(path, string(filepath.Separator))
+		for _, part := range parts {
+			if part == dirPattern {
+				return true
+			}
+		}
 	}
 	return false
 }
