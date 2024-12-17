@@ -299,26 +299,18 @@ func getNodeVersion(root string) string {
 		return ""
 	}
 	lines := strings.Split(string(content), "\n")
-	var version, nodeVersion string
+	var nodeVersion string
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		if strings.Contains(line, "\"version\"") && !strings.Contains(line, "engines") {
-			parts := strings.Split(line, "\"")
-			if len(parts) >= 4 {
-				version = strings.TrimSpace(parts[3])
-			}
-		}
 		if strings.Contains(line, "\"node\"") {
 			parts := strings.Split(line, "\"")
 			if len(parts) >= 4 {
 				nodeVersion = strings.TrimSpace(parts[3])
+				return fmt.Sprintf("requires Node %s", nodeVersion)
 			}
 		}
 	}
-	if nodeVersion != "" {
-		return fmt.Sprintf("%s (requires Node %s)", version, nodeVersion)
-	}
-	return version
+	return ""
 }
 
 func getPythonVersion(root string) string {
