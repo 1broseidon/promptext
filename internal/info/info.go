@@ -698,7 +698,9 @@ func AnalyzeProject(rootPath string) *ProjectAnalysis {
 		// If we can't load gitignore, proceed without it
 		gi = nil
 	}
-	filter := filter.NewUnifiedFilter(gi, nil, nil)
+	f := filter.New(filter.Options{
+		IgnoreDefault: true,
+	})
 
 	filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
