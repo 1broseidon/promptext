@@ -23,10 +23,12 @@ func LoadConfig(dirPath string) (*FileConfig, error) {
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
+			log.Debug("No .promptext.yml found in %s", dirPath)
 			return &FileConfig{}, nil
 		}
 		return nil, err
 	}
+	log.Debug("Found and loaded .promptext.yml from %s", dirPath)
 
 	var config FileConfig
 	if err := yaml.Unmarshal(data, &config); err != nil {
