@@ -360,6 +360,7 @@ func getPythonVersion(root string) string {
 			}
 			if inToolPoetry && strings.HasPrefix(line, "name = ") {
 				projectName = strings.Trim(strings.TrimPrefix(line, "name = "), "\"'")
+				metadata.Name = projectName
 			}
 			if inToolPoetry && strings.HasPrefix(line, "version = ") {
 				version := strings.Trim(strings.TrimPrefix(line, "version = "), "\"'")
