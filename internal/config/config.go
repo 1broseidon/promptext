@@ -46,11 +46,8 @@ func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bo
 		extensions = parseCommaSeparated(flagExt)
 	}
 
-	// Start with default excludes from filter package
-	excludes = append([]string{}, filter.DefaultIgnoreDirs...)
-
-	// Add config file excludes
-	excludes = append(excludes, fc.Excludes...)
+	// Start with config file excludes
+	excludes = append([]string{}, fc.Excludes...)
 
 	// Add flag excludes (highest priority)
 	if flagExclude != "" {

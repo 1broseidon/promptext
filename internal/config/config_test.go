@@ -106,7 +106,7 @@ func TestMergeWithFlags(t *testing.T) {
 			flagExclude:     "node_modules",
 			flagVerbose:     true,
 			wantExtensions:  []string{".js", ".ts"},
-			wantExcludes:    append(filter.DefaultIgnoreDirs, "vendor", "node_modules"),
+			wantExcludes:    []string{"vendor", "node_modules"},
 			wantVerbose:     true,
 		},
 		{
@@ -130,7 +130,7 @@ func TestMergeWithFlags(t *testing.T) {
 			flagExclude:     "",
 			flagVerbose:     false,
 			wantExtensions:  nil,
-			wantExcludes:    filter.DefaultIgnoreDirs,
+			wantExcludes:    []string{},
 			wantVerbose:     false,
 		},
 		{
