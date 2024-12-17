@@ -5,9 +5,31 @@ import (
 	"strings"
 )
 
+var (
+	entryPointPatterns = map[string][]string{
+		"go":     {"main.go"},
+		"python": {"__main__.py", "main.py"},
+		"node":   {"index.js", "server.js", "app.js"},
+	}
+
+	configPatterns = []string{
+		"*.json", "*.yaml", "*.yml", "*.toml", "*.ini",
+		".env*", "config.*", "*.config.*",
+	}
+
+	docPatterns = []string{
+		"README*", "*.md", "docs/*", "*.txt",
+		"LICENSE*", "CHANGELOG*", "CONTRIBUTING*",
+	}
+)
+
 // UnifiedFilter provides backward compatibility with the old API
 type UnifiedFilter struct {
-	chain *FilterChain
+	chain             *FilterChain
+	defaultIgnores    []string
+	defaultIgnoreExts []string
+	allowedExtensions []string
+	configExcludes    []string
 }
 
 // NewUnifiedFilter creates a new UnifiedFilter with all exclusion patterns
@@ -33,7 +55,13 @@ func NewUnifiedFilter(gitIgnore *GitIgnore, extensions, excludes []string) *Unif
 		chain.Add(NewDirectoryFilter(excludes, true))
 	}
 
-	return &UnifiedFilter{chain: chain}
+	return &UnifiedFilter{
+		chain:             chain,
+		defaultIgnores:    DefaultIgnoreDirs,
+		defaultIgnoreExts: DefaultIgnoreExtensions,
+		allowedExtensions: extensions,
+		configExcludes:    excludes,
+	}
 }
 
 // GetFileType determines the type of file based on its path and patterns
@@ -151,13 +179,3 @@ func (uf *UnifiedFilter) ShouldProcess(path string) bool {
 	return uf.chain.ShouldProcess(path)
 }
 
-// Helper function to parse gitignore patterns
-func parseGitIgnorePatterns(patterns []string) []*Pattern {
-	var result []*Pattern
-	for _, p := range patterns {
-		if pattern, err := NewPattern(p); err == nil {
-			result = append(result, pattern)
-		}
-	}
-	return result
-}
