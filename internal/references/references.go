@@ -37,7 +37,7 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
                 continue
             }
             // The captured group might be in match[1] or match[2] depending on pattern
-            ref = ""
+            var ref string
             for i := 1; i < len(match); i++ {
                 if match[i] != "" {
                     ref = match[i]
