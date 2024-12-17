@@ -24,24 +24,34 @@ func (df *DirectoryFilter) Match(path string) (bool, error) {
     normalizedPath := filepath.ToSlash(path)
     
     for _, pattern := range df.patterns {
-        // Exact match
-        if pattern == normalizedPath {
-            return true, nil
-        }
-
-        // Directory prefix match
-        if strings.HasSuffix(pattern, "/") {
-            dirPattern := strings.TrimSuffix(pattern, "/")
-            if strings.HasPrefix(normalizedPath, dirPattern+"/") || normalizedPath == dirPattern {
+        // Handle patterns with wildcards
+        if strings.Contains(pattern, "*") || strings.Contains(pattern, "?") || strings.Contains(pattern, "[") {
+            // Try matching against base name first for *.ext patterns
+            if strings.HasPrefix(pattern, "*") {
+                if matched, err := filepath.Match(pattern, filepath.Base(normalizedPath)); err == nil && matched {
+                    return true, nil
+                }
+            }
+            
+            // Try matching against full path
+            matched, err := filepath.Match(pattern, normalizedPath)
+            if err != nil {
+                return false, err
+            }
+            if matched {
                 return true, nil
             }
-        }
-
-        // Path component match
-        components := strings.Split(normalizedPath, "/")
-        for _, component := range components {
-            if component == pattern {
-                return true, nil
+        } else {
+            // Exact match or directory prefix match
+            if strings.HasSuffix(pattern, "/") {
+                dirPattern := strings.TrimSuffix(pattern, "/")
+                if strings.HasPrefix(normalizedPath, dirPattern+"/") || normalizedPath == dirPattern {
+                    return true, nil
+                }
+            } else {
+                if pattern == normalizedPath {
+                    return true, nil
+                }
             }
         }
     }
