@@ -136,16 +136,20 @@ func TestMergeWithFlags(t *testing.T) {
 			config: &FileConfig{
 				Verbose: true,
 			},
-			flagVerbose: false,
-			wantVerbose: true,
+			flagVerbose:     false,
+			wantExtensions:  []string{},
+			wantExcludes:    []string{},
+			wantVerbose:     true,
 		},
 		{
-			name: "config verbose false with flag true",
+			name: "config verbose false with flag true", 
 			config: &FileConfig{
 				Verbose: false,
 			},
-			flagVerbose: true,
-			wantVerbose: true,
+			flagVerbose:     true,
+			wantExtensions:  []string{},
+			wantExcludes:    []string{},
+			wantVerbose:     true,
 		},
 	}
 
