@@ -104,6 +104,35 @@ func (f *Filter) isExcluded(path string) bool {
     return false
 }
 
+// GetFileType determines the type of file based on its path
+func GetFileType(path string) string {
+    // Check for test files
+    if strings.Contains(path, "_test.go") || strings.Contains(path, "test_") || strings.HasPrefix(path, "test_") {
+        return "test"
+    }
+
+    // Check for entry points
+    base := filepath.Base(path)
+    if base == "main.go" || base == "index.js" || base == "app.py" {
+        return "entry:main"
+    }
+
+    // Check for config files
+    switch filepath.Ext(path) {
+    case ".yml", ".yaml", ".json", ".toml", ".ini", ".conf", ".config":
+        return "config"
+    }
+    
+    // Check for documentation
+    switch filepath.Ext(path) {
+    case ".md", ".txt", ".rst", ".adoc":
+        return "doc"
+    }
+    
+    // Default to empty string for other files
+    return ""
+}
+
 // isIncluded checks if a path matches any include patterns
 func (f *Filter) isIncluded(path string) bool {
     normalizedPath := filepath.ToSlash(path)
