@@ -104,10 +104,10 @@ func buildVerboseDisplay(projectOutput *format.ProjectOutput) string {
 }
 
 // processFile handles the processing of a single file
-func processFile(path string, config Config, gi *filter.GitIgnore) (*format.FileInfo, error) {
+func processFile(path string, config Config) (*format.FileInfo, error) {
 	f := filter.New(filter.Options{
-		Includes: config.Extensions,
-		Excludes: config.Excludes,
+		Includes:      config.Extensions,
+		Excludes:      config.Excludes,
 		IgnoreDefault: true,
 	})
 
@@ -183,7 +183,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			return nil
 		}
 
-		fileInfo, err := processFile(path, config, gi)
+		fileInfo, err := processFile(path, config)
 		if err != nil {
 			return err
 		}
@@ -277,7 +277,7 @@ func countDependencies(deps []string) (main, dev int) {
 }
 
 // countIncludedFiles counts files that match the filter criteria
-func countIncludedFiles(config Config, gi *filter.GitIgnore) (int, error) {
+func countIncludedFiles(config Config) (int, error) {
 	fileCount := 0
 	err := filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
@@ -285,8 +285,8 @@ func countIncludedFiles(config Config, gi *filter.GitIgnore) (int, error) {
 		}
 		rel, _ := filepath.Rel(config.DirPath, path)
 		f := filter.New(filter.Options{
-			Includes: config.Extensions,
-			Excludes: config.Excludes,
+			Includes:      config.Extensions,
+			Excludes:      config.Excludes,
 			IgnoreDefault: true,
 		})
 		if f.ShouldProcess(rel) {
@@ -330,7 +330,7 @@ func GetMetadataSummary(config Config, tokenCount int) (string, error) {
 	}
 
 	// Count and add included files
-	fileCount, err := countIncludedFiles(config, gi)
+	fileCount, err := countIncludedFiles(config)
 	if err != nil {
 		return "", fmt.Errorf("error counting files: %w", err)
 	}
