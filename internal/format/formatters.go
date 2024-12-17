@@ -18,7 +18,7 @@ func (m *MarkdownFormatter) formatOverview(sb *strings.Builder, overview *Projec
 	}
 	sb.WriteString("# Project Overview\n\n")
 	sb.WriteString(fmt.Sprintf("%s\n\n", overview.Description))
-	
+
 	if len(overview.Features) > 0 {
 		sb.WriteString("## Key Features\n")
 		for _, feature := range overview.Features {
@@ -62,7 +62,7 @@ func (m *MarkdownFormatter) formatFileStats(sb *strings.Builder, stats *FileStat
 	sb.WriteString(fmt.Sprintf("- Total Files: %d\n", stats.TotalFiles))
 	sb.WriteString(fmt.Sprintf("- Total Lines: %d\n", stats.TotalLines))
 	sb.WriteString(fmt.Sprintf("- Packages: %d\n", stats.PackageCount))
-	
+
 	sb.WriteString("\nFile Types:\n")
 	for ext, count := range stats.FilesByType {
 		sb.WriteString(fmt.Sprintf("- %s: %d files\n", ext, count))
@@ -125,7 +125,7 @@ func (m *MarkdownFormatter) formatFileReferences(sb *strings.Builder, refs *refe
 	if refs == nil || (len(refs.Internal) == 0 && len(refs.External) == 0) {
 		return
 	}
-	
+
 	sb.WriteString("\n**References:**\n")
 	if len(refs.Internal) > 0 {
 		sb.WriteString("Internal:\n")
@@ -150,7 +150,7 @@ func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
 	var sb strings.Builder
 
 	m.formatOverview(&sb, project.Overview)
-	
+
 	sb.WriteString("## Quick Reference\n\n")
 	m.formatAnalysis(&sb, project.Analysis)
 	m.formatFileStats(&sb, project.FileStats)
