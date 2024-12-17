@@ -65,9 +65,9 @@ type ProjectAnalysis struct {
 func (d *DirectoryNode) ToMarkdown(level int) string {
 	var sb strings.Builder
 	
-	// Skip the root node name but process its children
-	if level > 0 {
-		indent := strings.Repeat("  ", level-1)
+	// Only write the node name if it's not the root level (level 1)
+	if level > 1 {
+		indent := strings.Repeat("  ", level-2)
 		sb.WriteString(fmt.Sprintf("%s└── %s", indent, d.Name))
 		if d.Type == "dir" {
 			sb.WriteString("/")
