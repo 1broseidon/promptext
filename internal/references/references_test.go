@@ -1,7 +1,6 @@
 package references
 
 import (
-	"path/filepath"
 	"testing"
 )
 
