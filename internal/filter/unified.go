@@ -11,11 +11,11 @@ func NewUnifiedFilter(gitIgnore *GitIgnore, extensions, excludes []string) *Unif
     
     // Add gitignore filter if provided
     if gitIgnore != nil {
-        chain.Add(&GitIgnoreFilter{patterns: parseGitIgnorePatterns(gitIgnore.patterns)})
+        chain.Add(NewGitIgnoreFilter(gitIgnore))
     }
     
     // Add directory filter for default ignores
-    chain.Add(NewDirectoryFilter(DefaultIgnoreDirs))
+    chain.Add(NewDirectoryFilter(DefaultIgnoreDirs, true))
     
     // Add extension filters
     if len(extensions) > 0 {
@@ -25,7 +25,7 @@ func NewUnifiedFilter(gitIgnore *GitIgnore, extensions, excludes []string) *Unif
     
     // Add directory filter for custom excludes
     if len(excludes) > 0 {
-        chain.Add(NewDirectoryFilter(excludes))
+        chain.Add(NewDirectoryFilter(excludes, true))
     }
     
     return &UnifiedFilter{chain: chain}
