@@ -100,8 +100,8 @@ func (tc *TokenCounter) countCodeTokens(line string) int {
 	// Handle comments separately
 	if idx := strings.Index(line, "//"); idx >= 0 {
 		beforeComment := strings.TrimSpace(line[:idx])
-		comment := strings.TrimSpace(line[idx:])
-		return tc.countCodeTokens(beforeComment) + 1 // Count comment as one token
+		// Count the code before comment plus 1 for the comment itself
+		return tc.countCodeTokens(beforeComment) + 1
 	}
 
 	// Split on whitespace first
