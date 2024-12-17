@@ -23,14 +23,20 @@ var (
     }
 
     referencePatterns = []*regexp.Regexp{
-        // Go imports - handle both quoted and parenthesized imports
-        regexp.MustCompile(`(?m)^\s*import\s*\(?\s*"([^"]+)"\)?`),
-        // Python imports - handle both import and from...import
-        regexp.MustCompile(`(?m)^\s*(?:from\s+([\w\._]+(?:\s+import\s+[\w\s,]+)?)|import\s+([\w\._]+))`),
-        // JavaScript/TypeScript imports
-        regexp.MustCompile(`(?m)import\s+(?:{[^}]*}\s+from\s+)?['"]([^'"]+)['"]|require\(['"]([^'"]+)['"]\)`),
+        // Go imports - simpler pattern for single-line imports
+        regexp.MustCompile(`(?m)^\s*import\s+(?:"([^"]+)"|([A-Za-z0-9_/\.-]+))`),
+
+        // Python imports - separate patterns for "import" and "from ... import ..."
+        regexp.MustCompile(`(?m)^\s*import\s+([\w\._]+)`),
+        regexp.MustCompile(`(?m)^\s*from\s+([\w\._]+)\s+import\s+([\w\.,\s]+)`),
+
+        // JavaScript/TypeScript imports - separate patterns for import and require
+        regexp.MustCompile(`(?m)import\s+(?:{[^}]*}\s+from\s+)?['"]([^'"]+)['"]`),
+        regexp.MustCompile(`(?m)require\(['"]([^'"]+)['"]\)`),
+
         // Markdown links
         regexp.MustCompile(`(?m)\[[^\]]*\]\(([^)]+)\)`),
+
         // Local file references in comments
         regexp.MustCompile(`(?m)(?:\/\/|#)\s*(?:see|ref|reference):\s*([^\s;]+)`),
     }
