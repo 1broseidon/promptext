@@ -217,20 +217,27 @@ func GetMetadataSummary(config Config) (string, error) {
 	if projectInfo.Metadata != nil {
 		summary.WriteString(fmt.Sprintf("   Language: %s %s\n", projectInfo.Metadata.Language, projectInfo.Metadata.Version))
 		if len(projectInfo.Metadata.Dependencies) > 0 {
-			mainDeps := 0
-			devDeps := 0
+			mainDeps := []string{}
+			devDeps := []string{}
 			for _, dep := range projectInfo.Metadata.Dependencies {
 				if strings.HasPrefix(dep, "[dev] ") {
-					devDeps++
+					devDeps = append(devDeps, strings.TrimPrefix(dep, "[dev] "))
 				} else {
-					mainDeps++
+					mainDeps = append(mainDeps, dep)
 				}
 			}
-			if devDeps > 0 {
-				summary.WriteString(fmt.Sprintf("   Dependencies: %d packages (%d main, %d dev)\n", 
-					len(projectInfo.Metadata.Dependencies), mainDeps, devDeps))
-			} else {
-				summary.WriteString(fmt.Sprintf("   Dependencies: %d packages\n", mainDeps))
+			summary.WriteString(fmt.Sprintf("   Dependencies: %d packages total\n", len(projectInfo.Metadata.Dependencies)))
+			if len(mainDeps) > 0 {
+				summary.WriteString("   Main dependencies:\n")
+				for _, dep := range mainDeps {
+					summary.WriteString(fmt.Sprintf("     - %s\n", dep))
+				}
+			}
+			if len(devDeps) > 0 {
+				summary.WriteString("   Dev dependencies:\n")
+				for _, dep := range devDeps {
+					summary.WriteString(fmt.Sprintf("     - %s\n", dep))
+				}
 			}
 		}
 	}
