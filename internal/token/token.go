@@ -20,7 +20,7 @@ func NewTokenCounter() *TokenCounter {
 	return &TokenCounter{
 		wordPattern:    regexp.MustCompile(`\w+`),
 		numberPattern:  regexp.MustCompile(`\d+`),
-		symbolPattern:  regexp.MustCompile(`[^\w\s]`),
+		symbolPattern:  regexp.MustCompile(`[^\w\s]+`), // Changed to capture sequences
 		spacingPattern: regexp.MustCompile(`\s+`),
 	}
 }
@@ -62,13 +62,27 @@ func (tc *TokenCounter) EstimateTokens(text string) int {
 func (tc *TokenCounter) countTextTokens(line string) int {
 	count := 0
 
-	// Count words
-	words := tc.wordPattern.FindAllString(line, -1)
-	count += len(words)
-
-	// Count symbols (punctuation, markdown characters, etc.)
-	symbols := tc.symbolPattern.FindAllString(line, -1)
-	count += len(symbols)
+	// Split on whitespace first
+	parts := strings.Fields(line)
+	
+	for _, part := range parts {
+		// Handle markdown syntax
+		if strings.HasPrefix(part, "[") && strings.Contains(part, "](") {
+			// Count link text and URL separately
+			count += 2
+			continue
+		}
+		if strings.HasPrefix(part, "*") || strings.HasPrefix(part, "**") {
+			// Count emphasized text as one token
+			count++
+			continue
+		}
+		
+		// Count remaining words and symbol sequences
+		words := tc.wordPattern.FindAllString(part, -1)
+		symbols := tc.symbolPattern.FindAllString(part, -1)
+		count += len(words) + len(symbols)
+	}
 
 	return count
 }
@@ -83,18 +97,32 @@ func (tc *TokenCounter) countCodeTokens(line string) int {
 		return 0
 	}
 
+	// Handle comments separately
+	if idx := strings.Index(line, "//"); idx >= 0 {
+		beforeComment := strings.TrimSpace(line[:idx])
+		comment := strings.TrimSpace(line[idx:])
+		return tc.countCodeTokens(beforeComment) + 1 // Count comment as one token
+	}
+
 	// Split on whitespace first
 	parts := strings.FieldsFunc(line, unicode.IsSpace)
 
 	for _, part := range parts {
-		// Count each character of operators and symbols
+		if part == "" {
+			continue
+		}
+
+		// Handle string literals
+		if strings.HasPrefix(part, "\"") && strings.HasSuffix(part, "\"") {
+			count++ // Count entire string as one token
+			continue
+		}
+
+		// Handle operators and symbols as sequences
 		symbols := tc.symbolPattern.FindAllString(part, -1)
-		count += len(symbols)
-
-		// Count words (identifiers, keywords)
 		words := tc.wordPattern.FindAllString(part, -1)
-		count += len(words)
-
+		
+		count += len(symbols) + len(words)
 	}
 
 	return count
