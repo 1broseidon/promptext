@@ -73,6 +73,15 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 				ref = ref[:idx]
 			}
 
+			// Handle Go single-line imports
+			if pattern == referencePatterns[0] {
+				if isGoStdlibPackage(ref) {
+					continue
+				}
+				addReference(refs, ref, currentDir, rootDir, allFiles)
+				continue
+			}
+
 			// Handle Python relative imports
 			if strings.HasPrefix(ref, ".") && !strings.Contains(ref, "/") {
 				parts := strings.Split(ref, " ")
@@ -134,13 +143,32 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 						modPath = filepath.Join(targetDir, name)
 					}
 
-					resolved := resolveReference(modPath, currentDir, rootDir, allFiles)
+					resolved := resolveReference(modPath, targetDir, rootDir, allFiles)
 					if resolved != "" {
 						if _, ok := refs.Internal[currentDir]; !ok {
 							refs.Internal[currentDir] = []string{}
 						}
 						refs.Internal[currentDir] = append(refs.Internal[currentDir], resolved)
+					} else {
+						// Combine baseModule and name for external reference
+						addReference(refs, baseModule+"/"+name, currentDir, rootDir, allFiles)
 					}
+				}
+				continue
+			}
+
+			// Handle Python import ...
+			if pattern == referencePatterns[2] {
+				resolved := resolveReference(ref, currentDir, rootDir, allFiles)
+				if resolved != "" {
+					if _, ok := refs.Internal[currentDir]; !ok {
+						refs.Internal[currentDir] = []string{}
+					}
+					refs.Internal[currentDir] = append(refs.Internal[currentDir], resolved)
+					continue
+				}
+				if resolved == "" {
+					addReference(refs, ref, currentDir, rootDir, allFiles)
 				}
 				continue
 			}
