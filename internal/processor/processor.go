@@ -249,11 +249,23 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	if err != nil {
 		return fmt.Errorf("invalid format: %w", err)
 	}
-	// Load config file
-	fileConfig, err := config.LoadConfig(dirPath)
+	// Convert dirPath to absolute path
+	absPath, err := filepath.Abs(dirPath)
 	if err != nil {
-		log.Printf("Warning: Failed to load .promptext.yml: %v", err)
+		return fmt.Errorf("failed to get absolute path: %w", err)
+	}
+
+	// Load config file from the specified directory
+	fileConfig, err := config.LoadConfig(absPath)
+	if err != nil {
+		log.Printf("Warning: Failed to load .promptext.yml from %s: %v", absPath, err)
 		fileConfig = &config.FileConfig{}
+	}
+
+	// Initialize gitignore from the specified directory
+	gitIgnore, err := gitignore.New(filepath.Join(absPath, ".gitignore"))
+	if err != nil {
+		log.Printf("Warning: Failed to load .gitignore from %s: %v", absPath, err)
 	}
 
 	// Merge file config with command line flags
@@ -261,7 +273,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 
 	// Create processor configuration
 	procConfig := Config{
-		DirPath:    dirPath,
+		DirPath:    absPath,
 		Extensions: extensions,
 		Excludes:   excludes,
 	}
