@@ -180,7 +180,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		})
 
 		// Check if path should be excluded
-		if f.isExcluded(relPath) {
+		if f.IsExcluded(relPath) {
 			if d.IsDir() {
 				log.Debug("  Skipping excluded directory: %s", relPath)
 				return filepath.SkipDir

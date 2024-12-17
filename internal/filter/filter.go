@@ -61,7 +61,7 @@ func New(opts Options) *Filter {
 // ShouldProcess determines if a path should be processed
 func (f *Filter) ShouldProcess(path string) bool {
     // Check excludes first (excludes take precedence)
-    if f.isExcluded(path) {
+    if f.IsExcluded(path) {
         return false
     }
 
@@ -74,8 +74,8 @@ func (f *Filter) ShouldProcess(path string) bool {
     return f.isIncluded(path)
 }
 
-// isExcluded checks if a path matches any exclude patterns
-func (f *Filter) isExcluded(path string) bool {
+// IsExcluded checks if a path matches any exclude patterns
+func (f *Filter) IsExcluded(path string) bool {
     normalizedPath := filepath.ToSlash(path)
 
     // Check default ignores if enabled
@@ -99,9 +99,25 @@ func (f *Filter) isExcluded(path string) bool {
     // Check custom excludes
     for _, pattern := range f.excludes {
         pattern = filepath.ToSlash(pattern)
+        // Handle file extensions
+        if strings.HasPrefix(pattern, ".") {
+            if strings.HasSuffix(normalizedPath, pattern) {
+                return true
+            }
+            continue
+        }
+        // Handle directory patterns
+        if strings.HasSuffix(pattern, "/") {
+            if strings.HasPrefix(normalizedPath, pattern) || 
+               strings.Contains(normalizedPath, "/"+pattern) {
+                return true
+            }
+            continue
+        }
+        // Handle exact matches and path-based patterns
         if strings.HasPrefix(normalizedPath, pattern) || 
            strings.Contains(normalizedPath, "/"+pattern) ||
-           normalizedPath == strings.TrimSuffix(pattern, "/") {
+           normalizedPath == pattern {
             return true
         }
     }
