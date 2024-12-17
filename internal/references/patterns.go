@@ -29,8 +29,8 @@ var (
         regexp.MustCompile(`(?m)^\s*(?:from\s+([\w\.]+)|import\s+([\w\.]+))`),
         // JavaScript/TypeScript imports
         regexp.MustCompile(`(?m)import\s+(?:{[^}]*}\s+from\s+)?['"]([^'"]+)['"]|require\(['"]([^'"]+)['"]\)`),
-        // Markdown links - exclude URLs
-        regexp.MustCompile(`(?m)\[[^\]]*\]\((?!https?://|mailto:|ftp://|tel:)([^)]+)\)`),
+        // Markdown links
+        regexp.MustCompile(`(?m)\[[^\]]*\]\(([^)]+)\)`),
         // Local file references in comments
         regexp.MustCompile(`(?m)(?:\/\/|#)\s*(?:see|ref|reference):\s*([^\s;]+)`),
     }
