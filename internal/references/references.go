@@ -151,13 +151,19 @@ func resolveReference(ref, currentDir, rootDir string, allFiles []string) string
 func matchFile(path, rootDir string, allFiles []string) bool {
     // Normalize path for comparison
     path = filepath.Clean(path)
-    
+
+    // Convert candidate path to a relative path before comparing
+    rel, err := filepath.Rel(rootDir, path)
+    if err == nil {
+        path = rel
+    }
+
     // Check if file exists in project
     for _, file := range allFiles {
         if filepath.Clean(file) == path {
             return true
         }
     }
-    
+
     return false
 }
