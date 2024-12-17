@@ -79,38 +79,32 @@ func TestMarkdownFormatter_Format(t *testing.T) {
 		{
 			name: "basic project",
 			input: &ProjectOutput{
-				Overview: &ProjectOverview{
-					Description: "Test Project",
-					Features:    []string{"Feature 1", "Feature 2"},
+				Metadata: &Metadata{
+					Language: "Go",
+					Version: "1.17",
+					Dependencies: []string{"dep1", "dep2"},
 				},
-				FileStats: &FileStatistics{
-					TotalFiles: 10,
-					TotalLines: 500,
-					FilesByType: map[string]int{
-						".go": 5,
-						".md": 2,
+				DirectoryTree: &DirectoryNode{
+					Name: "test",
+					Type: "dir",
+					Children: []*DirectoryNode{
+						{Name: "main.go", Type: "file"},
 					},
-				},
-				GitInfo: &GitInfo{
-					Branch:        "main",
-					CommitHash:    "abc123",
-					CommitMessage: "test commit",
 				},
 			},
 			want: []string{
-				"# Project Overview",
-				"Test Project",
-				"Feature 1",
-				"Feature 2",
-				"Total Files: 10",
-				"Total Lines: 500",
-				".go: 5 files",
-				"Branch: main",
-				"Commit: abc123",
+				"Language: Go",
+				"Version: 1.17",
+				"Dependencies:",
+				"  - dep1",
+				"  - dep2",
+				"Project Structure:",
+				"└── main.go",
 			},
 			unwant: []string{
 				"<project>",
 				"</project>",
+				"# Project Overview",
 			},
 		},
 		{
