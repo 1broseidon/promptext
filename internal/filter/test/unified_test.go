@@ -138,7 +138,7 @@ func TestNewUnifiedFilter(t *testing.T) {
 	extensions := []string{".go", ".md"}
 	excludes := []string{"vendor/"}
 
-	filter := NewUnifiedFilter(gitIgnore, extensions, excludes)
+	filter := filter.NewUnifiedFilter(gitIgnore, extensions, excludes)
 
 	if filter.gitIgnore != gitIgnore {
 		t.Error("NewUnifiedFilter did not set gitIgnore correctly")
