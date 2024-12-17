@@ -222,11 +222,11 @@ func isExternalReference(ref string) bool {
 	}
 
 	// Check for standard library packages and other external packages
-	if !strings.Contains(ref, "/") && !strings.Contains(ref, ".") {
+	if !strings.Contains(ref, "/") && !strings.Contains(ref, ".") && !strings.HasPrefix(ref, ".") {
 		// Standard library packages
 		return true
 	}
-	if strings.HasPrefix(ref, "@") || strings.HasPrefix(ref, "github.com/") || strings.HasPrefix(ref, "golang.org/") {
+	if strings.HasPrefix(ref, "@") || strings.HasPrefix(ref, "github.com/") || strings.HasPrefix(ref, "golang.org/") || strings.HasPrefix(ref, "gopkg.in/") {
 		return true
 	}
 
