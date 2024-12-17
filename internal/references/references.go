@@ -37,7 +37,7 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 			}
 
 			// Handle Go import blocks
-			if pattern == referencePatterns[0] && len(match) > 2 && match[2] != "" {
+			if pattern == referencePatterns[1] && len(match) > 2 && match[2] != "" {
 				importBlock := match[2]
 				importLines := strings.Split(importBlock, "\n")
 				for _, line := range importLines {
@@ -103,7 +103,7 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 			}
 
 			// Handle Python from ... import ...
-			if pattern == referencePatterns[2] && len(match) > 2 {
+			if pattern == referencePatterns[3] && len(match) > 2 {
 				baseModule := match[1]
 				importedNames := match[2]
 				names := strings.Split(importedNames, ",")
@@ -285,6 +285,15 @@ func resolveReference(ref, currentDir, rootDir string, allFiles []string) string
 	// Try fallback up directories
 	if resolved := fallbackUpDirectories(ref, currentDir, rootDir, allFiles); resolved != "" {
 		return resolved
+	}
+
+	// Final fallback: try the file directly at the project root
+	rootCandidate := filepath.Join(rootDir, filepath.Base(ref))
+	if matchFile(rootCandidate, rootDir, allFiles) {
+		if rel, err := filepath.Rel(rootDir, rootCandidate); err == nil {
+			return rel
+		}
+		return rootCandidate
 	}
 
 	return ""
