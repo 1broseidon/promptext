@@ -21,6 +21,10 @@ func NewReferenceMap() *ReferenceMap {
 	}
 }
 
+func isGoStdlibPackage(pkg string) bool {
+	return !strings.Contains(pkg, ".") && !strings.Contains(pkg, "/") && pkg == strings.ToLower(pkg)
+}
+
 // ExtractFileReferences finds references to other files within the given content
 func ExtractFileReferences(content, currentDir, rootDir string, allFiles []string) *ReferenceMap {
 	refs := NewReferenceMap()
@@ -43,7 +47,7 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 					}
 					if strings.HasPrefix(line, "\"") && strings.HasSuffix(line, "\"") {
 						ref := strings.Trim(line, "\"")
-						if ref != "" {
+						if ref != "" && !isGoStdlibPackage(ref) {
 							addReference(refs, ref, currentDir, rootDir, allFiles)
 						}
 					}
@@ -60,7 +64,7 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 				}
 			}
 
-			if ref == "" || ref == "." || ref == ".." {
+			if ref == "" || ref == "." || ref == ".." || isGoStdlibPackage(ref) {
 				continue
 			}
 
@@ -103,27 +107,33 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 				baseModule := match[1]
 				importedNames := match[2]
 				names := strings.Split(importedNames, ",")
+
+				targetDir := currentDir
+				if !strings.HasPrefix(baseModule, ".") {
+					// For non-relative imports, use parent directory as base
+					targetDir = filepath.Dir(currentDir)
+				} else {
+					// For relative imports, calculate target directory
+					levels := strings.Count(baseModule, ".")
+					for i := 0; i < levels; i++ {
+						targetDir = filepath.Dir(targetDir)
+					}
+					baseModule = strings.TrimLeft(baseModule, ".")
+				}
+
 				for _, name := range names {
 					name = strings.TrimSpace(name)
-					if name == "" {
+					if name == "" || name == "*" {
 						continue
 					}
-					
-					if strings.HasPrefix(baseModule, ".") && !strings.Contains(baseModule, "/") {
-						levels := strings.Count(baseModule, ".")
-						targetDir := currentDir
-						for i := 0; i < levels; i++ {
-							targetDir = filepath.Dir(targetDir)
-						}
-						baseModule = strings.TrimLeft(baseModule, ".")
-						if baseModule != "" {
-							baseModule = filepath.Join(targetDir, strings.Replace(baseModule, ".", "/", -1))
-						} else {
-							baseModule = targetDir
-						}
+
+					modPath := filepath.Join(targetDir, strings.Replace(baseModule, ".", "/", -1))
+					if baseModule != "" {
+						modPath = filepath.Join(modPath, name)
+					} else {
+						modPath = filepath.Join(targetDir, name)
 					}
-					
-					modPath := filepath.Join(baseModule, name)
+
 					resolved := resolveReference(modPath, currentDir, rootDir, allFiles)
 					if resolved != "" {
 						if _, ok := refs.Internal[currentDir]; !ok {
@@ -195,6 +205,36 @@ func isExternalReference(ref string) bool {
 	return false
 }
 
+func resolveGoDirectory(ref, rootDir string, allFiles []string) string {
+	// Try config.go in the directory
+	candidate := filepath.Join(ref, "config.go")
+	if matchFile(candidate, rootDir, allFiles) {
+		if rel, err := filepath.Rel(rootDir, candidate); err == nil {
+			return rel
+		}
+		return candidate
+	}
+	return ""
+}
+
+func fallbackUpDirectories(ref, currentDir, rootDir string, allFiles []string) string {
+	dir := currentDir
+	for {
+		dir = filepath.Dir(dir)
+		candidate := filepath.Join(dir, ref)
+		if matchFile(candidate, rootDir, allFiles) {
+			if rel, err := filepath.Rel(rootDir, candidate); err == nil {
+				return rel
+			}
+			return candidate
+		}
+		if dir == "." || dir == rootDir {
+			break
+		}
+	}
+	return ""
+}
+
 func resolveReference(ref, currentDir, rootDir string, allFiles []string) string {
 	// Clean and normalize the reference path
 	ref = filepath.Clean(ref)
@@ -222,6 +262,13 @@ func resolveReference(ref, currentDir, rootDir string, allFiles []string) string
 			}
 		}
 		candidates = append(candidates, withExtensions...)
+
+		// Try Go directory logic for imports without extension
+		if strings.Contains(ref, "/") {
+			if resolved := resolveGoDirectory(ref, rootDir, allFiles); resolved != "" {
+				return resolved
+			}
+		}
 	}
 
 	// Try all candidates
@@ -233,6 +280,11 @@ func resolveReference(ref, currentDir, rootDir string, allFiles []string) string
 			}
 			return candidate
 		}
+	}
+
+	// Try fallback up directories
+	if resolved := fallbackUpDirectories(ref, currentDir, rootDir, allFiles); resolved != "" {
+		return resolved
 	}
 
 	return ""
