@@ -17,18 +17,18 @@ var DefaultIgnoreExtensions = []string{
 
 // DefaultIgnoreDirs contains common directories that should be ignored
 var DefaultIgnoreDirs = []string{
-	".git",
-	"node_modules",
-	"vendor",
-	".idea",
-	".vscode",
-	"__pycache__",
-	".pytest_cache",
-	"dist",
-	"build",
-	"coverage",
-	"bin",
-	".terraform",
+	".git/",
+	"node_modules/",
+	"vendor/",
+	".idea/",
+	".vscode/",
+	"__pycache__/",
+	".pytest_cache/",
+	"dist/",
+	"build/",
+	"coverage/",
+	"bin/",
+	".terraform/",
 }
 
 // ShouldProcessFile is maintained for backward compatibility
