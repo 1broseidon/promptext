@@ -1,8 +1,3 @@
-# extensions:
-#   - .go
-#   - .md
-# excludes:
-#   - vendor/
-#   - '*.test.go'
-#   - tmp/
-# verbose: false
+excludes:
+  - samples/
+verbose: false
