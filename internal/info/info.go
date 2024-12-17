@@ -469,25 +469,48 @@ func getPythonDependencies(root string) []string {
 	// Check pyproject.toml for Poetry dependencies
 	if content, err := os.ReadFile(filepath.Join(root, "pyproject.toml")); err == nil {
 		lines := strings.Split(string(content), "\n")
-		inDeps := false
+		inMainDeps := false
+		inDevDeps := false
 		for _, line := range lines {
 			line = strings.TrimSpace(line)
 			if line == "[tool.poetry.dependencies]" {
-				inDeps = true
+				inMainDeps = true
+				inDevDeps = false
 				continue
 			}
-			if inDeps && strings.HasPrefix(line, "[") {
-				inDeps = false
+			if line == "[tool.poetry.group.dev.dependencies]" {
+				inMainDeps = false
+				inDevDeps = true
 				continue
 			}
-			if inDeps && line != "" && !strings.HasPrefix(line, "#") {
+			if (inMainDeps || inDevDeps) && strings.HasPrefix(line, "[") {
+				inMainDeps = false
+				inDevDeps = false
+				continue
+			}
+			if (inMainDeps || inDevDeps) && line != "" && !strings.HasPrefix(line, "#") {
 				parts := strings.SplitN(line, "=", 2)
 				if len(parts) > 0 {
 					dep := strings.TrimSpace(parts[0])
 					if dep != "python" { // Skip python version constraint
-						depsMap[dep] = true
+						if inDevDeps {
+							depsMap["[dev] "+dep] = true
+						} else {
+							depsMap[dep] = true
+						}
 					}
 				}
+			}
+		}
+	}
+
+	// Try poetry.lock as alternative source
+	if content, err := os.ReadFile(filepath.Join(root, "poetry.lock")); err == nil && len(depsMap) == 0 {
+		lines := strings.Split(string(content), "\n")
+		for _, line := range lines {
+			if strings.HasPrefix(line, "name = ") {
+				name := strings.Trim(strings.TrimPrefix(line, "name = "), "\"")
+				depsMap[name] = true
 			}
 		}
 	}
