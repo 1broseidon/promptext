@@ -108,7 +108,7 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 		currentPath := ""
 		currentNode := rootNode
 		
-		for i, part := range parts[:len(parts)-1] {
+		for _, part := range parts[:len(parts)-1] {
 			currentPath = filepath.Join(currentPath, part)
 			if _, exists := dirMap[currentPath]; !exists {
 				newNode := &format.DirectoryNode{
