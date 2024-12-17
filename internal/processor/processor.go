@@ -215,7 +215,11 @@ func GetMetadataSummary(config Config) (string, error) {
 	}
 
 	if projectInfo.Metadata != nil {
-		summary.WriteString(fmt.Sprintf("   Language: %s %s\n", projectInfo.Metadata.Language, projectInfo.Metadata.Version))
+		summary.WriteString(fmt.Sprintf("   Language: %s", projectInfo.Metadata.Language))
+		if projectInfo.Metadata.Version != "" {
+			summary.WriteString(fmt.Sprintf(" %s", projectInfo.Metadata.Version))
+		}
+		summary.WriteString("\n")
 		if len(projectInfo.Metadata.Dependencies) > 0 {
 			mainDeps := 0
 			devDeps := 0
