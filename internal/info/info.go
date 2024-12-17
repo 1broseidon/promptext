@@ -296,7 +296,7 @@ func getNodeVersion(root string) string {
 }
 
 func getPythonVersion(root string) string {
-	
+
 	// Try pyproject.toml
 	if content, err := os.ReadFile(filepath.Join(root, "pyproject.toml")); err == nil {
 		lines := strings.Split(string(content), "\n")
@@ -452,7 +452,7 @@ func getPoetryDependencies(root string, depsMap map[string]bool) {
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		switch line {
 		case "[tool.poetry.dependencies]":
 			inMainDeps = true
@@ -498,7 +498,7 @@ func getPoetryLockDependencies(root string, depsMap map[string]bool) {
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		if strings.HasPrefix(line, "[[package]]") {
 			inPackage = true
 			continue
@@ -515,7 +515,7 @@ func getPoetryLockDependencies(root string, depsMap map[string]bool) {
 // getVenvDependencies reads dependencies from virtual environment
 func getVenvDependencies(root string, depsMap map[string]bool) {
 	venvDirs := []string{".venv", "venv"}
-	
+
 	for _, venvDir := range venvDirs {
 		sitePackages := filepath.Join(root, venvDir, "lib", "python3.*", "site-packages")
 		matches, err := filepath.Glob(sitePackages)
@@ -625,7 +625,6 @@ func getJavaGradleDependencies(root string) []string {
 	return deps
 }
 
-
 // ProjectAnalysis contains categorized project files and their descriptions
 type ProjectAnalysis struct {
 	EntryPoints   map[string]string // Entry points by language pattern
@@ -634,7 +633,6 @@ type ProjectAnalysis struct {
 	TestFiles     map[string]string // Test files
 	Documentation map[string]string // Documentation files
 }
-
 
 // Helper function to compare path slices
 func getConfigDescription(path string) string {
@@ -666,10 +664,10 @@ func isCoreFile(path string) bool {
 	if strings.Contains(path, "node_modules/") {
 		return false
 	}
-	
+
 	// Convert path separators to forward slashes for consistent matching
 	normalizedPath := filepath.ToSlash(path)
-	
+
 	// Only consider files in these special directories as core
 	return strings.Contains(normalizedPath, "internal/") ||
 		strings.Contains(normalizedPath, "pkg/") ||
@@ -724,4 +722,3 @@ func AnalyzeProject(rootPath string) *ProjectAnalysis {
 
 	return analysis
 }
-
