@@ -122,21 +122,29 @@ func (m *MarkdownFormatter) formatSourceFiles(sb *strings.Builder, files []FileI
 func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
 	var sb strings.Builder
 
-	m.formatOverview(&sb, project.Overview)
-
-	sb.WriteString("## Quick Reference\n\n")
-	m.formatAnalysis(&sb, project.Analysis)
-	m.formatFileStats(&sb, project.FileStats)
-
-	// Directory Structure
-	if project.DirectoryTree != nil {
-		sb.WriteString("## Project Structure\n```\n")
-		sb.WriteString(project.DirectoryTree.ToMarkdown(0))
-		sb.WriteString("```\n")
+	// Start with language and metadata
+	if project.Metadata != nil {
+		sb.WriteString(fmt.Sprintf("Language: %s\n", project.Metadata.Language))
+		if project.Metadata.Version != "" {
+			sb.WriteString(fmt.Sprintf("Version: %s\n", project.Metadata.Version))
+		}
+		if len(project.Metadata.Dependencies) > 0 {
+			sb.WriteString("Dependencies:\n")
+			for _, dep := range project.Metadata.Dependencies {
+				sb.WriteString(fmt.Sprintf("  - %s\n", dep))
+			}
+			sb.WriteString("\n")
+		}
 	}
 
-	m.formatGitInfo(&sb, project.GitInfo)
-	m.formatDependencies(&sb, project.Dependencies)
+	// Add directory tree right after metadata
+	if project.DirectoryTree != nil {
+		sb.WriteString("Project Structure:\n```\n")
+		sb.WriteString(project.DirectoryTree.ToMarkdown(0))
+		sb.WriteString("```\n\n")
+	}
+
+	// Add source files
 	m.formatSourceFiles(&sb, project.Files)
 
 	return sb.String(), nil
