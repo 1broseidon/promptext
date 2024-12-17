@@ -196,7 +196,7 @@ func GetMetadataSummary(config Config) (string, error) {
 		Extensions: config.Extensions,
 		Excludes:   config.Excludes,
 	}
-	projectInfo, err := info.GetProjectInfo(config.DirPath, infoConfig, gitIgnore)
+	projectInfo, err := info.GetProjectInfo(config.DirPath, infoConfig, gi)
 	if err != nil {
 		return "", err
 	}
