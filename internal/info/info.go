@@ -73,10 +73,12 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 		Type: "dir",
 	}
 
-	// Initialize directory tracker
+	// Create unified filter for consistent filtering
+	unifiedFilter := filter.NewUnifiedFilter(gitIgnore, config.Extensions, config.Excludes)
 
-	currentPath := make([]string, 0)
-	currentNode := rootNode
+	// Map to track directories
+	dirMap := make(map[string]*format.DirectoryNode)
+	dirMap["."] = rootNode
 
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -93,64 +95,39 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *gitignore.Git
 			return nil
 		}
 
-		// Create unified filter for consistent filtering
-		unifiedFilter := filter.NewUnifiedFilter(gitIgnore, config.Extensions, config.Excludes)
-
-		// Split the relative path
-		parts := strings.Split(rel, string(filepath.Separator))
-
-		// Reset to root node when we start a new top-level item
-		if len(parts) == 1 {
-			currentNode = rootNode
-			currentPath = currentPath[:0]
-		}
-
-		// Navigate to the correct parent node
-		parentPath := parts[:len(parts)-1]
-		if !pathEqual(currentPath, parentPath) {
-			currentNode = rootNode
-			for _, part := range parentPath {
-				found := false
-				for _, child := range currentNode.Children {
-					if child.Name == part {
-						currentNode = child
-						found = true
-						break
-					}
-				}
-				if !found {
-					newNode := &format.DirectoryNode{
-						Name: part,
-						Type: "dir",
-					}
-					currentNode.Children = append(currentNode.Children, newNode)
-					currentNode = newNode
-				}
-			}
-			currentPath = parentPath
-		}
-
-		if d.IsDir() {
-			// Skip directory if it should be filtered
-			if !unifiedFilter.ShouldProcess(rel) {
+		// Check if we should process this path
+		if !unifiedFilter.ShouldProcess(rel) {
+			if d.IsDir() {
 				return filepath.SkipDir
 			}
-			newNode := &format.DirectoryNode{
-				Name: d.Name(),
-				Type: "dir",
-			}
-			currentNode.Children = append(currentNode.Children, newNode)
-		} else {
-			// For files, use the same unified filter
-			if !unifiedFilter.ShouldProcess(rel) {
-				return nil
-			}
-			newNode := &format.DirectoryNode{
-				Name: d.Name(),
-				Type: "file",
-			}
-			currentNode.Children = append(currentNode.Children, newNode)
+			return nil
 		}
+
+		// Get parent directory path
+		parent := filepath.Dir(rel)
+		if parent == "." {
+			parent = ""
+		}
+
+		// Create or get parent node
+		parentNode, exists := dirMap[parent]
+		if !exists {
+			// This shouldn't happen as we process directories first
+			parentNode = rootNode
+		}
+
+		// Create new node
+		newNode := &format.DirectoryNode{
+			Name: filepath.Base(path),
+			Type: "file",
+		}
+		if d.IsDir() {
+			newNode.Type = "dir"
+			dirMap[rel] = newNode
+		}
+
+		// Add to parent's children
+		parentNode.Children = append(parentNode.Children, newNode)
 
 		return nil
 	})
