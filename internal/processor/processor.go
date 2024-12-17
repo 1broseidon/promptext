@@ -164,8 +164,8 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 	log.Debug("\nProcessing directories:")
 	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
-		if d.IsDir() {
-			log.Debug("  Scanning directory: %s", path)
+		if d.IsDir() && filepath.Dir(path) == config.DirPath {
+			log.Debug("  Scanning root directory: %s", path)
 		}
 		if err != nil || d.IsDir() {
 			return err
