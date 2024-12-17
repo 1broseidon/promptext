@@ -12,6 +12,7 @@ import (
 	"github.com/1broseidon/promptext/internal/filter"
 	"github.com/1broseidon/promptext/internal/format"
 	"github.com/1broseidon/promptext/internal/info"
+	"github.com/1broseidon/promptext/internal/log"
 	"github.com/1broseidon/promptext/internal/token"
 	"github.com/atotto/clipboard"
 )
@@ -331,7 +332,13 @@ func GetMetadataSummary(config Config, tokenCount int) (string, error) {
 }
 
 // Run executes the promptext tool with the given configuration
-func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string) error {
+func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string, debug bool) error {
+	// Enable debug logging if flag is set
+	if debug {
+		log.Enable()
+	}
+
+	log.Debug("Starting promptext with dir: %s", dirPath)
 	// Validate format
 	formatter, err := format.GetFormatter(outputFormat)
 	if err != nil {
@@ -346,12 +353,14 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	// Load config file from the specified directory
 	fileConfig, err := config.LoadConfig(absPath)
 	if err != nil {
-		log.Printf("Warning: Failed to load .promptext.yml from %s: %v", absPath, err)
+		log.Info("Warning: Failed to load .promptext.yml from %s: %v", absPath, err)
 		fileConfig = &config.FileConfig{}
 	}
 
 	// Merge file config with command line flags
-	extensions, excludes, verboseFlag := fileConfig.MergeWithFlags(extension, exclude, verbose)
+	extensions, excludes, verboseFlag, _ := fileConfig.MergeWithFlags(extension, exclude, verbose, debug)
+	log.Debug("Using extensions: %v", extensions)
+	log.Debug("Using excludes: %v", excludes)
 
 	// Create processor configuration
 	procConfig := Config{

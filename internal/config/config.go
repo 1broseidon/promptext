@@ -13,6 +13,7 @@ type FileConfig struct {
 	Excludes   []string `yaml:"excludes"`
 	Verbose    bool     `yaml:"verbose"`
 	Format     string   `yaml:"format"` // Add format field: "markdown", "xml", "json"
+	Debug      bool     `yaml:"debug"`  // Add debug field
 }
 
 // LoadConfig attempts to load and parse the .promptext.yml file
@@ -37,7 +38,7 @@ func LoadConfig(dirPath string) (*FileConfig, error) {
 
 // MergeWithFlags merges the file config with command line flags
 // Command line flags take precedence over file config
-func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bool) (extensions []string, excludes []string, verbose bool) {
+func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bool, flagDebug bool) (extensions []string, excludes []string, verbose bool, debug bool) {
 	// Handle extensions
 	if flagExt != "" {
 		extensions = parseCommaSeparated(flagExt)
@@ -56,7 +57,10 @@ func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bo
 	// Flag verbose overrides config verbose only if set
 	verbose = fc.Verbose || flagVerbose
 
-	return extensions, excludes, verbose
+	// Handle debug flag
+	debug = fc.Debug || flagDebug
+
+	return extensions, excludes, verbose, debug
 }
 
 func parseCommaSeparated(input string) []string {
