@@ -370,8 +370,19 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		log.Debug("No extension filters - processing all file types")
 	}
 
+	// Load gitignore patterns first
+	gi, err := filter.NewGitIgnore(filepath.Join(absPath, ".gitignore"))
+	if err != nil {
+		log.Info("Warning: Failed to load .gitignore: %v", err)
+	} else if gi != nil && len(gi.Patterns) > 0 {
+		log.Debug("Gitignore patterns:")
+		for _, pattern := range gi.Patterns {
+			log.Debug("  - Ignore: %s", pattern)
+		}
+	}
+
 	if len(excludes) > 0 {
-		log.Debug("Final exclusion patterns:")
+		log.Debug("Custom exclusion patterns:")
 		for _, excl := range excludes {
 			log.Debug("  - Exclude: %s", excl)
 		}
