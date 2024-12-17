@@ -70,7 +70,6 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 				continue
 			}
 
-
 			// Get the first non-empty capture group
 			var ref string
 			for i := 1; i < len(match); i++ {
@@ -89,14 +88,17 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 				ref = ref[:idx]
 			}
 
+			// Initialize maps if needed
+			if refs.Internal[currentDir] == nil {
+				refs.Internal[currentDir] = []string{}
+			}
+			if refs.External[currentDir] == nil {
+				refs.External[currentDir] = []string{}
+			}
 
 			addReference(refs, ref, currentDir, rootDir, allFiles)
 		}
 	}
-
-	// Remove empty keys from the maps
-	if len(refs.Internal[currentDir]) == 0 { delete(refs.Internal, currentDir) }
-	if len(refs.External[currentDir]) == 0 { delete(refs.External, currentDir) }
 
 	return refs
 }
