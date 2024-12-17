@@ -45,7 +45,7 @@ func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bo
 	} else if len(fc.Extensions) > 0 {
 		extensions = fc.Extensions
 	} else {
-		extensions = []string{} // Return empty slice instead of nil
+		extensions = nil
 	}
 
 	// Handle excludes
