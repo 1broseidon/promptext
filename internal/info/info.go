@@ -347,7 +347,6 @@ func getPythonVersion(root string) string {
 	if content, err := os.ReadFile(filepath.Join(root, "pyproject.toml")); err == nil {
 		lines := strings.Split(string(content), "\n")
 		inToolPoetry := false
-		var projectName string
 		for _, line := range lines {
 			line = strings.TrimSpace(line)
 			if line == "[tool.poetry]" {
@@ -357,10 +356,6 @@ func getPythonVersion(root string) string {
 			if inToolPoetry && strings.HasPrefix(line, "[") {
 				inToolPoetry = false
 				continue
-			}
-			if inToolPoetry && strings.HasPrefix(line, "name = ") {
-				projectName = strings.Trim(strings.TrimPrefix(line, "name = "), "\"'")
-				metadata.Name = projectName
 			}
 			if inToolPoetry && strings.HasPrefix(line, "version = ") {
 				version := strings.Trim(strings.TrimPrefix(line, "version = "), "\"'")
