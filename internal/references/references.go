@@ -74,7 +74,7 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 			}
 
 			// Handle Go single-line imports
-			if pattern == referencePatterns[0] && ref != "" {
+			if pattern == referencePatterns[0] {
 				if isGoStdlibPackage(ref) {
 					continue
 				}
@@ -87,7 +87,7 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 				parts := strings.Split(ref, " ")
 				modPath := strings.TrimSpace(parts[0])
 
-				// Convert relative import path to filesystem path
+				// Convert relative import path to filesystem path 
 				levels := strings.Count(modPath, ".") - 1
 				targetDir := currentDir
 				for i := 0; i < levels; i++ {
