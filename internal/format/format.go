@@ -42,7 +42,7 @@ type ProjectOverview struct {
 
 type FileStatistics struct {
 	TotalFiles   int            `xml:"totalFiles"`
-	FilesByType  map[string]int `xml:"fileTypes>type"`
+	FilesByType  map[string]int `xml:"-"` // Exclude from direct XML marshaling
 	TotalLines   int            `xml:"totalLines"`
 	PackageCount int            `xml:"packageCount"`
 }
@@ -64,14 +64,11 @@ type ProjectAnalysis struct {
 // Helper function to convert DirectoryNode to markdown string
 func (d *DirectoryNode) ToMarkdown(level int) string {
 	var sb strings.Builder
-	indent := strings.Repeat("  ", level)
-	prefix := "├──"
+	
+	// Skip the root node name but process its children
 	if level > 0 {
-		prefix = "└──"
-	}
-
-	if level > 0 {
-		sb.WriteString(fmt.Sprintf("%s%s %s", indent, prefix, d.Name))
+		indent := strings.Repeat("  ", level-1)
+		sb.WriteString(fmt.Sprintf("%s└── %s", indent, d.Name))
 		if d.Type == "dir" {
 			sb.WriteString("/")
 		}
@@ -79,12 +76,8 @@ func (d *DirectoryNode) ToMarkdown(level int) string {
 	}
 
 	if d.Children != nil {
-		for i, child := range d.Children {
-			if i == len(d.Children)-1 {
-				sb.WriteString(child.ToMarkdown(level + 1))
-			} else {
-				sb.WriteString(child.ToMarkdown(level + 1))
-			}
+		for _, child := range d.Children {
+			sb.WriteString(child.ToMarkdown(level + 1))
 		}
 	}
 
