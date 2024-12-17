@@ -93,11 +93,7 @@ promptext -exclude "test/,vendor/"
 - Build artifacts and caches
 - IDE directories (.idea, .vscode)
 
-See [documentation](docs/filters.md) for full list.
-
-## 🤝 Contributing
-
-Contributions welcome! Please read our [Contributing Guide](CONTRIBUTING.md).
+See [full documentation](docs/docs.md) for details.
 
 ## 📄 License
 
