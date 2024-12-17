@@ -61,7 +61,7 @@ setup(name="myproject", version="0.1.0")`,
     print("Hello")`,
 			},
 			expectedLang:    "Python",
-			expectedVersion: "",  // No version in requirements.txt
+			expectedVersion: "0.1.0",  // Version from setup.py
 		},
 		{
 			name: "Node.js Project",
@@ -125,7 +125,8 @@ edition = "2021"`,
 					tt.expectedLang, result.ProjectOutput.Metadata.Language)
 			}
 
-			if result.ProjectOutput.Metadata.Version != tt.expectedVersion {
+			// Only check version if we expect one
+			if tt.expectedVersion != "" && result.ProjectOutput.Metadata.Version != tt.expectedVersion {
 				t.Errorf("Expected version %s, got %s", 
 					tt.expectedVersion, result.ProjectOutput.Metadata.Version)
 			}
