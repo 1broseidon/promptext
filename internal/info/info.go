@@ -313,16 +313,27 @@ func getPythonVersion(root string) string {
 	if content, err := os.ReadFile(setupPath); err == nil {
 		lines := strings.Split(string(content), "\n")
 		for _, line := range lines {
+			line = strings.TrimSpace(line)
 			if strings.Contains(line, "version=") || strings.Contains(line, "version =") {
 				// Extract version from quotes, handling both single and double quotes
 				if idx := strings.Index(line, "\""); idx != -1 {
 					if endIdx := strings.Index(line[idx+1:], "\""); endIdx != -1 {
-						return line[idx+1 : idx+1+endIdx]
+						return strings.TrimSpace(line[idx+1 : idx+1+endIdx])
 					}
 				}
 				if idx := strings.Index(line, "'"); idx != -1 {
 					if endIdx := strings.Index(line[idx+1:], "'"); endIdx != -1 {
-						return line[idx+1 : idx+1+endIdx]
+						return strings.TrimSpace(line[idx+1 : idx+1+endIdx])
+					}
+				}
+				// Try extracting from name="myproject", version="0.1.0" pattern
+				parts := strings.Split(line, ",")
+				for _, part := range parts {
+					part = strings.TrimSpace(part)
+					if strings.HasPrefix(part, "version=") || strings.HasPrefix(part, "version =") {
+						part = strings.TrimPrefix(strings.TrimPrefix(part, "version="), "version =")
+						part = strings.Trim(part, "\"' ")
+						return part
 					}
 				}
 			}
