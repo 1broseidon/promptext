@@ -2,6 +2,7 @@ package rules
 
 import (
     "path/filepath"
+    "strings"
     "github.com/1broseidon/promptext/internal/filter/types"
 )
 
