@@ -84,7 +84,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		Extensions: config.Extensions,
 		Excludes:   config.Excludes,
 	}
-	projectInfo, err := info.GetProjectInfo(config.DirPath, infoConfig, gitIgnore)
+	projectInfo, err := info.GetProjectInfo(config.DirPath, infoConfig, gi)
 	if err != nil {
 		return &ProcessResult{}, fmt.Errorf("error getting project info: %w", err)
 	}
@@ -140,7 +140,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		}
 
 		// Create unified filter once
-		unifiedFilter := filter.NewUnifiedFilter(gitIgnore, config.Extensions, config.Excludes)
+		unifiedFilter := filter.NewUnifiedFilter(gi, config.Extensions, config.Excludes)
 
 		// Skip if file doesn't match our filters
 		if !unifiedFilter.ShouldProcess(path) {
@@ -187,7 +187,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 // GetMetadataSummary returns a concise summary of project metadata
 func GetMetadataSummary(config Config) (string, error) {
-	gitIgnore, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
+	gi, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
 	if err != nil {
 		return "", err
 	}
