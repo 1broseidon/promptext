@@ -1,32 +1,40 @@
-package references
+package filter
 
-import "regexp"
-
-var (
-	// Common prefixes that indicate non-local references
-	nonLocalPrefixes = []string{
-		"http://", "https://", "mailto:", "tel:", "ftp://",
-		"github.com/", "golang.org/", "gopkg.in/",
-		"@", // npm packages
-		"~", // home directory
-	}
-
-	// Common file extensions to try when resolving references
-	commonExtensions = []string{
-		// Source files
-		".go", ".py", ".js", ".ts", ".jsx", ".tsx",
-		".rb", ".php", ".java", ".cpp", ".c", ".h",
-		// Documentation
-		".md", ".rst", ".txt",
-		// Config files
-		".yml", ".yaml", ".json", ".toml",
-	}
-
-	referencePatterns = []*regexp.Regexp{
-		// Markdown links
-		regexp.MustCompile(`(?m)\[[^\]]*\]\(([^)]+)\)`),
-
-		// Local file references in comments
-		regexp.MustCompile(`(?m)(?:\/\/|#)\s*(?:see|ref|reference):\s*([^\s;]+)`),
-	}
+import (
+    "path/filepath"
+    "strings"
 )
+
+// Pattern represents a parsed path pattern
+type Pattern struct {
+    Original  string
+    Negated   bool
+    IsGlob    bool
+    IsDir     bool
+    Segments  []string
+}
+
+// NewPattern creates and validates a new pattern
+func NewPattern(pattern string) (*Pattern, error) {
+    p := &Pattern{
+        Original: pattern,
+        Negated:  strings.HasPrefix(pattern, "!"),
+        IsGlob:   strings.Contains(pattern, "*") || strings.Contains(pattern, "?"),
+        IsDir:    strings.HasSuffix(pattern, "/"),
+    }
+    
+    // Remove negation prefix if present
+    if p.Negated {
+        pattern = pattern[1:]
+    }
+    
+    // Remove trailing slash for directory patterns
+    if p.IsDir {
+        pattern = strings.TrimSuffix(pattern, "/")
+    }
+    
+    // Split pattern into segments
+    p.Segments = strings.Split(pattern, string(filepath.Separator))
+    
+    return p, nil
+}
