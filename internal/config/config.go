@@ -38,16 +38,17 @@ func LoadConfig(dirPath string) (*FileConfig, error) {
 // MergeWithFlags merges the file config with command line flags
 // Command line flags take precedence over file config
 func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bool) (extensions []string, excludes []string, verbose bool) {
-	extensions = fc.Extensions
+	// Handle extensions
 	if flagExt != "" {
-		// Override with flag extensions
 		extensions = parseCommaSeparated(flagExt)
+	} else if len(fc.Extensions) > 0 {
+		extensions = fc.Extensions
+	} else {
+		extensions = []string{} // Return empty slice instead of nil
 	}
 
-	// Start with config file excludes
+	// Handle excludes
 	excludes = append([]string{}, fc.Excludes...)
-
-	// Add flag excludes (highest priority)
 	if flagExclude != "" {
 		excludes = append(excludes, parseCommaSeparated(flagExclude)...)
 	}
