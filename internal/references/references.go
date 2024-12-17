@@ -32,6 +32,25 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 				continue
 			}
 
+			// Handle Go import blocks
+			if pattern == referencePatterns[0] && len(match) > 2 && match[2] != "" {
+				importBlock := match[2]
+				importLines := strings.Split(importBlock, "\n")
+				for _, line := range importLines {
+					line = strings.TrimSpace(line)
+					if line == "" {
+						continue
+					}
+					if strings.HasPrefix(line, "\"") && strings.HasSuffix(line, "\"") {
+						ref := strings.Trim(line, "\"")
+						if ref != "" {
+							addReference(refs, ref, currentDir, rootDir, allFiles)
+						}
+					}
+				}
+				continue
+			}
+
 			// Get the first non-empty capture group
 			var ref string
 			for i := 1; i < len(match); i++ {
@@ -51,7 +70,7 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 			}
 
 			// Handle Python relative imports
-			if strings.HasPrefix(ref, ".") {
+			if strings.HasPrefix(ref, ".") && !strings.Contains(ref, "/") {
 				parts := strings.Split(ref, " ")
 				modPath := parts[0]
 
@@ -79,35 +98,76 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 				}
 			}
 
-			// Check if it's external
-			if isExternalReference(ref) {
-				if _, ok := refs.External[currentDir]; !ok {
-					refs.External[currentDir] = []string{}
+			// Handle Python from ... import ...
+			if pattern == referencePatterns[2] && len(match) > 2 {
+				baseModule := match[1]
+				importedNames := match[2]
+				names := strings.Split(importedNames, ",")
+				for _, name := range names {
+					name = strings.TrimSpace(name)
+					if name == "" {
+						continue
+					}
+					
+					if strings.HasPrefix(baseModule, ".") && !strings.Contains(baseModule, "/") {
+						levels := strings.Count(baseModule, ".")
+						targetDir := currentDir
+						for i := 0; i < levels; i++ {
+							targetDir = filepath.Dir(targetDir)
+						}
+						baseModule = strings.TrimLeft(baseModule, ".")
+						if baseModule != "" {
+							baseModule = filepath.Join(targetDir, strings.Replace(baseModule, ".", "/", -1))
+						} else {
+							baseModule = targetDir
+						}
+					}
+					
+					modPath := filepath.Join(baseModule, name)
+					resolved := resolveReference(modPath, currentDir, rootDir, allFiles)
+					if resolved != "" {
+						if _, ok := refs.Internal[currentDir]; !ok {
+							refs.Internal[currentDir] = []string{}
+						}
+						refs.Internal[currentDir] = append(refs.Internal[currentDir], resolved)
+					}
 				}
-				refs.External[currentDir] = append(refs.External[currentDir], ref)
 				continue
 			}
 
-			// Try to resolve as internal reference
-			resolved := resolveReference(ref, currentDir, rootDir, allFiles)
-			if resolved != "" {
-				if _, ok := refs.Internal[currentDir]; !ok {
-					refs.Internal[currentDir] = []string{}
-				}
-				refs.Internal[currentDir] = append(refs.Internal[currentDir], resolved)
-			} else {
-				// Only add as external if it's not a relative path
-				if !strings.HasPrefix(ref, "./") && !strings.HasPrefix(ref, "../") {
-					if _, ok := refs.External[currentDir]; !ok {
-						refs.External[currentDir] = []string{}
-					}
-					refs.External[currentDir] = append(refs.External[currentDir], ref)
-				}
-			}
+			addReference(refs, ref, currentDir, rootDir, allFiles)
 		}
 	}
 
 	return refs
+}
+
+func addReference(refs *ReferenceMap, ref, currentDir, rootDir string, allFiles []string) {
+	// Check if it's external
+	if isExternalReference(ref) {
+		if _, ok := refs.External[currentDir]; !ok {
+			refs.External[currentDir] = []string{}
+		}
+		refs.External[currentDir] = append(refs.External[currentDir], ref)
+		return
+	}
+
+	// Try to resolve as internal reference
+	resolved := resolveReference(ref, currentDir, rootDir, allFiles)
+	if resolved != "" {
+		if _, ok := refs.Internal[currentDir]; !ok {
+			refs.Internal[currentDir] = []string{}
+		}
+		refs.Internal[currentDir] = append(refs.Internal[currentDir], resolved)
+	} else {
+		// Only add as external if it's not a relative path
+		if !strings.HasPrefix(ref, "./") && !strings.HasPrefix(ref, "../") {
+			if _, ok := refs.External[currentDir]; !ok {
+				refs.External[currentDir] = []string{}
+			}
+			refs.External[currentDir] = append(refs.External[currentDir], ref)
+		}
+	}
 }
 
 func isExternalReference(ref string) bool {

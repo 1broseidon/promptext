@@ -25,10 +25,12 @@ var (
 	referencePatterns = []*regexp.Regexp{
 		// Go imports - simpler pattern for single-line imports
 		regexp.MustCompile(`(?m)^\s*import\s+(?:"([^"]+)"|([A-Za-z0-9_/\.-]+))`),
+		// Go import blocks
+		regexp.MustCompile(`(?m)^\s*import\s*\((?P<block>(?:\s*"[^"]+"\s*)+)\)`),
 
 		// Python imports - separate patterns for "import" and "from ... import ..."
-		regexp.MustCompile(`(?m)^\s*import\s+([\w\.]+)`),
-		regexp.MustCompile(`(?m)^\s*from\s+([\w\.]+)`),
+		regexp.MustCompile(`(?m)^\s*import\s+([\w\._]+)(?:\s+as\s+\w+)?`),
+		regexp.MustCompile(`(?m)^\s*from\s+([\w\._]+)\s+import\s+([\w\.,\s\*]+)`),
 
 		// JavaScript/TypeScript imports - separate patterns for import and require
 		regexp.MustCompile(`(?m)import\s+(?:{[^}]*}\s+from\s+)?['"]([^'"]+)['"]`),
