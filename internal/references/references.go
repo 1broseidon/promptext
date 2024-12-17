@@ -60,6 +60,9 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
             } else if isExternalReference(ref) {
                 // If not resolved and is an external reference
                 refs.External[currentDir] = append(refs.External[currentDir], ref)
+            } else {
+                // If not resolved and not an external reference, consider it external
+                refs.External[currentDir] = append(refs.External[currentDir], ref)
             }
         }
     }
