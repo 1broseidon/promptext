@@ -25,7 +25,7 @@ func TestTokenCounter_EstimateTokens(t *testing.T) {
 		},
 		{
 			name:     "Text with symbols",
-			text:     "Symbols: !@#$%^&*()_+=-`~[]\{}|;':\",./<>?",
+			text:     "Symbols: !@#$%^&*()_+=-`~[]\\{}|;':\",./<>?",
 			expected: 32,
 		},
 		{
@@ -39,16 +39,11 @@ func TestTokenCounter_EstimateTokens(t *testing.T) {
 			expected: 6,
 		},
 		{
-			name:     "Multi-line code block",
-			text: `
-			```go
-			func main() {
-				println("Hello, world!")
-			}
-			```
-			`,
+			name: "Multi-line code block",
+			text: "```go\nfunc main() {\n    println(\"Hello, world!\")\n}\n```",
 			expected: 11,
 		},
+		
 		{
 			name:     "Code block with symbols",
 			text:     "```python\nprint(1 + 2 * 3)\n```",
@@ -92,44 +87,40 @@ func TestTokenCounter_EstimateTokens(t *testing.T) {
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines",
 			text: `
-			```go
-			var x = a + 123 * (c - 456) / e; // comment
-			println("hello")
-			```
-			`,
+```go
+var x = a + 123 * (c - 456) / e; // comment
+println("hello")
+````,
 			expected: 23,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines and tabs",
 			text: `
-			```go
-			var x = a + 123 * (c - 456) / e; 	// comment
-			println("hello")
-			```
-			`,
+```go
+var x = a + 123 * (c - 456) / e;     // comment
+println("hello")
+````,
 			expected: 23,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines and tabs and multiple lines",
 			text: `
-			```go
-			var x = a + 123 * (c - 456) / e; 	// comment
-			println("hello")
-			var y = 1
-			```
-			`,
+```go
+var x = a + 123 * (c - 456) / e;     // comment
+println("hello")
+var y = 1
+````,
 			expected: 26,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines and tabs and multiple lines and empty lines",
 			text: `
-			```go
-			var x = a + 123 * (c - 456) / e; 	// comment
-			
-			println("hello")
-			var y = 1
-			```
-			`,
+```go
+var x = a + 123 * (c - 456) / e;     // comment
+
+println("hello")
+var y = 1
+````,
 			expected: 27,
 		},
 	}
