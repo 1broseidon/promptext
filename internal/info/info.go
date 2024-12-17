@@ -685,13 +685,15 @@ func isCoreFile(path string) bool {
 		return false
 	}
 	
-	dir := filepath.Dir(path)
+	// Convert path separators to forward slashes for consistent matching
+	normalizedPath := filepath.ToSlash(path)
+	
 	// Only consider files in these special directories as core
-	return strings.Contains(dir, "internal/") ||
-		strings.Contains(dir, "pkg/") ||
-		strings.Contains(dir, "src/") ||
-		strings.Contains(dir, "lib/") ||
-		strings.Contains(dir, "core/")
+	return strings.Contains(normalizedPath, "internal/") ||
+		strings.Contains(normalizedPath, "pkg/") ||
+		strings.Contains(normalizedPath, "src/") ||
+		strings.Contains(normalizedPath, "lib/") ||
+		strings.Contains(normalizedPath, "core/")
 }
 
 func getCoreDescription(_ string) string {

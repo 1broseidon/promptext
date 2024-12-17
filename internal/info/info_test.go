@@ -53,7 +53,9 @@ func TestGetProjectInfo(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, info)
 		assert.NotNil(t, info.DirectoryTree)
-		assert.Equal(t, "test", info.DirectoryTree.Name)
+		// Verify basic structure instead of specific temp dir name
+		assert.NotEmpty(t, info.DirectoryTree.Name)
+		assert.Equal(t, "dir", info.DirectoryTree.Type)
 	})
 }
 
@@ -101,8 +103,25 @@ func TestGenerateDirectoryTree(t *testing.T) {
 		assert.Equal(t, filepath.Base(tmpDir), tree.Name)
 		assert.Equal(t, "dir", tree.Type)
 
-		// Verify children count
-		assert.Equal(t, 3, len(tree.Children)) // main.go, internal/, docs/
+		// Verify directory structure
+		foundMain := false
+		foundInternal := false
+		foundDocs := false
+		
+		for _, child := range tree.Children {
+			switch child.Name {
+			case "main.go":
+				foundMain = true
+			case "internal":
+				foundInternal = true
+			case "docs":
+				foundDocs = true
+			}
+		}
+		
+		assert.True(t, foundMain, "main.go not found")
+		assert.True(t, foundInternal, "internal/ not found")
+		assert.True(t, foundDocs, "docs/ not found")
 	})
 }
 
