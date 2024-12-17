@@ -228,7 +228,7 @@ func GetMetadataSummary(config Config) (string, error) {
 			return nil
 		}
 		rel, _ := filepath.Rel(config.DirPath, path)
-		if filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gitIgnore) {
+		if filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gi) {
 			fileCount++
 		}
 		return nil
