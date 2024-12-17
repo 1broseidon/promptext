@@ -166,10 +166,32 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			return err
 		}
 
-		// Check if directory should be skipped
+		// Get relative path for filtering
+		relPath, err := filepath.Rel(config.DirPath, path)
+		if err != nil {
+			return err
+		}
+
+		// Create filter instance
+		f := filter.New(filter.Options{
+			Includes:      config.Extensions,
+			Excludes:      config.Excludes,
+			IgnoreDefault: true,
+		})
+
+		// Check if path should be excluded
+		if f.isExcluded(relPath) {
+			if d.IsDir() {
+				log.Debug("  Skipping excluded directory: %s", relPath)
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// Log directory scanning
 		if d.IsDir() {
 			if filepath.Dir(path) == config.DirPath {
-				log.Debug("  Scanning root directory: %s", path)
+				log.Debug("  Scanning directory: %s", relPath)
 			}
 			return nil
 		}

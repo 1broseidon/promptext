@@ -81,7 +81,9 @@ func (f *Filter) isExcluded(path string) bool {
     // Check default ignores if enabled
     if f.ignoreDefault {
         for _, pattern := range DefaultIgnoreDirs {
-            if strings.Contains(normalizedPath, pattern) {
+            pattern = filepath.ToSlash(pattern)
+            if strings.HasPrefix(normalizedPath, pattern) || 
+               strings.Contains(normalizedPath, "/"+pattern) {
                 return true
             }
         }
@@ -96,7 +98,10 @@ func (f *Filter) isExcluded(path string) bool {
 
     // Check custom excludes
     for _, pattern := range f.excludes {
-        if f.matchPattern(pattern, normalizedPath) {
+        pattern = filepath.ToSlash(pattern)
+        if strings.HasPrefix(normalizedPath, pattern) || 
+           strings.Contains(normalizedPath, "/"+pattern) ||
+           normalizedPath == strings.TrimSuffix(pattern, "/") {
             return true
         }
     }
@@ -148,9 +153,14 @@ func (f *Filter) isIncluded(path string) bool {
 
 // matchPattern checks if a path matches a pattern
 func (f *Filter) matchPattern(pattern, path string) bool {
+    // Normalize both pattern and path
+    pattern = filepath.ToSlash(pattern)
+    path = filepath.ToSlash(path)
+
     // Handle directory patterns (ending with /)
     if strings.HasSuffix(pattern, "/") {
-        return strings.Contains(path, pattern)
+        pattern = strings.TrimSuffix(pattern, "/")
+        return strings.HasPrefix(path, pattern+"/") || path == pattern
     }
 
     // Handle extension patterns (starting with .)
