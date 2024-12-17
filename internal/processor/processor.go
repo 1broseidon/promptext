@@ -265,7 +265,7 @@ func GetMetadataSummary(config Config) (string, error) {
 }
 
 // Run executes the promptext tool with the given configuration
-func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string) error {
+func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string) error {
 	// Validate format
 	formatter, err := format.GetFormatter(outputFormat)
 	if err != nil {
@@ -315,13 +315,24 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		fmt.Println(result.DisplayContent)
 	}
 
-	// Format output and copy to clipboard unless disabled
-	if !noCopy {
-		formattedOutput, err := formatter.Format(result.ProjectOutput)
-		if err != nil {
-			return fmt.Errorf("error formatting output: %w", err)
-		}
+	// Format output
+	formattedOutput, err := formatter.Format(result.ProjectOutput)
+	if err != nil {
+		return fmt.Errorf("error formatting output: %w", err)
+	}
 
+	if outFile != "" {
+		// Write to file if -out is specified
+		if err := os.WriteFile(outFile, []byte(formattedOutput), 0644); err != nil {
+			return fmt.Errorf("error writing to output file: %w", err)
+		}
+		// Always print metadata summary and success message in green
+		if info, err := GetMetadataSummary(procConfig); err == nil {
+			fmt.Printf("\033[32m%s   ✓ code context written to %s (%s format)\033[0m\n",
+				info, outFile, outputFormat)
+		}
+	} else if !noCopy {
+		// Copy to clipboard if no output file is specified and clipboard is not disabled
 		if err := clipboard.WriteAll(formattedOutput); err != nil {
 			log.Printf("Warning: Failed to copy to clipboard: %v", err)
 		} else {

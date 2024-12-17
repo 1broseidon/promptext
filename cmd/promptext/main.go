@@ -16,10 +16,11 @@ func main() {
 	infoOnly := flag.Bool("info", false, "Only display project summary")
 	verbose := flag.Bool("verbose", false, "Show full code content in terminal")
 	format := flag.String("format", "markdown", "Output format (markdown, xml, json)")
+	outFile := flag.String("out", "", "Output file path (if specified, output will be written to file instead of clipboard)")
 
 	flag.Parse()
 
-	if err := processor.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose, *format); err != nil {
+	if err := processor.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose, *format, *outFile); err != nil {
 		log.Fatal(err)
 	}
 }
