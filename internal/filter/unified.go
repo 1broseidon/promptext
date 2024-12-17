@@ -49,14 +49,14 @@ func NewUnifiedFilter(gitIgnore *gitignore.GitIgnore, extensions, excludes []str
 
 // GetFileType determines the type of file based on its path and patterns
 func (uf *UnifiedFilter) GetFileType(path string) string {
+    // Quick check for node_modules first
+    if strings.Contains(path, "node_modules/") {
+        return "dependency"
+    }
+
     // Check for tests
     if strings.Contains(path, "_test.") || strings.Contains(path, "test_") {
         return "test"
-    }
-    
-    // Check if path contains node_modules
-    if strings.Contains(path, "node_modules/") {
-        return "dependency"
     }
 
     // Check for entry points with full path support
@@ -97,7 +97,10 @@ func (uf *UnifiedFilter) GetFileType(path string) string {
 
 // ShouldProcess determines if a file should be processed based on all rules
 func (uf *UnifiedFilter) ShouldProcess(path string) bool {
-	// 1. Check all exclusion patterns first
+	// Quick check for node_modules first
+	if strings.Contains(path, "node_modules/") {
+		return false
+	}
 
 	// Check default ignore directories
 	for _, dir := range uf.defaultIgnores {
@@ -106,7 +109,7 @@ func (uf *UnifiedFilter) ShouldProcess(path string) bool {
 		}
 	}
 
-	// Check gitignore patterns
+	// Check gitignore patterns 
 	if uf.gitIgnore != nil && uf.gitIgnore.ShouldIgnore(path) {
 		return false
 	}
