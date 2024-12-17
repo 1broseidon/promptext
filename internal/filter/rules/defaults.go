@@ -1,9 +1,9 @@
 package rules
 
-import "github.com/1broseidon/promptext/internal/filter"
+import "github.com/1broseidon/promptext/internal/filter/types"
 
-func DefaultExcludes() []filter.Rule {
-    return []filter.Rule{
+func DefaultExcludes() []types.Rule {
+    return []types.Rule{
         NewPatternRule([]string{
             ".git/",
             "node_modules/",
@@ -17,7 +17,7 @@ func DefaultExcludes() []filter.Rule {
             "coverage/",
             "bin/",
             ".terraform/",
-        }, filter.Exclude),
+        }, types.Exclude),
         NewExtensionRule([]string{
             ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp",
             ".ico", ".icns", ".svg", ".eps", ".raw", ".cr2", ".nef",

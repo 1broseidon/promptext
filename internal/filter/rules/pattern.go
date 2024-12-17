@@ -3,17 +3,17 @@ package rules
 import (
     "path/filepath"
     "strings"
-    "github.com/1broseidon/promptext/internal/filter"
+    "github.com/1broseidon/promptext/internal/filter/types"
 )
 
 type PatternRule struct {
-    BaseRule
+    types.BaseRule
     patterns []string
 }
 
-func NewPatternRule(patterns []string, action filter.RuleAction) Rule {
+func NewPatternRule(patterns []string, action types.RuleAction) types.Rule {
     return &PatternRule{
-        BaseRule: filter.BaseRule{action: action},
+        BaseRule: types.BaseRule{action: action},
         patterns: patterns,
     }
 }

@@ -2,15 +2,15 @@ package rules
 
 import (
     "path/filepath"
-    "github.com/1broseidon/promptext/internal/filter"
+    "github.com/1broseidon/promptext/internal/filter/types"
 )
 
 type ExtensionRule struct {
-    BaseRule
+    types.BaseRule
     extensions map[string]bool
 }
 
-func NewExtensionRule(exts []string, action filter.RuleAction) Rule {
+func NewExtensionRule(exts []string, action types.RuleAction) types.Rule {
     extMap := make(map[string]bool)
     for _, ext := range exts {
         extMap[ext] = true

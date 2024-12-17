@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 	"github.com/1broseidon/promptext/internal/filter/rules"
+	"github.com/1broseidon/promptext/internal/filter/types"
 )
 
 type Options struct {
@@ -13,7 +14,7 @@ type Options struct {
 }
 
 type Filter struct {
-	rules []Rule
+	rules []types.Rule
 }
 
 func New(opts Options) *Filter {
