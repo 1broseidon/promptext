@@ -138,18 +138,12 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		return nil, err
 	}
 
-	// Initialize gitignore
-	gi, err := filter.NewGitIgnore(filepath.Join(config.DirPath, ".gitignore"))
-	if err != nil {
-		return &ProcessResult{}, fmt.Errorf("error reading .gitignore: %w", err)
-	}
-
 	// Get project information
 	infoConfig := &info.Config{
 		Extensions: config.Extensions,
 		Excludes:   config.Excludes,
 	}
-	projectInfo, err := info.GetProjectInfo(config.DirPath, infoConfig, gi)
+	projectInfo, err := info.GetProjectInfo(config.DirPath, infoConfig)
 	if err != nil {
 		return &ProcessResult{}, fmt.Errorf("error getting project info: %w", err)
 	}
