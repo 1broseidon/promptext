@@ -420,7 +420,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		}
 		// Always print metadata summary and success message in green
 		if info, err := GetMetadataSummary(procConfig, result.TokenCount); err == nil {
-			fmt.Printf("\033[32m%s   ✓ code context written to %s (%s format)\033[0m\n",
+			fmt.Printf("\033[32m%s✓ code context written to %s (%s format)\033[0m\n",
 				info, outFile, outputFormat)
 		}
 	} else if !noCopy {
