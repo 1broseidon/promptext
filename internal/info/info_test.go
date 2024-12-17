@@ -45,7 +45,7 @@ func TestGetProjectInfo(t *testing.T) {
 	}
 
 	// Initialize gitignore
-	gi, _ := gitignore.New(filepath.Join(tmpDir, ".gitignore"))
+	gi, _ := filter.NewGitIgnore(filepath.Join(tmpDir, ".gitignore"))
 
 	// Test GetProjectInfo
 	t.Run("basic project structure", func(t *testing.T) {
@@ -92,7 +92,7 @@ func TestGenerateDirectoryTree(t *testing.T) {
 		Excludes:   []string{},
 	}
 
-	gi, _ := gitignore.New("")
+	gi, _ := filter.NewGitIgnore("")
 
 	t.Run("directory tree generation", func(t *testing.T) {
 		tree, err := generateDirectoryTree(tmpDir, config, gi)
