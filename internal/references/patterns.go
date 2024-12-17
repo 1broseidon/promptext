@@ -23,15 +23,15 @@ var (
     }
 
     referencePatterns = []*regexp.Regexp{
-        // Go imports
-        regexp.MustCompile(`(?m)^\s*import\s+(?:"([^"]+)"|([^"'\s]+))`),
-        // Python imports
-        regexp.MustCompile(`(?m)^\s*(?:from\s+([^\s;]+)\s+import|import\s+([^\s;]+))`),
+        // Go imports - handle both quoted and parenthesized imports
+        regexp.MustCompile(`(?m)^\s*import\s+(?:\(\s*|\s*)"([^"]+)"`),
+        // Python imports - handle both import and from...import
+        regexp.MustCompile(`(?m)^\s*(?:from\s+([\w\.]+)|import\s+([\w\.]+))`),
         // JavaScript/TypeScript imports
-        regexp.MustCompile(`(?m)(?:import\s+.*?from\s+['"]([^'"]+)['"]|require\s*\(['"]([^'"]+)['"]\))`),
-        // Markdown links - only file links, not URLs
-        regexp.MustCompile(`(?m)\[[^\]]*\]\(([^)]+)\)`),
+        regexp.MustCompile(`(?m)import\s+(?:{[^}]*}\s+from\s+)?['"]([^'"]+)['"]|require\(['"]([^'"]+)['"]\)`),
+        // Markdown links - exclude URLs
+        regexp.MustCompile(`(?m)\[[^\]]*\]\((?!https?://|mailto:|ftp://|tel:)([^)]+)\)`),
         // Local file references in comments
-        regexp.MustCompile(`(?m)(?:\/\/|#)\s*(?:see|ref|reference):\s*([^\s]+)`),
+        regexp.MustCompile(`(?m)(?:\/\/|#)\s*(?:see|ref|reference):\s*([^\s;]+)`),
     }
 )
