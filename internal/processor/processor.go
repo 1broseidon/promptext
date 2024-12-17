@@ -189,20 +189,20 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			IgnoreDefault: true,
 		})
 
-		// Check if path should be excluded
-		if f.IsExcluded(relPath) {
-			if d.IsDir() {
+		// For directories, check exclusion before logging
+		if d.IsDir() {
+			if f.IsExcluded(relPath) {
 				log.Debug("  Skipping excluded directory: %s", relPath)
 				return filepath.SkipDir
+			}
+			if filepath.Dir(path) == config.DirPath {
+				log.Debug("  Scanning directory: %s", relPath)
 			}
 			return nil
 		}
 
-		// Log directory scanning
-		if d.IsDir() {
-			if filepath.Dir(path) == config.DirPath {
-				log.Debug("  Scanning directory: %s", relPath)
-			}
+		// For files, check exclusion
+		if f.IsExcluded(relPath) {
 			return nil
 		}
 
