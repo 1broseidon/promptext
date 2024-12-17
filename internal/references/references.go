@@ -50,7 +50,33 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
                 ref = ref[:idx]
             }
 
-            // Check if it's external first
+            // Handle Python relative imports
+            if strings.HasPrefix(ref, ".") {
+                parts := strings.Split(ref, " ")
+                modPath := parts[0]
+                
+                // Convert relative import path to filesystem path
+                levels := strings.Count(modPath, ".")
+                targetDir := currentDir
+                for i := 0; i < levels; i++ {
+                    targetDir = filepath.Dir(targetDir)
+                }
+                modPath = strings.TrimLeft(modPath, ".")
+                if modPath != "" {
+                    modPath = filepath.Join(targetDir, strings.Replace(modPath, ".", "/", -1))
+                } else {
+                    modPath = targetDir
+                }
+                
+                // Try to resolve the module path
+                resolved := resolveReference(modPath, currentDir, rootDir, allFiles)
+                if resolved != "" {
+                    refs.Internal[currentDir] = append(refs.Internal[currentDir], resolved)
+                    continue
+                }
+            }
+
+            // Check if it's external
             if isExternalReference(ref) {
                 refs.External[currentDir] = append(refs.External[currentDir], ref)
                 continue

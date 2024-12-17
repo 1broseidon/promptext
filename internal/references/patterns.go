@@ -26,7 +26,7 @@ var (
         // Go imports - handle both quoted and parenthesized imports
         regexp.MustCompile(`(?m)^\s*import\s*\(?\s*"([^"]+)"\)?`),
         // Python imports - handle both import and from...import
-        regexp.MustCompile(`(?m)^\s*(?:from\s+([\w\.]+)|import\s+([\w\.]+))`),
+        regexp.MustCompile(`(?m)^\s*(?:from\s+([\w\._]+(?:\s+import\s+[\w\s,]+)?)|import\s+([\w\._]+))`),
         // JavaScript/TypeScript imports
         regexp.MustCompile(`(?m)import\s+(?:{[^}]*}\s+from\s+)?['"]([^'"]+)['"]|require\(['"]([^'"]+)['"]\)`),
         // Markdown links
