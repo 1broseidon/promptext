@@ -105,9 +105,13 @@ func buildVerboseDisplay(projectOutput *format.ProjectOutput) string {
 
 // processFile handles the processing of a single file
 func processFile(path string, config Config, gi *filter.GitIgnore) (*format.FileInfo, error) {
-	unifiedFilter := filter.NewUnifiedFilter(gi, config.Extensions, config.Excludes)
+	f := filter.New(filter.Options{
+		Includes: config.Extensions,
+		Excludes: config.Excludes,
+		IgnoreDefault: true,
+	})
 
-	if !unifiedFilter.ShouldProcess(path) {
+	if !f.ShouldProcess(path) {
 		return nil, nil
 	}
 
