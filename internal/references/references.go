@@ -74,7 +74,7 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 			}
 
 			// Handle Go single-line imports
-			if pattern == referencePatterns[0] {
+			if pattern == referencePatterns[0] && ref != "" {
 				if isGoStdlibPackage(ref) {
 					continue
 				}
@@ -85,10 +85,10 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 			// Handle Python relative imports
 			if strings.HasPrefix(ref, ".") && !strings.Contains(ref, "/") {
 				parts := strings.Split(ref, " ")
-				modPath := parts[0]
+				modPath := strings.TrimSpace(parts[0])
 
 				// Convert relative import path to filesystem path
-				levels := strings.Count(modPath, ".")
+				levels := strings.Count(modPath, ".") - 1
 				targetDir := currentDir
 				for i := 0; i < levels; i++ {
 					targetDir = filepath.Dir(targetDir)
@@ -114,14 +114,14 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 			// Handle Python from ... import ...
 			if pattern == referencePatterns[3] && len(match) > 2 {
 				baseModule := match[1]
-				importedNames := match[2]
+				importedNames := strings.TrimSpace(match[2])
 				names := strings.Split(importedNames, ",")
 
 				targetDir := currentDir
 				if !strings.HasPrefix(baseModule, ".") {
 					// For non-relative imports, use parent directory as base
 					targetDir = filepath.Dir(currentDir)
-				} else {
+				} else if strings.HasPrefix(baseModule, ".") {
 					// For relative imports, calculate target directory
 					levels := strings.Count(baseModule, ".")
 					for i := 0; i < levels; i++ {
@@ -151,7 +151,7 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 						refs.Internal[currentDir] = append(refs.Internal[currentDir], resolved)
 					} else {
 						// Combine baseModule and name for external reference
-						addReference(refs, baseModule+"/"+name, currentDir, rootDir, allFiles)
+						addReference(refs, baseModule, currentDir, rootDir, allFiles)
 					}
 				}
 				continue
@@ -168,7 +168,7 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 					continue
 				}
 				if resolved == "" {
-					addReference(refs, ref, currentDir, rootDir, allFiles)
+					addReference(refs, ref, currentDir, rootDir, allFiles)					
 				}
 				continue
 			}

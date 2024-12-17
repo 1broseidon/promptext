@@ -29,7 +29,7 @@ var (
 		regexp.MustCompile(`(?m)^\s*import\s*\((?P<block>(?:\s*"[^"]+"\s*)+)\)`),
 
 		// Python imports - separate patterns for "import" and "from ... import ..."
-		regexp.MustCompile(`(?m)^\s*import\s+([\w\._]+)(?:\s+as\s+\w+)?`),
+		regexp.MustCompile(`(?m)^\s*import\s+([\w\._]+)`),
 		regexp.MustCompile(`(?m)^\s*from\s+([\w\._]+)\s+import\s+([\w\.,\s\*]+)`),
 
 		// JavaScript/TypeScript imports - separate patterns for import and require
