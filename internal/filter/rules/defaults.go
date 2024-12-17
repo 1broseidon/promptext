@@ -25,6 +25,6 @@ func DefaultExcludes() []types.Rule {
             ".zip", ".tar", ".gz", ".7z", ".rar", ".iso",
             ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
             ".class", ".pyc", ".pyo", ".pyd", ".o", ".a",
-        }, filter.Exclude),
+        }, types.Exclude),
     }
 }

@@ -20,6 +20,13 @@ type BaseRule struct {
     action  RuleAction
 }
 
+func NewBaseRule(pattern string, action RuleAction) BaseRule {
+    return BaseRule{
+        pattern: pattern,
+        action:  action,
+    }
+}
+
 func (r *BaseRule) Action() RuleAction {
     return r.action
 }
