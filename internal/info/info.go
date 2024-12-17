@@ -693,13 +693,25 @@ func AnalyzeProject(rootPath string) *ProjectAnalysis {
 		Documentation: make(map[string]string),
 	}
 
+	// Create filter with default settings and node_modules exclusion
+	f := filter.New(filter.Options{
+		IgnoreDefault: true,
+		Excludes:     []string{"node_modules/", "vendor/"}, // Add explicit excludes
+	})
+
 	filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return nil
 		}
 
 		rel, _ := filepath.Rel(rootPath, path)
-		fileType := filter.GetFileType(rel)
+
+		// Skip excluded paths entirely
+		if f.IsExcluded(rel) {
+			return nil
+		}
+
+		fileType := filter.GetFileType(rel, f)
 
 		switch {
 		case strings.HasPrefix(fileType, "entry:"):
