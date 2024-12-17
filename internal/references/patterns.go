@@ -24,20 +24,14 @@ var (
 
     referencePatterns = []*regexp.Regexp{
         // Go imports
-        regexp.MustCompile(`(?m)^\s*import\s+(?:"([^"]+)"|'([^']+)')`),
+        regexp.MustCompile(`(?m)^\s*import\s+(?:"([^"]+)"|([^"'\s]+))`),
         // Python imports
-        regexp.MustCompile(`(?m)(?:from|import)\s+([^\s;]+)`),
+        regexp.MustCompile(`(?m)^\s*(?:from\s+([^\s;]+)\s+import|import\s+([^\s;]+))`),
         // JavaScript/TypeScript imports
-        regexp.MustCompile(`(?m)(?:import|require)\s*\(?['"]([^'"]+)['"]\)?`),
-        // C/C++ includes
-        regexp.MustCompile(`(?m)#include\s+["<]([^">]+)[">]`),
-        // Ruby/PHP requires
-        regexp.MustCompile(`(?m)(?:require|include)\s+['"]([^'"]+)['"]`),
-        // CSS/SCSS imports
-        regexp.MustCompile(`(?m)@import\s+['"]([^'"]+)['"]`),
-        // Markdown links
-        regexp.MustCompile(`(?m)\[[^\]]*\]\(([^)]+)\)`),
-        // HTML includes (src/href)
-        regexp.MustCompile(`(?m)(?:src|href)=["']([^'"]+)["']`),
+        regexp.MustCompile(`(?m)(?:import\s+.*?from\s+['"]([^'"]+)['"]|require\s*\(['"]([^'"]+)['"]\))`),
+        // Markdown links - only file links, not URLs
+        regexp.MustCompile(`(?m)\[[^\]]*\]\((?!https?://|mailto:|ftp://)([^)]+)\)`),
+        // Local file references in comments
+        regexp.MustCompile(`(?m)(?:\/\/|#)\s*(?:see|ref|reference):\s*([^\s]+)`),
     }
 )

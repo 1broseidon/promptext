@@ -36,17 +36,28 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
             var ref string
             for i := 1; i < len(match); i++ {
                 if match[i] != "" {
-                    ref = match[i]
+                    ref = strings.TrimSpace(match[i])
                     break
                 }
             }
             
-            if ref == "" {
+            if ref == "" || ref == "." || ref == ".." {
                 continue
+            }
+
+            // Remove any query parameters or fragments
+            if idx := strings.IndexAny(ref, "?#"); idx != -1 {
+                ref = ref[:idx]
             }
 
             // Check if it's an external reference
             if isExternalReference(ref) {
+                if !strings.Contains(ref, "://") && !strings.HasPrefix(ref, "mailto:") {
+                    // Add scheme for URLs if missing
+                    if strings.HasPrefix(ref, "www.") {
+                        ref = "https://" + ref
+                    }
+                }
                 refs.External[currentDir] = append(
                     refs.External[currentDir], 
                     ref,
@@ -57,10 +68,13 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
             // Try to resolve the reference
             resolved := resolveReference(ref, currentDir, rootDir, allFiles)
             if resolved != "" {
-                refs.Internal[currentDir] = append(
-                    refs.Internal[currentDir], 
-                    resolved,
-                )
+                // Convert to relative path for display
+                if rel, err := filepath.Rel(rootDir, filepath.Join(rootDir, resolved)); err == nil {
+                    refs.Internal[currentDir] = append(
+                        refs.Internal[currentDir],
+                        rel,
+                    )
+                }
             }
         }
     }
@@ -93,25 +107,40 @@ func resolveReference(ref, currentDir, rootDir string, allFiles []string) string
     // Clean and normalize the reference path
     ref = filepath.Clean(ref)
     
-    // Try direct match first
-    candidate := filepath.Join(currentDir, ref)
-    if matchFile(candidate, rootDir, allFiles) {
-        return candidate
+    // Handle relative paths
+    if strings.HasPrefix(ref, "./") {
+        ref = strings.TrimPrefix(ref, "./")
+    }
+    
+    candidates := []string{
+        // Try as-is first
+        ref,
+        // Try relative to current directory
+        filepath.Join(currentDir, ref),
+        // Try absolute path within project
+        filepath.Join(rootDir, ref),
     }
     
     // If no extension provided, try common extensions
     if filepath.Ext(ref) == "" {
-        for _, ext := range commonExtensions {
-            candidateWithExt := candidate + ext
-            if matchFile(candidateWithExt, rootDir, allFiles) {
-                return candidateWithExt
+        withExtensions := []string{}
+        for _, candidate := range candidates {
+            for _, ext := range commonExtensions {
+                withExtensions = append(withExtensions, candidate+ext)
             }
         }
+        candidates = append(candidates, withExtensions...)
     }
     
-    // Try absolute path within project
-    if matchFile(ref, rootDir, allFiles) {
-        return ref
+    // Try all candidates
+    for _, candidate := range candidates {
+        if matchFile(candidate, rootDir, allFiles) {
+            // Return path relative to root
+            if rel, err := filepath.Rel(rootDir, candidate); err == nil {
+                return rel
+            }
+            return candidate
+        }
     }
     
     return ""
