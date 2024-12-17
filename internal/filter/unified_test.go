@@ -3,7 +3,6 @@ package filter
 import (
 	"testing"
 
-	"github.com/1broseidon/promptext/internal/gitignore"
 )
 
 func TestUnifiedFilter_ShouldProcess(t *testing.T) {

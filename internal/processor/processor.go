@@ -121,7 +121,7 @@ func buildVerboseDisplay(projectOutput *format.ProjectOutput) string {
 }
 
 // processFile handles the processing of a single file
-func processFile(path string, config Config, gi *gitignore.GitIgnore, allFiles []string) (*format.FileInfo, error) {
+func processFile(path string, config Config, gi *filter.GitIgnore, allFiles []string) (*format.FileInfo, error) {
 	unifiedFilter := filter.NewUnifiedFilter(gi, config.Extensions, config.Excludes)
 
 	if !unifiedFilter.ShouldProcess(path) {
@@ -161,7 +161,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	}
 
 	// Initialize gitignore
-	gi, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
+	gi, err := filter.NewGitIgnore(filepath.Join(config.DirPath, ".gitignore"))
 	if err != nil {
 		return &ProcessResult{}, fmt.Errorf("error reading .gitignore: %w", err)
 	}
@@ -304,7 +304,7 @@ func countIncludedFiles(config Config, gi *gitignore.GitIgnore) (int, error) {
 
 // GetMetadataSummary returns a concise summary of project metadata
 func GetMetadataSummary(config Config, tokenCount int) (string, error) {
-	gi, err := gitignore.New(filepath.Join(config.DirPath, ".gitignore"))
+	gi, err := filter.NewGitIgnore(filepath.Join(config.DirPath, ".gitignore"))
 	if err != nil {
 		return "", err
 	}

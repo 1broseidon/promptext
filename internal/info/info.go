@@ -691,7 +691,7 @@ func AnalyzeProject(rootPath string) *ProjectAnalysis {
 		Documentation: make(map[string]string),
 	}
 
-	gi, err := gitignore.New(filepath.Join(rootPath, ".gitignore"))
+	gi, err := filter.NewGitIgnore(filepath.Join(rootPath, ".gitignore"))
 	if err != nil {
 		// If we can't load gitignore, proceed without it
 		gi = nil
