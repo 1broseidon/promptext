@@ -34,61 +34,74 @@ func New(path string) (*GitIgnore, error) {
 	return &GitIgnore{patterns: patterns}, nil
 }
 
+// matchExact checks if the pattern exactly matches either the base name or full path
+func (gi *GitIgnore) matchExact(pattern, path, baseName string) bool {
+	return pattern == baseName || pattern == path
+}
+
+// matchDirectory checks if a directory pattern matches the path
+func (gi *GitIgnore) matchDirectory(pattern, path string) bool {
+	if strings.HasSuffix(pattern, "/") {
+		dirPattern := strings.TrimSuffix(pattern, "/")
+		return strings.Contains(path, dirPattern)
+	}
+	return false
+}
+
+// matchGlobPattern checks if a glob pattern matches any part of the path
+func (gi *GitIgnore) matchGlobPattern(pattern, path, baseName string) bool {
+	// For patterns starting with *, try matching against base name first
+	if strings.HasPrefix(pattern, "*") {
+		if matched, err := filepath.Match(pattern, baseName); err == nil && matched {
+			return true
+		}
+	}
+
+	// Try matching against full path
+	if matched, err := filepath.Match(pattern, path); err == nil && matched {
+		return true
+	}
+
+	// Try matching against each path segment
+	segments := strings.Split(path, string(filepath.Separator))
+	for _, segment := range segments {
+		if matched, err := filepath.Match(pattern, segment); err == nil && matched {
+			return true
+		}
+	}
+
+	// For patterns like .name*, try matching with the pattern as a suffix
+	if strings.HasSuffix(pattern, "*") {
+		prefix := strings.TrimSuffix(pattern, "*")
+		if strings.HasPrefix(path, prefix) || strings.HasPrefix(baseName, prefix) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (gi *GitIgnore) ShouldIgnore(path string) bool {
 	if len(gi.patterns) == 0 {
 		return false
 	}
 
-	// Get both the full path and base name for matching
 	baseName := filepath.Base(path)
 
 	for _, pattern := range gi.patterns {
-		// Handle directory patterns
-		if strings.HasSuffix(pattern, "/") {
-			dirPattern := strings.TrimSuffix(pattern, "/")
-			if strings.Contains(path, dirPattern) {
-				return true
-			}
-			continue
+		// Try exact matches first
+		if gi.matchExact(pattern, path, baseName) {
+			return true
 		}
 
-		// Try exact matches first
-		if pattern == baseName || pattern == path {
+		// Check directory patterns
+		if gi.matchDirectory(pattern, path) {
 			return true
 		}
 
 		// Handle glob patterns
-		if strings.Contains(pattern, "*") {
-			// For patterns starting with *, try matching against base name first
-			if strings.HasPrefix(pattern, "*") {
-				matched, err := filepath.Match(pattern, baseName)
-				if err == nil && matched {
-					return true
-				}
-			}
-
-			// Try matching against full path
-			matched, err := filepath.Match(pattern, path)
-			if err == nil && matched {
-				return true
-			}
-
-			// Try matching against each path segment
-			segments := strings.Split(path, string(filepath.Separator))
-			for _, segment := range segments {
-				matched, err := filepath.Match(pattern, segment)
-				if err == nil && matched {
-					return true
-				}
-			}
-
-			// For patterns like .name*, try matching with the pattern as a suffix
-			if strings.HasSuffix(pattern, "*") {
-				prefix := strings.TrimSuffix(pattern, "*")
-				if strings.HasPrefix(path, prefix) || strings.HasPrefix(baseName, prefix) {
-					return true
-				}
-			}
+		if strings.Contains(pattern, "*") && gi.matchGlobPattern(pattern, path, baseName) {
+			return true
 		}
 	}
 	return false
