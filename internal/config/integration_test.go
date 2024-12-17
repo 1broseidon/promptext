@@ -3,9 +3,11 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"reflect"
+	"sort"
+	"strings"
 	"testing"
 
-	"github.com/1broseidon/promptext/internal/filter"
 	"github.com/1broseidon/promptext/internal/processor"
 )
 
@@ -23,8 +25,8 @@ func TestFilterIntegration(t *testing.T) {
 		"lib/helper.go":     "package lib",
 		"vendor/dep.go":     "package vendor",
 		"node_modules/x.js": "module.exports = {};",
-		"test.txt":         "test file",
-		".env":             "SECRET=123",
+		"test.txt":          "test file",
+		".env":              "SECRET=123",
 	}
 
 	for path, content := range files {
@@ -62,7 +64,7 @@ excludes:
 	config := processor.Config{
 		DirPath: tmpDir,
 	}
-	
+
 	result, err := processor.ProcessDirectory(config, false)
 	if err != nil {
 		t.Fatal(err)
@@ -73,7 +75,7 @@ excludes:
 		"main.go",
 		"lib/helper.go",
 	}
-	
+
 	foundFiles := make([]string, 0)
 	for _, file := range result.ProjectOutput.Files {
 		foundFiles = append(foundFiles, file.Path)
