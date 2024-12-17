@@ -24,7 +24,7 @@ var (
 
     referencePatterns = []*regexp.Regexp{
         // Go imports - handle both quoted and parenthesized imports
-        regexp.MustCompile(`(?m)^\s*import\s+(?:\(\s*|\s*)"([^"]+)"`),
+        regexp.MustCompile(`(?m)^\s*import\s*\(?\s*"([^"]+)"\)?`),
         // Python imports - handle both import and from...import
         regexp.MustCompile(`(?m)^\s*(?:from\s+([\w\.]+)|import\s+([\w\.]+))`),
         // JavaScript/TypeScript imports

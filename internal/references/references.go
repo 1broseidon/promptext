@@ -85,8 +85,12 @@ func isExternalReference(ref string) bool {
         return true
     }
     
-    // Check for package names without paths or with '@' prefix (npm packages)
-    if !strings.Contains(ref, "/") && !strings.Contains(ref, ".") || strings.HasPrefix(ref, "@") {
+    // Check for standard library packages and other external packages
+    if !strings.Contains(ref, "/") && !strings.Contains(ref, ".") {
+        // Standard library packages
+        return true
+    }
+    if strings.HasPrefix(ref, "@") || strings.HasPrefix(ref, "github.com/") || strings.HasPrefix(ref, "golang.org/") {
         return true
     }
     
