@@ -1,7 +1,9 @@
-package filter
+package filter_test
 
 import (
 	"testing"
+	
+	"github.com/1broseidon/promptext/internal/filter"
 )
 
 func TestUnifiedFilter_ShouldProcess(t *testing.T) {
@@ -91,7 +93,7 @@ func TestUnifiedFilter_ShouldProcess(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitIgnore := createGitIgnore(tt.gitIgnoreRules)
-			filter := NewUnifiedFilter(gitIgnore, tt.allowedExts, tt.excludePatterns)
+			f := filter.NewUnifiedFilter(gitIgnore, tt.allowedExts, tt.excludePatterns)
 
 			got := filter.ShouldProcess(tt.path)
 			if got != tt.want {
@@ -164,7 +166,7 @@ func TestUnifiedFilter_PathMatching(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			filter := NewUnifiedFilter(nil, nil, tt.excludes)
+			f := filter.NewUnifiedFilter(nil, nil, tt.excludes)
 			got := filter.ShouldProcess(tt.path)
 			if got != tt.want {
 				t.Errorf("PathMatching(%q) = %v, want %v", tt.path, got, tt.want)

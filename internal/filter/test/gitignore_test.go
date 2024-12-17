@@ -1,9 +1,11 @@
-package filter
+package filter_test
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/1broseidon/promptext/internal/filter"
 )
 
 func TestNewGitIgnore(t *testing.T) {
@@ -55,7 +57,7 @@ func TestNewGitIgnore(t *testing.T) {
 				t.Fatalf("Failed to write .gitignore file: %v", err)
 			}
 
-			got, err := NewGitIgnore(gitignorePath)
+			got, err := filter.NewGitIgnore(gitignorePath)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewGitIgnore() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -78,7 +80,7 @@ func TestNewGitIgnore(t *testing.T) {
 
 	// Test non-existent file
 	t.Run("non-existent file", func(t *testing.T) {
-		got, err := NewGitIgnore(filepath.Join(tmpDir, "nonexistent"))
+		got, err := filter.NewGitIgnore(filepath.Join(tmpDir, "nonexistent"))
 		if err != nil {
 			t.Errorf("NewGitIgnore() error = %v, want nil for non-existent file", err)
 			return
@@ -210,7 +212,7 @@ func TestGitIgnore_ShouldIgnore(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gi := &GitIgnore{patterns: tt.patterns}
+			gi := &filter.GitIgnore{Patterns: tt.patterns}
 
 			for path, want := range tt.paths {
 				got := gi.ShouldIgnore(path)
@@ -223,7 +225,7 @@ func TestGitIgnore_ShouldIgnore(t *testing.T) {
 }
 
 func TestGitIgnore_MatchFunctions(t *testing.T) {
-	gi := &GitIgnore{}
+	gi := &filter.GitIgnore{}
 
 	t.Run("matchExact", func(t *testing.T) {
 		tests := []struct {
