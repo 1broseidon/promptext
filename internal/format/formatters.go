@@ -156,9 +156,11 @@ func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
 	m.formatFileStats(&sb, project.FileStats)
 
 	// Directory Structure
-	sb.WriteString("## Project Structure\n```\n")
-	sb.WriteString(project.DirectoryTree.ToMarkdown(0))
-	sb.WriteString("```\n")
+	if project.DirectoryTree != nil {
+		sb.WriteString("## Project Structure\n```\n")
+		sb.WriteString(project.DirectoryTree.ToMarkdown(0))
+		sb.WriteString("```\n")
+	}
 
 	m.formatGitInfo(&sb, project.GitInfo)
 	m.formatDependencies(&sb, project.Dependencies)
