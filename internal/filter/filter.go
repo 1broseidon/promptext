@@ -126,7 +126,12 @@ func (f *Filter) IsExcluded(path string) bool {
 }
 
 // GetFileType determines the type of file based on its path
-func GetFileType(path string) string {
+func GetFileType(path string, f *Filter) string {
+    // First check if the path should be excluded
+    if f != nil && f.IsExcluded(path) {
+        return ""
+    }
+
     // Check for test files
     if strings.Contains(path, "_test.go") || strings.Contains(path, "test_") || strings.HasPrefix(path, "test_") {
         return "test"
