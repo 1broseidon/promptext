@@ -154,10 +154,20 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	// Create token counter
 	tokenCounter := token.NewTokenCounter()
 
-	// Process files
-	var displayContent string
+	// Format the output for both display and clipboard
+	formatter, err := format.GetFormatter("markdown") // Default to markdown for token counting
+	if err != nil {
+		return nil, fmt.Errorf("error creating formatter: %w", err)
+	}
+
+	formattedOutput, err := formatter.Format(projectOutput)
+	if err != nil {
+		return nil, fmt.Errorf("error formatting output: %w", err)
+	}
+
+	displayContent := ""
 	if verbose {
-		displayContent = buildVerboseDisplay(projectOutput)
+		displayContent = formattedOutput
 	}
 
 	log.Debug("\nProcessing directories:")
@@ -215,17 +225,6 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 	if err != nil {
 		return &ProcessResult{}, fmt.Errorf("error walking directory: %w", err)
-	}
-
-	// Format the output for token counting
-	formatter, err := format.GetFormatter("markdown") // Default to markdown for token counting
-	if err != nil {
-		return nil, fmt.Errorf("error creating formatter: %w", err)
-	}
-
-	formattedOutput, err := formatter.Format(projectOutput)
-	if err != nil {
-		return nil, fmt.Errorf("error formatting output: %w", err)
 	}
 
 	return &ProcessResult{
