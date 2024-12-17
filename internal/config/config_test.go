@@ -168,6 +168,11 @@ func TestMergeWithFlags(t *testing.T) {
 			if gotVerb != tt.wantVerbose {
 				t.Errorf("Verbose = %v, want %v", gotVerb, tt.wantVerbose)
 			}
+
+			// Always false in these tests since we pass false as flagDebug
+			if gotDebug != false {
+				t.Errorf("Debug = %v, want false", gotDebug)
+			}
 		})
 	}
 }
