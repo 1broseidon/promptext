@@ -197,6 +197,8 @@ func getProjectMetadata(root string) (*ProjectMetadata, error) {
 
 	// Check for different project files
 	files := []string{
+		"pyproject.toml",   // Python (Poetry)
+		"poetry.lock",      // Python (Poetry)
 		"go.mod",           // Go
 		"package.json",     // Node.js
 		"requirements.txt", // Python
@@ -227,7 +229,7 @@ func detectLanguage(filename string) string {
 		return "Go"
 	case "package.json":
 		return "JavaScript/Node.js"
-	case "requirements.txt":
+	case "requirements.txt", "pyproject.toml", "poetry.lock":
 		return "Python"
 	case "Cargo.toml":
 		return "Rust"
