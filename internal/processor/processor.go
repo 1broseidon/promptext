@@ -263,7 +263,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	}
 
 	// Initialize gitignore from the specified directory
-	gitIgnore, err := gitignore.New(filepath.Join(absPath, ".gitignore"))
+	gi, err := gitignore.New(filepath.Join(absPath, ".gitignore"))
 	if err != nil {
 		log.Printf("Warning: Failed to load .gitignore from %s: %v", absPath, err)
 	}
