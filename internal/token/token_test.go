@@ -86,37 +86,22 @@ func TestTokenCounter_EstimateTokens(t *testing.T) {
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines",
-			text: ```go
-var x = a + 123 * (c - 456) / e; // comment
-println("hello")
-```,
+			text: "```go\nvar x = a + 123 * (c - 456) / e; // comment\nprintln(\"hello\")\n```",
 			expected: 23,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines and tabs",
-			text: ```go
-var x = a + 123 * (c - 456) / e;     // comment
-println("hello")
-```,
+			text: "```go\nvar x = a + 123 * (c - 456) / e;     // comment\nprintln(\"hello\")\n```",
 			expected: 23,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines and tabs and multiple lines",
-			text: ```go
-var x = a + 123 * (c - 456) / e;     // comment
-println("hello")
-var y = 1
-```,
+			text: "```go\nvar x = a + 123 * (c - 456) / e;     // comment\nprintln(\"hello\")\nvar y = 1\n```",
 			expected: 26,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines and tabs and multiple lines and empty lines",
-			text: ```go
-var x = a + 123 * (c - 456) / e;     // comment
-
-println("hello")
-var y = 1
-```,
+			text: "```go\nvar x = a + 123 * (c - 456) / e;     // comment\n\nprintln(\"hello\")\nvar y = 1\n```",
 			expected: 27,
 		},
 	}
