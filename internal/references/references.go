@@ -50,19 +50,12 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
                 ref = ref[:idx]
             }
 
-            // Attempt to resolve relative path as internal
-            candidate := filepath.Join(currentDir, ref)
-            if matchFile(candidate, rootDir, allFiles) {
-                if rel, err := filepath.Rel(rootDir, filepath.Join(rootDir, candidate)); err == nil {
-                    refs.Internal[currentDir] = append(refs.Internal[currentDir], rel)
-                    continue
-                }
-            }
-            // If not resolved as internal, check if it's external
-            if isExternalReference(ref) {
-                refs.External[currentDir] = append(refs.External[currentDir], ref)
-            } else {
-                // If still not found, it's external by default
+            // Attempt to resolve as internal first
+            resolved := resolveReference(ref, currentDir, rootDir, allFiles)
+            if resolved != "" {
+                refs.Internal[currentDir] = append(refs.Internal[currentDir], resolved)
+            } else if isExternalReference(ref) {
+                // If not resolved as internal, check if it's external
                 refs.External[currentDir] = append(refs.External[currentDir], ref)
             }
         }
