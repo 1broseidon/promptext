@@ -86,37 +86,37 @@ func TestTokenCounter_EstimateTokens(t *testing.T) {
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines",
-			text: "```go
+			text: ````go
 var x = a + 123 * (c - 456) / e; // comment
-println(\"hello\")
-```",
+println("hello")
+````,
 			expected: 23,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines and tabs",
-			text: "```go
+			text: ````go
 var x = a + 123 * (c - 456) / e;     // comment
-println(\"hello\")
-```",
+println("hello")
+````,
 			expected: 23,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines and tabs and multiple lines",
-			text: "```go
+			text: ````go
 var x = a + 123 * (c - 456) / e;     // comment
-println(\"hello\")
+println("hello")
 var y = 1
-```",
+````,
 			expected: 26,
 		},
 		{
 			name: "Code with mixed symbols and words and numbers and strings and comments and newlines and tabs and multiple lines and empty lines",
-			text: "```go
+			text: ````go
 var x = a + 123 * (c - 456) / e;     // comment
 
-println(\"hello\")
+println("hello")
 var y = 1
-```",
+````,
 			expected: 27,
 		},
 	}
