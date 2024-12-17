@@ -63,7 +63,7 @@ type ProjectAnalysis struct {
 func (d *DirectoryNode) ToMarkdown(level int) string {
 	var sb strings.Builder
 	
-	// Write the node name for all levels except root (level 0)
+	// Skip root node name but include its children
 	if level > 0 {
 		indent := strings.Repeat("  ", level-1)
 		prefix := "└── "
@@ -74,9 +74,15 @@ func (d *DirectoryNode) ToMarkdown(level int) string {
 		}
 	}
 
+	// Process children
 	if d.Children != nil {
-		for _, child := range d.Children {
-			sb.WriteString(child.ToMarkdown(level + 1))
+		for i, child := range d.Children {
+			// For root level, don't increment the level
+			nextLevel := level
+			if level > 0 {
+				nextLevel++
+			}
+			sb.WriteString(child.ToMarkdown(nextLevel))
 		}
 	}
 
