@@ -14,19 +14,19 @@ var (
     }
 
     referencePatterns = []*regexp.Regexp{
-        // Go imports (excluding standard library and external packages)
-        regexp.MustCompile(`(?m)^import\s+(?:\([^)]+\)|["']\.\/([^"']+)["'])`),
-        // require('./X'), Node.js style local imports
-        regexp.MustCompile(`(?m)require\(['"]\./([^'"]+)['"]\)`),
-        // Markdown links to local files: [text](./path/to/file)
+        // Go imports: captures both "utils" and "./utils" style
+        regexp.MustCompile(`(?m)^\s*import\s+(?:"([^"]+)"|'([^']+)')`),
+        // Node.js require: matches require('utils') or require('./utils')
+        regexp.MustCompile(`(?m)require\(['"]([^'"]+)['"]\)`),
+        // Markdown links: [text](utils) or [text](./utils)
         regexp.MustCompile(`(?m)\[[^\]]*\]\(([^)]+)\)`),
-        // HTML includes with relative paths
-        regexp.MustCompile(`(?m)(?:src|href)=["'](\.\/[^'"]+)["']`),
+        // HTML includes: src="utils.js" or src="./utils.js"
+        regexp.MustCompile(`(?m)(?:src|href)=["']([^'"]+)["']`),
     }
 )
 
 // ExtractFileReferences finds references to other files within the given content
-func ExtractFileReferences(content, currentDir string, allFiles []string) []string {
+func ExtractFileReferences(content, currentDir, rootDir string, allFiles []string) []string {
     var refs []string
     refMap := make(map[string]bool)
 
@@ -38,13 +38,20 @@ func ExtractFileReferences(content, currentDir string, allFiles []string) []stri
             }
             ref := match[1]
             
-            // Skip URLs and package imports
-            if strings.HasPrefix(ref, "http") || strings.HasPrefix(ref, "github.com/") {
+            // The captured group might be in match[1] or match[2] depending on pattern
+            ref := ""
+            for i := 1; i < len(match); i++ {
+                if match[i] != "" {
+                    ref = match[i]
+                    break
+                }
+            }
+            if ref == "" {
                 continue
             }
 
             // Try to resolve the reference
-            resolved := resolveReference(ref, currentDir, allFiles)
+            resolved := resolveReference(ref, currentDir, rootDir, allFiles)
             if resolved != "" && !refMap[resolved] {
                 refs = append(refs, resolved)
                 refMap[resolved] = true
@@ -55,61 +62,56 @@ func ExtractFileReferences(content, currentDir string, allFiles []string) []stri
     return refs
 }
 
-func resolveReference(ref, currentDir string, allFiles []string) string {
-    // Skip non-local references
+func isNonLocalReference(ref string) bool {
+    if strings.HasPrefix(ref, "#") {
+        return true
+    }
     for _, prefix := range nonLocalPrefixes {
         if strings.HasPrefix(ref, prefix) {
-            return ""
+            return true
         }
     }
+    if strings.Contains(ref, "://") {
+        return true
+    }
+    return false
+}
 
-    // Skip fragment-only references
-    if strings.HasPrefix(ref, "#") {
+func matchExact(absCandidate, rootDir string, allFiles []string) string {
+    for _, file := range allFiles {
+        absFile, _ := filepath.Abs(filepath.Join(rootDir, file))
+        if absFile == absCandidate {
+            return file
+        }
+    }
+    return ""
+}
+
+func resolveReference(ref, currentDir, rootDir string, allFiles []string) string {
+    if isNonLocalReference(ref) {
         return ""
     }
 
     // Clean and normalize the reference path
     ref = filepath.Clean(ref)
     
-    // Handle absolute vs relative paths
-    var candidates []string
-    if strings.HasPrefix(ref, "./") || strings.HasPrefix(ref, "../") {
-        // Relative path - try resolving from current directory
-        candidates = []string{filepath.Join(currentDir, ref)}
-    } else if strings.Contains(ref, "/") {
-        // Path-like reference - try as-is and relative to current dir
-        candidates = []string{
-            ref,
-            filepath.Join(currentDir, ref),
-        }
-    } else {
-        // Bare reference - only look in current directory
-        candidates = []string{filepath.Join(currentDir, ref)}
+    // Form absolute path from current directory
+    absCandidate, err := filepath.Abs(filepath.Join(rootDir, currentDir, ref))
+    if err != nil {
+        return ""
     }
 
-    // First try exact matches
-    for _, candidate := range candidates {
-        cleanCandidate := filepath.Clean(candidate)
-        for _, file := range allFiles {
-            if filepath.Clean(file) == cleanCandidate {
-                return file
-            }
-        }
+    // Try exact match first
+    if file := matchExact(absCandidate, rootDir, allFiles); file != "" {
+        return file
     }
 
     // If no extension present, try with common extensions
     if filepath.Ext(ref) == "" {
-        exts := []string{".go", ".md", ".yml", ".yaml", ".json"}
-        baseCandidates := candidates
-        for _, candidate := range baseCandidates {
-            for _, ext := range exts {
-                withExt := candidate + ext
-                cleanWithExt := filepath.Clean(withExt)
-                for _, file := range allFiles {
-                    if filepath.Clean(file) == cleanWithExt {
-                        return file
-                    }
-                }
+        for _, ext := range []string{".go", ".md", ".yml", ".yaml", ".json"} {
+            candidateWithExt := absCandidate + ext
+            if file := matchExact(candidateWithExt, rootDir, allFiles); file != "" {
+                return file
             }
         }
     }

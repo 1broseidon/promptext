@@ -158,7 +158,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			return fmt.Errorf("error getting relative path for %s: %w", path, err)
 		}
 
-		refs := references.ExtractFileReferences(string(content), filepath.Dir(rel), allFiles)
+		refs := references.ExtractFileReferences(string(content), filepath.Dir(rel), config.DirPath, allFiles)
 
 		projectOutput.Files = append(projectOutput.Files, format.FileInfo{
 			Path:       rel,
