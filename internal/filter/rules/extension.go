@@ -30,5 +30,8 @@ func (r *ExtensionRule) Match(path string) bool {
     if ext == "" {
         return false
     }
-    return r.extensions[ext]
+    matches := r.extensions[ext]
+    // For excludes, we want to return true if it matches (to trigger exclusion)
+    // For includes, we want to return true if it matches (to trigger inclusion)
+    return matches
 }

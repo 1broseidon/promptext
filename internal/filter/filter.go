@@ -20,14 +20,16 @@ type Filter struct {
 func New(opts Options) *Filter {
 	var filterRules []types.Rule
 	
-	// Add include rules first
-	if len(opts.Includes) > 0 {
-		filterRules = append(filterRules, rules.NewExtensionRule(opts.Includes, types.Include))
+	// Add exclude rules first to ensure they take precedence
+	if len(opts.Excludes) > 0 {
+		filterRules = append(filterRules, 
+			rules.NewPatternRule(opts.Excludes, types.Exclude),
+			rules.NewExtensionRule(opts.Excludes, types.Exclude))
 	}
 	
-	// Add exclude rules
-	if len(opts.Excludes) > 0 {
-		filterRules = append(filterRules, rules.NewPatternRule(opts.Excludes, types.Exclude))
+	// Add include rules
+	if len(opts.Includes) > 0 {
+		filterRules = append(filterRules, rules.NewExtensionRule(opts.Includes, types.Include))
 	}
 	
 	// Add default excludes if enabled
