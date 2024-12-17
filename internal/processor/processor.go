@@ -284,7 +284,12 @@ func countIncludedFiles(config Config, gi *filter.GitIgnore) (int, error) {
 			return nil
 		}
 		rel, _ := filepath.Rel(config.DirPath, path)
-		if filter.ShouldProcessFile(rel, config.Extensions, config.Excludes, gi) {
+		f := filter.New(filter.Options{
+			Includes: config.Extensions,
+			Excludes: config.Excludes,
+			IgnoreDefault: true,
+		})
+		if f.ShouldProcess(rel) {
 			fileCount++
 		}
 		return nil

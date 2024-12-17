@@ -72,8 +72,12 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *filter.GitIgn
 		Type: "dir",
 	}
 
-	// Create unified filter for consistent filtering
-	unifiedFilter := filter.NewUnifiedFilter(gitIgnore, config.Extensions, config.Excludes)
+	// Create filter for consistent filtering
+	f := filter.New(filter.Options{
+		Includes: config.Extensions,
+		Excludes: config.Excludes,
+		IgnoreDefault: true,
+	})
 
 	// Map to track directories
 	dirMap := make(map[string]*format.DirectoryNode)
@@ -95,7 +99,7 @@ func generateDirectoryTree(root string, config *Config, gitIgnore *filter.GitIgn
 		}
 
 		// Always process directories, but check filter for files
-		if !d.IsDir() && !unifiedFilter.ShouldProcess(rel) {
+		if !d.IsDir() && !f.ShouldProcess(rel) {
 			return nil
 		}
 
