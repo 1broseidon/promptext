@@ -33,6 +33,10 @@ import (
 				},
 			},
 		},
+		// The Python imports test checks both absolute and relative imports.
+		// - `from utils import helper` should resolve to "app/utils/helper.py" (internal).
+		// - `import requests` should be external.
+		// - `from ..models import user` should navigate up one directory from "app/views" to "app" and resolve "app/models/user.py".
 		{
 			name: "Python imports",
 			content: `from utils import helper
@@ -48,6 +52,19 @@ from ..models import user`,
 				External: map[string][]string{
 					"app/views": {"requests"},
 				},
+			},
+		},
+		{
+			name: "Python relative imports only",
+			content: `from ..models import user`,
+			currentDir: "app/views",
+			rootDir:    "/project",
+			allFiles:   []string{"app/models/user.py"},
+			want: &ReferenceMap{
+				Internal: map[string][]string{
+					"app/views": {"app/models/user.py"},
+				},
+				External: map[string][]string{},
 			},
 		},
 		{
