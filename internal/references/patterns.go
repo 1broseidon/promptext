@@ -27,8 +27,8 @@ var (
 		regexp.MustCompile(`(?m)^\s*import\s+(?:"([^"]+)"|([A-Za-z0-9_/\.-]+))`),
 
 		// Python imports - separate patterns for "import" and "from ... import ..."
-		regexp.MustCompile(`(?m)^\s*import\s+([\w\._]+)(?:\s+as\s+\w+)?`),
-		regexp.MustCompile(`(?m)^\s*from\s+([\w\._]+)\s+import\s+[\w\.,\s\*]+`),
+		regexp.MustCompile(`(?m)^\s*import\s+([\w\.]+)`),
+		regexp.MustCompile(`(?m)^\s*from\s+([\w\.]+)`),
 
 		// JavaScript/TypeScript imports - separate patterns for import and require
 		regexp.MustCompile(`(?m)import\s+(?:{[^}]*}\s+from\s+)?['"]([^'"]+)['"]`),

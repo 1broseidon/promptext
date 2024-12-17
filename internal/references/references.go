@@ -71,6 +71,9 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 				// Try to resolve the module path
 				resolved := resolveReference(modPath, currentDir, rootDir, allFiles)
 				if resolved != "" {
+					if _, ok := refs.Internal[currentDir]; !ok {
+						refs.Internal[currentDir] = []string{}
+					}
 					refs.Internal[currentDir] = append(refs.Internal[currentDir], resolved)
 					continue
 				}
@@ -78,6 +81,9 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 
 			// Check if it's external
 			if isExternalReference(ref) {
+				if _, ok := refs.External[currentDir]; !ok {
+					refs.External[currentDir] = []string{}
+				}
 				refs.External[currentDir] = append(refs.External[currentDir], ref)
 				continue
 			}
@@ -85,10 +91,16 @@ func ExtractFileReferences(content, currentDir, rootDir string, allFiles []strin
 			// Try to resolve as internal reference
 			resolved := resolveReference(ref, currentDir, rootDir, allFiles)
 			if resolved != "" {
+				if _, ok := refs.Internal[currentDir]; !ok {
+					refs.Internal[currentDir] = []string{}
+				}
 				refs.Internal[currentDir] = append(refs.Internal[currentDir], resolved)
 			} else {
 				// Only add as external if it's not a relative path
 				if !strings.HasPrefix(ref, "./") && !strings.HasPrefix(ref, "../") {
+					if _, ok := refs.External[currentDir]; !ok {
+						refs.External[currentDir] = []string{}
+					}
 					refs.External[currentDir] = append(refs.External[currentDir], ref)
 				}
 			}
