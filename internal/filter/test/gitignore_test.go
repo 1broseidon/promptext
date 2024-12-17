@@ -64,12 +64,12 @@ func TestNewGitIgnore(t *testing.T) {
 			}
 
 			if !tt.wantErr {
-				if len(got.patterns) != len(tt.patterns) {
-					t.Errorf("NewGitIgnore() got %v patterns, want %v patterns", len(got.patterns), len(tt.patterns))
+				if len(got.Patterns) != len(tt.patterns) {
+					t.Errorf("NewGitIgnore() got %v patterns, want %v patterns", len(got.Patterns), len(tt.patterns))
 					return
 				}
 
-				for i, pattern := range got.patterns {
+				for i, pattern := range got.Patterns {
 					if pattern != tt.patterns[i] {
 						t.Errorf("Pattern %d: got %v, want %v", i, pattern, tt.patterns[i])
 					}
@@ -85,8 +85,8 @@ func TestNewGitIgnore(t *testing.T) {
 			t.Errorf("NewGitIgnore() error = %v, want nil for non-existent file", err)
 			return
 		}
-		if len(got.patterns) != 0 {
-			t.Errorf("NewGitIgnore() got %v patterns, want 0 for non-existent file", len(got.patterns))
+		if len(got.Patterns) != 0 {
+			t.Errorf("NewGitIgnore() got %v patterns, want 0 for non-existent file", len(got.Patterns))
 		}
 	})
 }
@@ -240,7 +240,7 @@ func TestGitIgnore_MatchFunctions(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			if got := gi.matchExact(tt.pattern, tt.path, tt.baseName); got != tt.want {
+			if got := gi.MatchExact(tt.pattern, tt.path, tt.baseName); got != tt.want {
 				t.Errorf("matchExact(%q, %q, %q) = %v, want %v",
 					tt.pattern, tt.path, tt.baseName, got, tt.want)
 			}
@@ -260,7 +260,7 @@ func TestGitIgnore_MatchFunctions(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			if got := gi.matchDirectory(tt.pattern, tt.path); got != tt.want {
+			if got := gi.MatchDirectory(tt.pattern, tt.path); got != tt.want {
 				t.Errorf("matchDirectory(%q, %q) = %v, want %v",
 					tt.pattern, tt.path, got, tt.want)
 			}
@@ -282,7 +282,7 @@ func TestGitIgnore_MatchFunctions(t *testing.T) {
 		}
 
 		for _, tt := range tests {
-			if got := gi.matchGlobPattern(tt.pattern, tt.path, tt.baseName); got != tt.want {
+			if got := gi.MatchGlobPattern(tt.pattern, tt.path, tt.baseName); got != tt.want {
 				t.Errorf("matchGlobPattern(%q, %q, %q) = %v, want %v",
 					tt.pattern, tt.path, tt.baseName, got, tt.want)
 			}

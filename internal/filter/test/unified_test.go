@@ -95,7 +95,7 @@ func TestUnifiedFilter_ShouldProcess(t *testing.T) {
 			gitIgnore := createGitIgnore(tt.gitIgnoreRules)
 			f := filter.NewUnifiedFilter(gitIgnore, tt.allowedExts, tt.excludePatterns)
 
-			got := filter.ShouldProcess(tt.path)
+			got := f.ShouldProcess(tt.path)
 			if got != tt.want {
 				t.Errorf("UnifiedFilter.ShouldProcess(%q) = %v, want %v", tt.path, got, tt.want)
 			}
