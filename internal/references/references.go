@@ -19,7 +19,7 @@ var (
         // require('./X'), Node.js style local imports
         regexp.MustCompile(`(?m)require\(['"]\./([^'"]+)['"]\)`),
         // Markdown links to local files: [text](./path/to/file)
-        regexp.MustCompile(`(?m)\[[^\]]*\]\(((?!http|mailto|#)[^)]+)\)`),
+        regexp.MustCompile(`(?m)\[[^\]]*\]\(([^)]+)\)`),
         // HTML includes with relative paths
         regexp.MustCompile(`(?m)(?:src|href)=["'](\.\/[^'"]+)["']`),
     }
