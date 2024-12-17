@@ -2,8 +2,45 @@ package references
 
 import (
 	"path/filepath"
+	"regexp"
 	"strings"
 )
+
+// Common patterns for finding references in code
+var referencePatterns = []*regexp.Regexp{
+	regexp.MustCompile(`(?m)^import\s+["']([^"']+)["']`),                    // Go imports
+	regexp.MustCompile(`(?m)^from\s+([^\s]+)\s+import`),                     // Python imports
+	regexp.MustCompile(`require\s*\(?\s*["']([^"']+)["']`),                  // Node.js requires
+	regexp.MustCompile(`import\s+.*?from\s+["']([^"']+)["']`),               // ES6 imports
+	regexp.MustCompile(`@import\s+["']([^"']+)["']`),                        // CSS imports
+	regexp.MustCompile(`#include\s+["<]([^>"']+)[>"]`),                      // C/C++ includes
+	regexp.MustCompile(`source\s+["']([^"']+)["']`),                         // Shell source
+	regexp.MustCompile(`href\s*=\s*["']([^"']+)["']`),                       // HTML links
+	regexp.MustCompile(`src\s*=\s*["']([^"']+)["']`),                        // HTML sources
+	regexp.MustCompile(`url\s*\(\s*["']?([^"'\)]+)["']?\s*\)`),             // CSS urls
+	regexp.MustCompile(`\[.*?\]\(([^)\s]+)\)`),                              // Markdown links
+}
+
+// Common non-local prefixes that indicate external references
+var nonLocalPrefixes = []string{
+	"http://", "https://",
+	"git://", "git+",
+	"npm:", "pip:",
+	"gem:", "mvn:",
+}
+
+// Common file extensions to try when resolving references
+var commonExtensions = []string{
+	".go", ".mod",
+	".js", ".jsx", ".ts", ".tsx",
+	".py", ".rb", ".php",
+	".java", ".scala", ".kt",
+	".c", ".cpp", ".h", ".hpp",
+	".css", ".scss", ".less",
+	".html", ".htm",
+	".md", ".rst", ".txt",
+	".json", ".yaml", ".yml", ".toml",
+}
 
 // ReferenceMap stores file reference information
 type ReferenceMap struct {
