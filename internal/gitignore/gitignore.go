@@ -34,9 +34,17 @@ func New(path string) (*GitIgnore, error) {
 	return &GitIgnore{patterns: patterns}, nil
 }
 
-// matchExact checks if the pattern exactly matches either the base name or full path
+// matchExact checks if the pattern exactly matches either the base name or full path,
+// or if the pattern matches the start of the path for directory-like patterns
 func (gi *GitIgnore) matchExact(pattern, path, baseName string) bool {
-	return pattern == baseName || pattern == path
+	if pattern == baseName || pattern == path {
+		return true
+	}
+	// Handle patterns that should match at the start of the path
+	if !strings.HasSuffix(pattern, "/") {
+		return strings.HasPrefix(path, pattern+"/")
+	}
+	return false
 }
 
 // matchDirectory checks if a directory pattern matches the path
