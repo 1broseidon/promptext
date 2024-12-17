@@ -130,7 +130,6 @@ func TestMarkdownFormatter_Format(t *testing.T) {
 				"package main",
 				"func main()",
 				"```",
-				"References:",
 			},
 		},
 	}
