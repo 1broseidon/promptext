@@ -24,7 +24,6 @@ func TestMainFlags(t *testing.T) {
 			dir      string
 			ext      string
 			exclude  string
-			noCopy   bool
 			infoOnly bool
 			verbose  bool
 			format   string
@@ -47,7 +46,6 @@ func TestMainFlags(t *testing.T) {
 				dir:      ".",
 				ext:      "",
 				exclude:  "",
-				noCopy:   false,
 				infoOnly: false,
 				verbose:  false,
 				format:   "markdown",
@@ -80,7 +78,6 @@ func TestMainFlags(t *testing.T) {
 				dir:      "/test/path",
 				ext:      ".go,.js",
 				exclude:  "vendor,node_modules",
-				noCopy:   true,
 				infoOnly: true,
 				verbose:  true,
 				format:   "xml",
@@ -99,7 +96,6 @@ func TestMainFlags(t *testing.T) {
 			dirPath := pflag.StringP("directory", "d", ".", "Directory path to process")
 			extension := pflag.StringP("extension", "e", "", "File extension to filter, e.g., .go,.js")
 			exclude := pflag.StringP("exclude", "x", "", "Patterns to exclude, comma-separated")
-			noCopy := pflag.BoolP("no-copy", "n", false, "Disable automatic copying to clipboard")
 			infoOnly := pflag.BoolP("info", "i", false, "Only display project summary")
 			verbose := pflag.BoolP("verbose", "v", false, "Show full code content in terminal")
 			format := pflag.StringP("format", "f", "markdown", "Output format: markdown, xml, json")
@@ -117,9 +113,6 @@ func TestMainFlags(t *testing.T) {
 			}
 			if *exclude != tt.expected.exclude {
 				t.Errorf("exclude = %v, want %v", *exclude, tt.expected.exclude)
-			}
-			if *noCopy != tt.expected.noCopy {
-				t.Errorf("noCopy = %v, want %v", *noCopy, tt.expected.noCopy)
 			}
 			if *infoOnly != tt.expected.infoOnly {
 				t.Errorf("infoOnly = %v, want %v", *infoOnly, tt.expected.infoOnly)

@@ -15,7 +15,6 @@ func main() {
 	dirPath := pflag.StringP("directory", "d", ".", "Directory path to process")
 	extension := pflag.StringP("extension", "e", "", "File extension to filter, e.g., .go,.js")
 	exclude := pflag.StringP("exclude", "x", "", "Patterns to exclude, comma-separated")
-	noCopy := pflag.BoolP("no-copy", "n", false, "Disable automatic copying to clipboard")
 	infoOnly := pflag.BoolP("info", "i", false, "Only display project summary")
 	verbose := pflag.BoolP("verbose", "v", false, "Show full code content in terminal")
 	format := pflag.StringP("format", "f", "markdown", "Output format: markdown, xml, json")
@@ -31,7 +30,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if err := processor.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose, *format, *outFile, *debug, *gitignore); err != nil {
+	if err := processor.Run(*dirPath, *extension, *exclude, false, *infoOnly, *verbose, *format, *outFile, *debug, *gitignore); err != nil {
 		log.Fatal(err)
 	}
 }
