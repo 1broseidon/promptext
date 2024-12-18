@@ -13,13 +13,13 @@ func init() {
 	if os.Getenv("TIKTOKEN_CACHE_DIR") == "" {
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			log.Printf("Warning: Could not get user home directory: %v", err)
+			log.Info("Warning: Could not get user home directory: %v", err)
 			return
 		}
 
 		cacheDir := filepath.Join(homeDir, ".promptext", "cache")
 		if err := os.MkdirAll(cacheDir, 0755); err != nil {
-			log.Printf("Warning: Could not create cache directory: %v", err)
+			log.Info("Warning: Could not create cache directory: %v", err)
 			return
 		}
 
@@ -34,7 +34,7 @@ type TokenCounter struct {
 func NewTokenCounter() *TokenCounter {
 	enc, err := tiktoken.GetEncoding("cl100k_base") // Using cl100k_base as it's used by GPT-3.5/4
 	if err != nil {
-		log.Printf("Warning: Failed to initialize tiktoken encoder: %v", err)
+		log.Info("Warning: Failed to initialize tiktoken encoder: %v", err)
 		return &TokenCounter{}
 	}
 	return &TokenCounter{
