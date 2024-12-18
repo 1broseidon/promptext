@@ -7,6 +7,7 @@ import (
 	"strings"
 	"github.com/1broseidon/promptext/internal/filter/rules"
 	"github.com/1broseidon/promptext/internal/filter/types"
+	"github.com/1broseidon/promptext/internal/log"
 )
 
 
