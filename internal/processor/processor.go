@@ -226,8 +226,6 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			return nil
 		}
 
-		var displayContent string
-
 		// Only log files that will be processed
 		if config.Filter.ShouldProcess(relPath) {
 			log.Debug("  Processing: %s", relPath)
