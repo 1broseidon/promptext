@@ -450,7 +450,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	// Merge file config with command line flags
 	extensions, excludes, verboseFlag, _, useGitIgnore := fileConfig.MergeWithFlags(extension, exclude, verbose, debug, &gitignore)
 	log.Debug("Using extensions: %v", extensions)
-	log.Debug("Using excludes: %v", excludes)
+	log.Debug("Using excludes: %#v", excludes)
 
 	// Create the filter once
 	f := filter.New(filter.Options{
