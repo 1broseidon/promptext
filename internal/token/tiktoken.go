@@ -1,10 +1,10 @@
 package token
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/1broseidon/promptext/internal/log"
 	"github.com/pkoukk/tiktoken-go"
 )
 
