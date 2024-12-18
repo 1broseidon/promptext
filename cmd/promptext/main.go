@@ -1,13 +1,17 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/spf13/pflag"
 	"github.com/1broseidon/promptext/internal/processor"
 )
 
 func main() {
+	// Add help flag
+	help := pflag.BoolP("help", "h", false, "Show help message")
 	// Define command line flags
 	dirPath := pflag.StringP("directory", "d", ".", "Directory path to process")
 	extension := pflag.StringP("extension", "e", "", "File extension to filter, e.g., .go,.js")
@@ -21,6 +25,12 @@ func main() {
 	gitignore := pflag.BoolP("gitignore", "g", true, "Use .gitignore patterns")
 
 	pflag.Parse()
+
+	// Handle help flag manually
+	if *help {
+		pflag.Usage()
+		os.Exit(0)
+	}
 
 	if err := processor.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose, *format, *outFile, *debug, *gitignore); err != nil {
 		log.Fatal(err)
