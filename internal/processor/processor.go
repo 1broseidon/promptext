@@ -122,7 +122,7 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 	if len(content) > 0 {
 		// Check first 1024 bytes for null bytes
 		if bytes.IndexByte(content[:min(1024, len(content))], 0) != -1 {
-			log.Debug("  Skipping binary file (null bytes): %s", path)
+			return nil
 			return nil, nil
 		}
 		
@@ -137,7 +137,7 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 			".db": true, ".sqlite": true, ".sqlite3": true,
 		}
 		if binaryExts[ext] {
-			log.Debug("  Skipping binary file (extension): %s", path)
+			return nil
 			return nil, nil
 		}
 	}
@@ -199,22 +199,20 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 		// For directories
 		if d.IsDir() {
-			// Check exclusion before any processing
 			if config.Filter.IsExcluded(relPath) {
-				log.Debug("  Skipping excluded directory: %s", relPath)
 				return filepath.SkipDir
-			}
-			
-			// Only log root level directories that aren't excluded
-			if filepath.Dir(path) == config.DirPath {
-				log.Debug("  Scanning directory: %s", relPath)
 			}
 			return nil
 		}
 
-		// For files, check exclusion
+		// Skip excluded files silently
 		if config.Filter.IsExcluded(relPath) {
 			return nil
+		}
+
+		// Only log files that will be processed
+		if config.Filter.ShouldProcess(relPath) {
+			log.Debug("  Processing: %s", relPath)
 		}
 
 		fileInfo, err := processFile(path, config)
