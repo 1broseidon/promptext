@@ -140,11 +140,20 @@ promptext respects your project's .gitignore patterns for consistent filtering.
 
 ### File Classification
 promptext automatically categorizes files into:
-- Entry Points
-- Configuration Files
-- Core Implementation
-- Test Files
-- Documentation
+- Entry Points: Main application entry points
+- Configuration Files: Project settings and configs
+- Core Implementation: Core business logic
+- Test Files: Unit and integration tests
+- Documentation: README, docs, and comments
+
+### Token Analysis
+- Automatic token counting for AI context limits
+- Separate counts for:
+  - Directory structure
+  - Git information
+  - Project metadata
+  - Source code content
+- Total token estimation for output formats
 
 ### Language Detection
 Supports automatic detection of:
