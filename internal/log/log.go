@@ -3,15 +3,29 @@ package log
 import (
 	"log"
 	"os"
+	"time"
 )
 
 var (
 	debugMode bool
 	logger    *log.Logger
+	phaseStart time.Time
 )
 
 func init() {
 	logger = log.New(os.Stderr, "", log.Ltime)
+}
+
+// Phase starts a new logging phase with a header
+func Phase(name string) {
+	if debugMode {
+		if !phaseStart.IsZero() {
+			duration := time.Since(phaseStart)
+			logger.Printf("[DEBUG] Phase completed in %.2fs\n", duration.Seconds())
+		}
+		logger.Printf("[DEBUG] %s%s%s\n", "=== ", name, " ===")
+		phaseStart = time.Now()
+	}
 }
 
 // Enable turns on debug logging

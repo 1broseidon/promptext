@@ -71,7 +71,9 @@ func New(opts Options) *Filter {
 	
 	var defaultPatterns, gitPatterns, configPatterns []string
 
-	// Get default patterns if enabled
+	log.Phase("Filter Configuration")
+	
+	// Collect patterns from all sources
 	if opts.IgnoreDefault {
 		defaultRules := rules.DefaultExcludes()
 		for _, rule := range defaultRules {
@@ -79,26 +81,27 @@ func New(opts Options) *Filter {
 				defaultPatterns = append(defaultPatterns, patternRule.Patterns()...)
 			}
 		}
+		log.Debug("Default exclude patterns: %d", len(defaultPatterns))
 	}
 
-	// Get gitignore patterns if enabled
 	if opts.UseGitIgnore {
 		if patterns, err := ParseGitIgnore("."); err == nil && len(patterns) > 0 {
 			gitPatterns = patterns
+			log.Debug("Gitignore patterns: %d", len(gitPatterns))
 		}
 	}
 
-	// Get config file and CLI excludes
 	if len(opts.Excludes) > 0 {
 		configPatterns = opts.Excludes
+		log.Debug("Config exclude patterns: %d", len(configPatterns))
 	}
 
 	// Merge all patterns
 	excludePatterns = MergeAndDedupePatterns([][]string{defaultPatterns, gitPatterns, configPatterns}...)
 	
-	// Log patterns once
+	// Log final consolidated patterns
 	if len(excludePatterns) > 0 {
-		log.Debug("Using %d exclude patterns:", len(excludePatterns))
+		log.Debug("Final consolidated exclude patterns (%d):", len(excludePatterns))
 		for _, p := range excludePatterns {
 			log.Debug("  - %s", p)
 		}
