@@ -181,7 +181,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	tokenCounter := token.NewTokenCounter()
 
 	log.StartTimer("Token Counting")
-	log.Debug("\nToken counting breakdown:")
+	log.Header("Token Analysis")
 	var totalTokens int
 	
 	log.Debug("\nProcessing project files:")
@@ -251,25 +251,34 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	treeOutput, _ := formatter.Format(&format.ProjectOutput{DirectoryTree: projectOutput.DirectoryTree})
 	treeTokens := tokenCounter.EstimateTokens(treeOutput)
 	totalTokens += treeTokens
-	log.Debug("  Directory tree: %d tokens", treeTokens)
+	log.Debug("Directory structure: %d tokens", treeTokens)
 	
 	// Count tokens for git info
+	gitTokens := 0
 	if projectOutput.GitInfo != nil {
 		gitOutput, _ := formatter.Format(&format.ProjectOutput{GitInfo: projectOutput.GitInfo})
-		gitTokens := tokenCounter.EstimateTokens(gitOutput)
+		gitTokens = tokenCounter.EstimateTokens(gitOutput)
 		totalTokens += gitTokens
-		log.Debug("  Git info: %d tokens", gitTokens)
 	}
+	log.Debug("Git information: %d tokens", gitTokens)
 	
 	// Count tokens for metadata
+	metaTokens := 0
 	if projectOutput.Metadata != nil {
 		metaOutput, _ := formatter.Format(&format.ProjectOutput{Metadata: projectOutput.Metadata})
-		metaTokens := tokenCounter.EstimateTokens(metaOutput)
+		metaTokens = tokenCounter.EstimateTokens(metaOutput)
 		totalTokens += metaTokens
-		log.Debug("  Metadata: %d tokens", metaTokens)
 	}
+	log.Debug("Project metadata: %d tokens", metaTokens)
 
-	log.Debug("Total tokens: %d", totalTokens)
+	// Calculate source file tokens
+	sourceTokens := totalTokens - treeTokens - gitTokens - metaTokens
+	log.Debug("Source files: %d tokens", sourceTokens)
+	log.Debug("Total token count: %d", totalTokens)
+
+	// Add timing summary
+	log.Header("Performance") 
+	log.Debug("Total processing time: %.2fms", float64(time.Since(phaseStart).Microseconds())/1000.0)
 	log.EndTimer("Token Counting")
 
 	// Format the full output
@@ -413,9 +422,11 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	// Enable debug logging if flag is set
 	if debug {
 		log.Enable()
+		log.SetColorEnabled(true)
 	}
 
-	log.Debug("Starting promptext with dir: %s", dirPath)
+	log.Header("Promptext Initialization")
+	log.Debug("Directory: %s", dirPath)
 	// Validate format
 	formatter, err := format.GetFormatter(outputFormat)
 	if err != nil {
@@ -436,8 +447,24 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 
 	// Merge file config with command line flags
 	extensions, excludes, verboseFlag, _, useGitIgnore := fileConfig.MergeWithFlags(extension, exclude, verbose, debug, &gitignore)
-	log.Debug("Using extensions: %v", extensions)
-	log.Debug("Using excludes: %#v", excludes)
+	log.Debug("Configuration:")
+	log.Debug("  • Extensions: %v", extensions)
+	log.Debug("  • Excludes: %#v", excludes)
+	log.Debug("  • Git Ignore: %v", useGitIgnore)
+
+	log.Header("Filter Rules")
+	if len(defaultPatterns) > 0 {
+		log.Debug("Default excludes (%d):", len(defaultPatterns))
+		log.Debug("  %s", strings.Join(defaultPatterns, ", "))
+	}
+	if len(gitPatterns) > 0 {
+		log.Debug("Git ignores (%d):", len(gitPatterns))
+		log.Debug("  %s", strings.Join(gitPatterns, ", "))
+	}
+	if len(configPatterns) > 0 {
+		log.Debug("Config excludes (%d):", len(configPatterns))
+		log.Debug("  %s", strings.Join(configPatterns, ", "))
+	}
 
 	// Create filter options
 	filterOpts := filter.Options{

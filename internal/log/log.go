@@ -11,11 +11,20 @@ var (
 	logger     *log.Logger
 	phaseStart time.Time
 	timeMarks  map[string]time.Time
+	headerColor = "\033[1;36m" // Cyan
+	debugColor  = "\033[0;37m" // Light gray
+	resetColor  = "\033[0m"
+	useColors   = false
 )
 
 func init() {
 	logger = log.New(os.Stderr, "", log.Ltime)
 	timeMarks = make(map[string]time.Time)
+}
+
+// SetColorEnabled enables or disables color output
+func SetColorEnabled(enabled bool) {
+	useColors = enabled
 }
 
 // Phase starts a new logging phase with a header
@@ -59,10 +68,26 @@ func Disable() {
 	debugMode = false
 }
 
+// Header prints a section header in debug mode
+func Header(format string, v ...interface{}) {
+	if debugMode {
+		msg := fmt.Sprintf(format, v...)
+		if useColors {
+			logger.Printf("%s=== %s ===%s", headerColor, msg, resetColor)
+		} else {
+			logger.Printf("=== %s ===", msg)
+		}
+	}
+}
+
 // Debug logs a debug message if debug mode is enabled
 func Debug(format string, v ...interface{}) {
 	if debugMode {
-		logger.Printf("[DEBUG] "+format, v...)
+		if useColors {
+			logger.Printf("%s[DEBUG] %s%s", debugColor, fmt.Sprintf(format, v...), resetColor)
+		} else {
+			logger.Printf("[DEBUG] "+format, v...)
+		}
 	}
 }
 
