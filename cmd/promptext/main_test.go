@@ -37,7 +37,6 @@ func TestMainFlags(t *testing.T) {
 				dir      string
 				ext      string
 				exclude  string
-				noCopy   bool
 				infoOnly bool
 				verbose  bool
 				format   string
