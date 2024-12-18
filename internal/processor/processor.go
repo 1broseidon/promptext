@@ -450,6 +450,15 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 
 
 
+	// Create processor configuration with filter
+	procConfig := Config{
+		DirPath:    absPath,
+		Extensions: extensions,
+		Excludes:   excludes,
+		GitIgnore:  useGitIgnore,
+		Filter:     f,
+	}
+
 	if infoOnly {
 		// Only display project summary
 		if info, err := GetMetadataSummary(procConfig, 0); err == nil {
@@ -458,15 +467,6 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 			return fmt.Errorf("error getting project info: %v", err)
 		}
 		return nil
-	}
-
-	// Create processor configuration with filter
-	procConfig := Config{
-		DirPath:    absPath,
-		Extensions: extensions,
-		Excludes:   excludes,
-		GitIgnore:  useGitIgnore,
-		Filter:     f,
 	}
 
 	// Process the directory
