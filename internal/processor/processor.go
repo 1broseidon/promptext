@@ -147,7 +147,6 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 		// Check first 1024 bytes for null bytes
 		if bytes.IndexByte(content[:min(1024, len(content))], 0) != -1 {
 			return nil, nil
-			return nil, nil
 		}
 
 		// Check file extension for common binary types
@@ -227,6 +226,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			return nil
 		}
 
+		var displayContent string
 		// Only log files that will be processed
 		if config.Filter.ShouldProcess(relPath) {
 			log.Debug("  Processing: %s", relPath)
