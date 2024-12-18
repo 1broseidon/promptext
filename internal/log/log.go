@@ -97,3 +97,8 @@ func Fatal(format string, v ...interface{}) {
 	logger.Printf("[FATAL] "+format, v...)
 	os.Exit(1)
 }
+
+// GetPhaseStart returns the current phase start time
+func GetPhaseStart() time.Time {
+	return phaseStart
+}

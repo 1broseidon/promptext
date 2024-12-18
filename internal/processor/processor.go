@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/1broseidon/promptext/internal/config"
 	"github.com/1broseidon/promptext/internal/filter"
@@ -181,10 +182,10 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	tokenCounter := token.NewTokenCounter()
 
 	log.StartTimer("Token Counting")
-	log.Header("Token Analysis")
+	log.Debug("=== Token Analysis ===")
 	var totalTokens int
 	
-	log.Debug("\nProcessing project files:")
+	log.Debug("Processing project files:")
 	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -277,8 +278,8 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	log.Debug("Total token count: %d", totalTokens)
 
 	// Add timing summary
-	log.Header("Performance") 
-	log.Debug("Total processing time: %.2fms", float64(time.Since(phaseStart).Microseconds())/1000.0)
+	log.Debug("=== Performance ===")
+	log.Debug("Total processing time: %.2fms", float64(time.Since(log.GetPhaseStart()).Microseconds())/1000.0)
 	log.EndTimer("Token Counting")
 
 	// Format the full output
@@ -425,7 +426,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		log.SetColorEnabled(true)
 	}
 
-	log.Header("Promptext Initialization")
+	log.Debug("=== Promptext Initialization ===")
 	log.Debug("Directory: %s", dirPath)
 	// Validate format
 	formatter, err := format.GetFormatter(outputFormat)
@@ -452,18 +453,10 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	log.Debug("  • Excludes: %#v", excludes)
 	log.Debug("  • Git Ignore: %v", useGitIgnore)
 
-	log.Header("Filter Rules")
-	if len(defaultPatterns) > 0 {
-		log.Debug("Default excludes (%d):", len(defaultPatterns))
-		log.Debug("  %s", strings.Join(defaultPatterns, ", "))
-	}
-	if len(gitPatterns) > 0 {
-		log.Debug("Git ignores (%d):", len(gitPatterns))
-		log.Debug("  %s", strings.Join(gitPatterns, ", "))
-	}
-	if len(configPatterns) > 0 {
-		log.Debug("Config excludes (%d):", len(configPatterns))
-		log.Debug("  %s", strings.Join(configPatterns, ", "))
+	log.Debug("=== Filter Rules ===")
+	if len(excludes) > 0 {
+		log.Debug("Config excludes (%d):", len(excludes))
+		log.Debug("  %s", strings.Join(excludes, ", "))
 	}
 
 	// Create filter options
