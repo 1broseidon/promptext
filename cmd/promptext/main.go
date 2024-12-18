@@ -9,35 +9,35 @@ import (
 
 func main() {
 	// Define command line flags
-	dirPath := flag.String("d", ".", "Directory path to process (-d, --dir)")
-	flag.StringVar(dirPath, "dir", ".", "Directory path to process (-d, --dir)")
+	dirPath := flag.String("directory", ".", "Directory path to process (-directory, -d)")
+	flag.StringVar(dirPath, "d", ".", "Directory path to process (-directory, -d)")
 	
-	extension := flag.String("e", "", "File extension to filter, e.g., .go,.js (-e, --ext)")
-	flag.StringVar(extension, "ext", "", "File extension to filter, e.g., .go,.js (-e, --ext)")
+	extension := flag.String("extension", "", "File extension to filter, e.g., .go,.js (-extension, -e)")
+	flag.StringVar(extension, "e", "", "File extension to filter, e.g., .go,.js (-extension, -e)")
 	
-	exclude := flag.String("x", "", "Patterns to exclude, comma-separated (-x, --exclude)")
-	flag.StringVar(exclude, "exclude", "", "Patterns to exclude, comma-separated (-x, --exclude)")
+	exclude := flag.String("exclude", "", "Patterns to exclude, comma-separated (-exclude, -x)")
+	flag.StringVar(exclude, "x", "", "Patterns to exclude, comma-separated (-exclude, -x)")
 	
-	noCopy := flag.Bool("n", false, "Disable automatic copying to clipboard (-n, --no-copy)")
-	flag.BoolVar(noCopy, "no-copy", false, "Disable automatic copying to clipboard (-n, --no-copy)")
+	noCopy := flag.Bool("nocopy", false, "Disable automatic copying to clipboard (-nocopy, -n)")
+	flag.BoolVar(noCopy, "n", false, "Disable automatic copying to clipboard (-nocopy, -n)")
 	
-	infoOnly := flag.Bool("i", false, "Only display project summary (-i, --info)")
-	flag.BoolVar(infoOnly, "info", false, "Only display project summary (-i, --info)")
+	infoOnly := flag.Bool("info", false, "Only display project summary (-info, -i)")
+	flag.BoolVar(infoOnly, "i", false, "Only display project summary (-info, -i)")
 	
-	verbose := flag.Bool("v", false, "Show full code content in terminal (-v, --verbose)")
-	flag.BoolVar(verbose, "verbose", false, "Show full code content in terminal (-v, --verbose)")
+	verbose := flag.Bool("verbose", false, "Show full code content in terminal (-verbose, -v)")
+	flag.BoolVar(verbose, "v", false, "Show full code content in terminal (-verbose, -v)")
 	
-	format := flag.String("f", "markdown", "Output format: markdown, xml, json (-f, --format)")
-	flag.StringVar(format, "format", "markdown", "Output format: markdown, xml, json (-f, --format)")
+	format := flag.String("format", "markdown", "Output format: markdown, xml, json (-format, -f)")
+	flag.StringVar(format, "f", "markdown", "Output format: markdown, xml, json (-format, -f)")
 	
-	outFile := flag.String("o", "", "Output file path (-o, --out)")
-	flag.StringVar(outFile, "out", "", "Output file path (-o, --out)")
+	outFile := flag.String("output", "", "Output file path (-output, -o)")
+	flag.StringVar(outFile, "o", "", "Output file path (-output, -o)")
 	
-	debug := flag.Bool("D", false, "Enable debug logging (-D, --debug)")
-	flag.BoolVar(debug, "debug", false, "Enable debug logging (-D, --debug)")
+	debug := flag.Bool("debug", false, "Enable debug logging (-debug, -D)")
+	flag.BoolVar(debug, "D", false, "Enable debug logging (-debug, -D)")
 	
-	gitignore := flag.Bool("g", true, "Use .gitignore patterns (-g, --gitignore)")
-	flag.BoolVar(gitignore, "gitignore", true, "Use .gitignore patterns (-g, --gitignore)")
+	gitignore := flag.Bool("gitignore", true, "Use .gitignore patterns (-gitignore, -g)")
+	flag.BoolVar(gitignore, "g", true, "Use .gitignore patterns (-gitignore, -g)")
 
 	flag.Parse()
 
