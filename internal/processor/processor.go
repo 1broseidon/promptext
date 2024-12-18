@@ -195,14 +195,12 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	// Populate project information
 	populateProjectInfo(projectOutput, projectInfo)
 
-	// Token analysis
-	log.StartTimer("Token Analysis")
+	// Combined file processing and token analysis
+	log.StartTimer("Project Analysis")
 	tokenCounter := token.NewTokenCounter()
-	log.Debug("=== Token Analysis ===")
+	log.Debug("=== Processing Files & Counting Tokens ===")
 	var totalTokens int
 
-	// Process files and count tokens
-	log.Debug("Processing project files:")
 	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -236,7 +234,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		if fileInfo != nil {
 			projectOutput.Files = append(projectOutput.Files, *fileInfo)
 
-			// Count tokens for this file and log the count
+			// Count tokens and log immediately
 			fileTokens := tokenCounter.EstimateTokens(fileInfo.Content)
 			totalTokens += fileTokens
 			log.Debug("  %s: %d tokens", relPath, fileTokens)
@@ -528,43 +526,37 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		return nil
 	}
 
-	// Process the directory
+	// Single pass processing
 	result, err := ProcessDirectory(procConfig, verboseFlag)
 	if err != nil {
 		return fmt.Errorf("error processing directory: %v", err)
 	}
 
-	// Write display content to stdout
-	if verbose {
-		fmt.Println(result.DisplayContent)
-	}
-
-	// Format output
+	// Format output once
 	formattedOutput, err := formatter.Format(result.ProjectOutput)
 	if err != nil {
 		return fmt.Errorf("error formatting output: %w", err)
 	}
 
+	// Get metadata summary
+	info, err := GetMetadataSummary(procConfig, result.TokenCount)
+	if err != nil {
+		return fmt.Errorf("error getting project info: %v", err)
+	}
+
+	// Handle output based on flags
 	if outFile != "" {
-		// Write to file if -out is specified
 		if err := os.WriteFile(outFile, []byte(formattedOutput), 0644); err != nil {
 			return fmt.Errorf("error writing to output file: %w", err)
 		}
-		// Always print metadata summary and success message in green
-		if info, err := GetMetadataSummary(procConfig, result.TokenCount); err == nil {
-			fmt.Printf("\033[32m%s\n✓ code context written to %s (%s format)\033[0m\n",
-				info, outFile, outputFormat)
-		}
+		fmt.Printf("\033[32m%s\n✓ code context written to %s (%s format)\033[0m\n",
+			info, outFile, outputFormat)
 	} else if !noCopy {
-		// Copy to clipboard if no output file is specified and clipboard is not disabled
 		if err := clipboard.WriteAll(formattedOutput); err != nil {
 			log.Info("Warning: Failed to copy to clipboard: %v", err)
 		} else {
-			// Always print metadata summary and success message in green
-			if info, err := GetMetadataSummary(procConfig, result.TokenCount); err == nil {
-				fmt.Printf("%s\n✓ code context copied to clipboard (%s format)\033[0m\n",
-					info, outputFormat)
-			}
+			fmt.Printf("\033[32m%s\n✓ code context copied to clipboard (%s format)\033[0m\n",
+				info, outputFormat)
 		}
 	}
 
