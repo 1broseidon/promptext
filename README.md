@@ -7,6 +7,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/1broseidon/promptext)](https://goreportcard.com/report/github.com/1broseidon/promptext)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://img.shields.io/github/release/1broseidon/promptext.svg)](https://github.com/1broseidon/promptext/releases/latest)
+[![Documentation](https://img.shields.io/badge/docs-docusaurus-blue)](https://1broseidon.github.io/promptext/)
 
 </div>
 
@@ -62,20 +63,22 @@ extensions:
   - .js
 excludes:
   - vendor/
-  - '*.test.go'
+  - "*.test.go"
 format: markdown
 verbose: false
 ```
 
-See our [full documentation](docs/docs.md) for:
+## Documentation
 
-- Detailed configuration options
-- Output format specifications
-- File filtering rules and defaults
-- Project analysis features
-- Token counting methodology
-- Performance optimization tips
-- And more!
+Visit our [documentation site](https://1broseidon.github.io/promptext/) for:
+
+- 📚 Getting Started Guide
+- ⚙️ Configuration Options
+- 🔍 File Filtering Rules
+- 📊 Token Analysis
+- 🔬 Project Analysis Features
+- 📝 Output Format Specifications
+- ⚡ Performance Tips
 
 ## License
 

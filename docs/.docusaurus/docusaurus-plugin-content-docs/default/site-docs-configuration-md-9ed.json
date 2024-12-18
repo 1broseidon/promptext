@@ -1,0 +1,27 @@
+{
+  "id": "configuration",
+  "title": "Configuration",
+  "description": "Configuration File",
+  "source": "@site/docs/configuration.md",
+  "sourceDirName": ".",
+  "slug": "/configuration",
+  "permalink": "/promptext/configuration",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/1broseidon/promptext/tree/main/docs/docs/configuration.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "sidebar_position": 3
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Getting Started",
+    "permalink": "/promptext/getting-started"
+  },
+  "next": {
+    "title": "File Filtering",
+    "permalink": "/promptext/file-filtering"
+  }
+}

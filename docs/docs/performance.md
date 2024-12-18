@@ -1,3 +1,7 @@
+---
+sidebar_position: 8
+---
+
 # Performance
 
 ## Optimization Features
@@ -23,6 +27,7 @@ promptext -debug
 ```
 
 Debug output includes:
+
 - Processing times
 - Memory usage
 - Cache hits/misses

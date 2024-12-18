@@ -1,3 +1,7 @@
+---
+sidebar_position: 4
+---
+
 # File Filtering
 
 ## Default Filters
@@ -25,8 +29,8 @@ promptext comes with intelligent default filters to exclude common non-source fi
 ```yaml
 excludes:
   - test/
-  - '*.generated.go'
-  - 'internal/tmp/'
+  - "*.generated.go"
+  - "internal/tmp/"
 ```
 
 ### Via Command Line

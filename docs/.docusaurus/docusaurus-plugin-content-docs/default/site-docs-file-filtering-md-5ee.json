@@ -1,0 +1,27 @@
+{
+  "id": "file-filtering",
+  "title": "File Filtering",
+  "description": "Default Filters",
+  "source": "@site/docs/file-filtering.md",
+  "sourceDirName": ".",
+  "slug": "/file-filtering",
+  "permalink": "/promptext/file-filtering",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/1broseidon/promptext/tree/main/docs/docs/file-filtering.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 4,
+  "frontMatter": {
+    "sidebar_position": 4
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Configuration",
+    "permalink": "/promptext/configuration"
+  },
+  "next": {
+    "title": "Token Analysis",
+    "permalink": "/promptext/token-analysis"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "project-analysis",
+  "title": "Project Analysis",
+  "description": "File Classification",
+  "source": "@site/docs/project-analysis.md",
+  "sourceDirName": ".",
+  "slug": "/project-analysis",
+  "permalink": "/promptext/project-analysis",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/1broseidon/promptext/tree/main/docs/docs/project-analysis.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 6,
+  "frontMatter": {
+    "sidebar_position": 6
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Token Analysis",
+    "permalink": "/promptext/token-analysis"
+  },
+  "next": {
+    "title": "Output Formats",
+    "permalink": "/promptext/output-formats"
+  }
+}

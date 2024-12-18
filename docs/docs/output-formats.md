@@ -1,3 +1,7 @@
+---
+sidebar_position: 7
+---
+
 # Output Formats
 
 promptext supports multiple output formats for flexibility.
@@ -11,14 +15,17 @@ promptext -format markdown
 ```
 
 Example output:
+
 ```markdown
 # Project Analysis
 
 ## Files
+
 - main.go (150 tokens)
 - utils/helper.go (80 tokens)
 
 ## Statistics
+
 Total Files: 2
 Total Tokens: 230
 ```
@@ -32,6 +39,7 @@ promptext -format xml
 ```
 
 Example output:
+
 ```xml
 <project>
   <files>

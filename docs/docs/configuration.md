@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # Configuration
 
 ## Configuration File
@@ -14,7 +18,7 @@ extensions:
 excludes:
   - vendor/
   - node_modules/
-  - '*.test.go'
+  - "*.test.go"
 verbose: false
 format: markdown
 debug: false
