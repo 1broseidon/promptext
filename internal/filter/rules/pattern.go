@@ -32,6 +32,15 @@ func (r *PatternRule) Match(path string) bool {
             continue
         }
         
+        // Handle wildcard patterns (e.g., .aider*)
+        if strings.Contains(pattern, "*") {
+            matched, _ := filepath.Match(pattern, filepath.Base(normalizedPath))
+            if matched {
+                return true
+            }
+            continue
+        }
+        
         // Handle exact matches and path-based patterns
         if strings.HasPrefix(normalizedPath, pattern) || 
            strings.Contains(normalizedPath, "/"+pattern) ||

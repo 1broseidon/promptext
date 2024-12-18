@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
@@ -118,6 +119,12 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error reading file %s: %w", path, err)
+	}
+
+	// Check if file appears to be binary
+	if len(content) > 0 && bytes.IndexByte(content[:min(1024, len(content))], 0) != -1 {
+		log.Debug("  Skipping binary file: %s", path)
+		return nil, nil
 	}
 
 	rel, err := filepath.Rel(config.DirPath, path)
