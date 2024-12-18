@@ -227,8 +227,6 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		}
 
 		var displayContent string
-		// Initialize displayContent for this iteration
-		var displayContent string
 
 		// Only log files that will be processed
 		if config.Filter.ShouldProcess(relPath) {
@@ -249,7 +247,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			totalTokens += fileTokens
 
 			if verbose {
-				displayContent += fmt.Sprintf("\n### File: %s\n```\n%s\n```\n",
+				displayContent = fmt.Sprintf("\n### File: %s\n```\n%s\n```\n",
 					path, fileInfo.Content)
 			}
 		}
@@ -307,7 +305,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		return nil, fmt.Errorf("error formatting output: %w", err)
 	}
 
-	displayContent = ""
+	var displayContent string
 	if verbose {
 		displayContent = formattedOutput
 	}
