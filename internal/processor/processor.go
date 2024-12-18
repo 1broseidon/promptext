@@ -168,29 +168,40 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 	log.Debug("\nToken counting breakdown:")
 	
+	var totalTokens int
+
 	// Count tokens for directory tree
 	treeOutput, _ := formatter.Format(&format.ProjectOutput{DirectoryTree: projectOutput.DirectoryTree})
-	log.Debug("  Directory tree: %d tokens", tokenCounter.EstimateTokens(treeOutput))
+	treeTokens := tokenCounter.EstimateTokens(treeOutput)
+	totalTokens += treeTokens
+	log.Debug("  Directory tree: %d tokens", treeTokens)
 	
 	// Count tokens for git info
 	if projectOutput.GitInfo != nil {
 		gitOutput, _ := formatter.Format(&format.ProjectOutput{GitInfo: projectOutput.GitInfo})
-		log.Debug("  Git info: %d tokens", tokenCounter.EstimateTokens(gitOutput))
+		gitTokens := tokenCounter.EstimateTokens(gitOutput)
+		totalTokens += gitTokens
+		log.Debug("  Git info: %d tokens", gitTokens)
 	}
 	
 	// Count tokens for metadata
 	if projectOutput.Metadata != nil {
 		metaOutput, _ := formatter.Format(&format.ProjectOutput{Metadata: projectOutput.Metadata})
-		log.Debug("  Metadata: %d tokens", tokenCounter.EstimateTokens(metaOutput))
+		metaTokens := tokenCounter.EstimateTokens(metaOutput)
+		totalTokens += metaTokens
+		log.Debug("  Metadata: %d tokens", metaTokens)
 	}
 	
 	// Count tokens for files
 	if len(projectOutput.Files) > 0 {
-		filesOutput, _ := formatter.Format(&format.ProjectOutput{Files: projectOutput.Files})
-		log.Debug("  Files content: %d tokens", tokenCounter.EstimateTokens(filesOutput))
+		for _, file := range projectOutput.Files {
+			fileTokens := tokenCounter.EstimateTokens(file.Content)
+			totalTokens += fileTokens
+			log.Debug("  File %s: %d tokens", file.Path, fileTokens)
+		}
 	}
 	
-	log.Debug("  Total formatted output: %d tokens", tokenCounter.EstimateTokens(formattedOutput))
+	log.Debug("  Total tokens: %d", totalTokens)
 
 	displayContent := ""
 	if verbose {
