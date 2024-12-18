@@ -428,7 +428,7 @@ func GetMetadataSummary(config Config, tokenCount int) (string, error) {
 	// Content lines with borders
 	for _, line := range contentLines {
 		paddedLine := line + strings.Repeat(" ", maxWidth-len(line))
-		summary.WriteString("│ " + paddedLine + "   │\n")
+		summary.WriteString("│ " + paddedLine + "     │\n")
 	}
 
 	// Bottom border
