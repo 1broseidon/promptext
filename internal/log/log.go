@@ -7,16 +7,6 @@ import (
 )
 
 var (
-	debugMode bool
-	logger    *log.Logger
-	phaseStart time.Time
-)
-
-func init() {
-	logger = log.New(os.Stderr, "", log.Ltime)
-}
-
-var (
 	debugMode  bool
 	logger     *log.Logger
 	phaseStart time.Time
