@@ -423,16 +423,16 @@ func GetMetadataSummary(config Config, tokenCount int) (string, error) {
 	summary.WriteString("\033[32m") // Start green color
 
 	// Top border
-	summary.WriteString("╭" + strings.Repeat("─", maxWidth+2) + "╮\n")
+	summary.WriteString("╭" + strings.Repeat("─", maxWidth+4) + "╮\n")
 
 	// Content lines with borders
 	for _, line := range contentLines {
 		paddedLine := line + strings.Repeat(" ", maxWidth-len(line))
-		summary.WriteString("│ " + paddedLine + " │\n")
+		summary.WriteString("│ " + paddedLine + "   │\n")
 	}
 
 	// Bottom border
-	summary.WriteString("╰" + strings.Repeat("─", maxWidth+2) + "╯")
+	summary.WriteString("╰" + strings.Repeat("─", maxWidth+4) + "╯")
 	summary.WriteString("\033[0m") // Reset color
 
 	return summary.String(), nil
