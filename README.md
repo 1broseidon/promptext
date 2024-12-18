@@ -38,19 +38,19 @@ go install github.com/1broseidon/promptext/cmd/promptext@latest
 
 ```bash
 # Process current directory
-promptext
+prx
 
 # Process specific file types
-promptext -e .go,.js
+prx -e .go,.js
 
 # Show project summary
-promptext -i
+prx -i
 
 # Export as XML with debug logging
-promptext -f xml -o project.xml -D
+prx -f xml -o project.xml -D
 
 # Process with custom exclusions and verbose output
-promptext -x "test/,vendor/" -v
+prx -x "test/,vendor/" -v
 ```
 
 ## Configuration
