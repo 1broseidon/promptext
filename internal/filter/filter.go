@@ -78,10 +78,6 @@ func New(opts Options) *Filter {
 				defaultPatterns = append(defaultPatterns, patternRule.Patterns()...)
 			}
 		}
-		log.Debug("Default exclude patterns:")
-		for _, p := range defaultPatterns {
-			log.Debug("  - %s", p)
-		}
 		excludePatterns = append(excludePatterns, defaultPatterns...)
 	}
 	
@@ -100,8 +96,13 @@ func New(opts Options) *Filter {
 	// Deduplicate patterns
 	excludePatterns = MergeAndDedupePatterns([][]string{excludePatterns}...)
 	
-	// Log all patterns at once
-	log.Debug("Using exclude patterns: %#v", excludePatterns)
+	// Log final pattern list once
+	if len(excludePatterns) > 0 {
+		log.Debug("Using exclude patterns:")
+		for _, p := range excludePatterns {
+			log.Debug("  - %s", p)
+		}
+	}
 	
 	// Create rules from final pattern list
 	if len(excludePatterns) > 0 {
