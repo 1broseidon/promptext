@@ -4,5 +4,7 @@ excludes:
   - .git/
   - .aider*/
   - .aider.*
+  - docs/.docusaurus/
+  - docs/package-lock.json
 verbose: true
 debug: true

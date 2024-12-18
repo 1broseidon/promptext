@@ -5,6 +5,9 @@ import "github.com/1broseidon/promptext/internal/filter/types"
 func DefaultExcludes() []types.Rule {
 	return []types.Rule{
 		NewPatternRule([]string{
+
+			".DS_Store",
+
 			// Version control
 			".git/",
 			".git*",
@@ -59,7 +62,7 @@ func DefaultExcludes() []types.Rule {
 			".zip", ".tar", ".gz", ".7z", ".rar", ".iso",
 			".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
 			".class", ".pyc", ".pyo", ".pyd", ".o", ".a", ".db",
-			".db-shm", ".db-wal", "DS_Store", ".DS_Store",
+			".db-shm", ".db-wal",
 		}, types.Exclude),
 	}
 }

@@ -1,0 +1,235 @@
+{
+  "entrypoints": [
+    "main"
+  ],
+  "origins": {
+    "237": [
+      237
+    ],
+    "17896441": [
+      869,
+      401
+    ],
+    "main": [
+      354,
+      869,
+      792
+    ],
+    "runtime~main": [
+      792,
+      869,
+      354
+    ],
+    "0e384e19": [
+      976
+    ],
+    "440aa5dd": [
+      532
+    ],
+    "5e95c892": [
+      647
+    ],
+    "5eeba3b8": [
+      810
+    ],
+    "62d43ef8": [
+      797
+    ],
+    "66f79b42": [
+      261
+    ],
+    "9ed00105": [
+      873
+    ],
+    "a7bd4aaa": [
+      98
+    ],
+    "a94703ab": [
+      869,
+      48
+    ],
+    "aba21aa0": [
+      742
+    ],
+    "b1a278ed": [
+      579
+    ],
+    "d589d3a7": [
+      924
+    ],
+    "edefc60b": [
+      624
+    ],
+    "styles": [
+      48,
+      354,
+      401,
+      792,
+      869
+    ]
+  },
+  "assets": {
+    "48": {
+      "js": [
+        {
+          "file": "assets/js/a94703ab.766b6a33.js",
+          "hash": "9b15ec728a7d053a",
+          "publicPath": "/promptext/assets/js/a94703ab.766b6a33.js"
+        }
+      ]
+    },
+    "98": {
+      "js": [
+        {
+          "file": "assets/js/a7bd4aaa.a57ccd7a.js",
+          "hash": "8fd5ac0f8aeb7b30",
+          "publicPath": "/promptext/assets/js/a7bd4aaa.a57ccd7a.js"
+        }
+      ]
+    },
+    "237": {
+      "js": [
+        {
+          "file": "assets/js/237.5e05e509.js",
+          "hash": "0deb1db5999001a4",
+          "publicPath": "/promptext/assets/js/237.5e05e509.js"
+        }
+      ]
+    },
+    "261": {
+      "js": [
+        {
+          "file": "assets/js/66f79b42.9411e9d5.js",
+          "hash": "c9291daba979783f",
+          "publicPath": "/promptext/assets/js/66f79b42.9411e9d5.js"
+        }
+      ]
+    },
+    "354": {
+      "js": [
+        {
+          "file": "assets/js/runtime~main.838bebc2.js",
+          "hash": "dbbe166250accd94",
+          "publicPath": "/promptext/assets/js/runtime~main.838bebc2.js"
+        }
+      ]
+    },
+    "401": {
+      "js": [
+        {
+          "file": "assets/js/17896441.9eb697d8.js",
+          "hash": "dd8b6c42f177d4c7",
+          "publicPath": "/promptext/assets/js/17896441.9eb697d8.js"
+        }
+      ]
+    },
+    "532": {
+      "js": [
+        {
+          "file": "assets/js/440aa5dd.b0171932.js",
+          "hash": "f6cfe6c744bb2c32",
+          "publicPath": "/promptext/assets/js/440aa5dd.b0171932.js"
+        }
+      ]
+    },
+    "579": {
+      "js": [
+        {
+          "file": "assets/js/b1a278ed.cbabcac9.js",
+          "hash": "c715aa233317f792",
+          "publicPath": "/promptext/assets/js/b1a278ed.cbabcac9.js"
+        }
+      ]
+    },
+    "624": {
+      "js": [
+        {
+          "file": "assets/js/edefc60b.e2e47d33.js",
+          "hash": "ae568f3272f37b7d",
+          "publicPath": "/promptext/assets/js/edefc60b.e2e47d33.js"
+        }
+      ]
+    },
+    "647": {
+      "js": [
+        {
+          "file": "assets/js/5e95c892.1dd74922.js",
+          "hash": "cccf69cbd495cc39",
+          "publicPath": "/promptext/assets/js/5e95c892.1dd74922.js"
+        }
+      ]
+    },
+    "742": {
+      "js": [
+        {
+          "file": "assets/js/aba21aa0.a9caf244.js",
+          "hash": "f04455a8450d97d3",
+          "publicPath": "/promptext/assets/js/aba21aa0.a9caf244.js"
+        }
+      ]
+    },
+    "792": {
+      "js": [
+        {
+          "file": "assets/js/main.c8716728.js",
+          "hash": "83dd33d1b7a6e45d",
+          "publicPath": "/promptext/assets/js/main.c8716728.js"
+        }
+      ]
+    },
+    "797": {
+      "js": [
+        {
+          "file": "assets/js/62d43ef8.35043be3.js",
+          "hash": "193391f099b51c97",
+          "publicPath": "/promptext/assets/js/62d43ef8.35043be3.js"
+        }
+      ]
+    },
+    "810": {
+      "js": [
+        {
+          "file": "assets/js/5eeba3b8.28f77975.js",
+          "hash": "eb97e21325a212f5",
+          "publicPath": "/promptext/assets/js/5eeba3b8.28f77975.js"
+        }
+      ]
+    },
+    "869": {
+      "css": [
+        {
+          "file": "assets/css/styles.17275f4c.css",
+          "hash": "2a2dd86f207492f2",
+          "publicPath": "/promptext/assets/css/styles.17275f4c.css"
+        }
+      ]
+    },
+    "873": {
+      "js": [
+        {
+          "file": "assets/js/9ed00105.67457197.js",
+          "hash": "21ae881e643463d2",
+          "publicPath": "/promptext/assets/js/9ed00105.67457197.js"
+        }
+      ]
+    },
+    "924": {
+      "js": [
+        {
+          "file": "assets/js/d589d3a7.fe480986.js",
+          "hash": "0deaacd1f3a66193",
+          "publicPath": "/promptext/assets/js/d589d3a7.fe480986.js"
+        }
+      ]
+    },
+    "976": {
+      "js": [
+        {
+          "file": "assets/js/0e384e19.c7c93262.js",
+          "hash": "fa0c659a89f4f1d5",
+          "publicPath": "/promptext/assets/js/0e384e19.c7c93262.js"
+        }
+      ]
+    }
+  }
+}

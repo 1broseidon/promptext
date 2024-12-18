@@ -15,8 +15,8 @@ const (
 
 // BaseRule provides common functionality
 type BaseRule struct {
-	pattern string
-	action  RuleAction
+	// pattern string
+	action RuleAction
 }
 
 func (r *BaseRule) Action() RuleAction {
