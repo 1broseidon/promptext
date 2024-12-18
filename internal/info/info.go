@@ -45,13 +45,7 @@ type ProjectMetadata struct {
 func GetProjectInfo(rootPath string, f *filter.Filter) (*ProjectInfo, error) {
 	info := &ProjectInfo{}
 
-	tree, err := generateDirectoryTree(rootPath, f)
-	if err != nil {
-		return nil, fmt.Errorf("error generating directory tree: %w", err)
-	}
-	info.DirectoryTree = tree
-
-	// Try to get git info if available
+	// Get git info if available
 	log.StartTimer("Git Info Collection")
 	gitInfo, err := getGitInfo(rootPath)
 	if err == nil {
@@ -64,6 +58,13 @@ func GetProjectInfo(rootPath string, f *filter.Filter) (*ProjectInfo, error) {
 	if err == nil {
 		info.Metadata = metadata
 	}
+
+	// Generate directory tree
+	tree, err := generateDirectoryTree(rootPath, f)
+	if err != nil {
+		return nil, fmt.Errorf("error generating directory tree: %w", err)
+	}
+	info.DirectoryTree = tree
 
 	return info, nil
 }
@@ -303,7 +304,6 @@ func getNodeVersion(root string) string {
 }
 
 func getPythonVersion(root string) string {
-
 	// Try pyproject.toml
 	if content, err := os.ReadFile(filepath.Join(root, "pyproject.toml")); err == nil {
 		lines := strings.Split(string(content), "\n")

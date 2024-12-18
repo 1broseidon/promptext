@@ -2,12 +2,13 @@ package filter
 
 import (
 	"bufio"
-	"github.com/1broseidon/promptext/internal/filter/rules"
-	"github.com/1broseidon/promptext/internal/filter/types"
-	"github.com/1broseidon/promptext/internal/log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/1broseidon/promptext/internal/filter/rules"
+	"github.com/1broseidon/promptext/internal/filter/types"
+	"github.com/1broseidon/promptext/internal/log"
 )
 
 type Options struct {
@@ -98,12 +99,9 @@ func New(opts Options) *Filter {
 	// Merge all patterns
 	excludePatterns = MergeAndDedupePatterns([][]string{defaultPatterns, gitPatterns, configPatterns}...)
 
-	// Log final consolidated patterns
+	// Log final consolidated patterns in array style
 	if len(excludePatterns) > 0 {
-		log.Debug("Final consolidated exclude patterns (%d):", len(excludePatterns))
-		for _, p := range excludePatterns {
-			log.Debug("  - %s", p)
-		}
+		log.Debug("Final consolidated exclude patterns (%d): [%s]", len(excludePatterns), strings.Join(excludePatterns, ", "))
 	}
 
 	// Add default rules first if enabled
@@ -148,7 +146,6 @@ func (f *Filter) ShouldProcess(path string) bool {
 	// Then check includes
 	for _, rule := range f.rules {
 		if rule.Match(path) && rule.Action() == types.Include {
-			log.Debug("Processing: %s (matched include rule)", path)
 			return true
 		}
 	}
@@ -160,8 +157,7 @@ func (f *Filter) ShouldProcess(path string) bool {
 		}
 	}
 
-	// No rules matched, default to include with logging
-	log.Debug("Processing: %s (no rules matched)", path)
+	// No rules matched, default to include without logging
 	return true
 }
 

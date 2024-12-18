@@ -39,23 +39,73 @@ type ProcessResult struct {
 	DisplayContent   string
 	ClipboardContent string
 	TokenCount       int
+	ProjectInfo      *info.ProjectInfo
 }
 
-// initializeProjectOutput sets up the initial project output structure
-func initializeProjectOutput(dirPath string, f *filter.Filter) (*format.ProjectOutput, error) {
-	projectOutput := &format.ProjectOutput{}
-
-	// Get project analysis using shared filter
-	analysis := info.AnalyzeProject(dirPath, f)
-	projectOutput.Analysis = &format.ProjectAnalysis{
-		EntryPoints:   analysis.EntryPoints,
-		ConfigFiles:   analysis.ConfigFiles,
-		CoreFiles:     analysis.CoreFiles,
-		TestFiles:     analysis.TestFiles,
-		Documentation: analysis.Documentation,
+// processFile handles the processing of a single file
+func processFile(path string, config Config) (*format.FileInfo, error) {
+	// Get relative path first for consistent logging
+	rel, err := filepath.Rel(config.DirPath, path)
+	if err != nil {
+		return nil, fmt.Errorf("error getting relative path for %s: %w", path, err)
 	}
 
-	return projectOutput, nil
+	if !config.Filter.ShouldProcess(rel) {
+		return nil, nil
+	}
+
+	// Skip .DS_Store files immediately
+	if filepath.Base(path) == ".DS_Store" {
+		return nil, nil
+	}
+
+	// Get file info first to check if it's a directory or has read permissions
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return nil, nil
+	}
+
+	// Skip directories
+	if fileInfo.IsDir() {
+		return nil, nil
+	}
+
+	// Check read permissions
+	if fileInfo.Mode().Perm()&0444 == 0 {
+		return nil, nil
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, nil
+	}
+
+	// Check if file appears to be binary
+	if len(content) > 0 {
+		// Check first 1024 bytes for null bytes
+		if bytes.IndexByte(content[:min(1024, len(content))], 0) != -1 {
+			return nil, nil
+		}
+
+		// Check file extension for common binary types
+		ext := strings.ToLower(filepath.Ext(path))
+		binaryExts := map[string]bool{
+			".exe": true, ".dll": true, ".so": true, ".dylib": true,
+			".bin": true, ".obj": true, ".o": true,
+			".zip": true, ".tar": true, ".gz": true, ".7z": true,
+			".pdf": true, ".doc": true, ".docx": true,
+			".xls": true, ".xlsx": true, ".ppt": true,
+			".db": true, ".sqlite": true, ".sqlite3": true,
+		}
+		if binaryExts[ext] {
+			return nil, nil
+		}
+	}
+
+	return &format.FileInfo{
+		Path:    rel,
+		Content: string(content),
+	}, nil
 }
 
 // populateProjectInfo adds project information to the output
@@ -79,129 +129,22 @@ func populateProjectInfo(projectOutput *format.ProjectOutput, projectInfo *info.
 	}
 }
 
-// buildVerboseDisplay creates the verbose display string
-func buildVerboseDisplay(projectOutput *format.ProjectOutput) string {
-	var displayBuilder strings.Builder
-
-	displayBuilder.WriteString(projectOutput.DirectoryTree.ToMarkdown(0))
-
-	if projectOutput.GitInfo != nil {
-		displayBuilder.WriteString(fmt.Sprintf("\nBranch: %s\nCommit: %s\nMessage: %s\n",
-			projectOutput.GitInfo.Branch,
-			projectOutput.GitInfo.CommitHash,
-			projectOutput.GitInfo.CommitMessage))
-	}
-
-	if projectOutput.Metadata != nil {
-		displayBuilder.WriteString(fmt.Sprintf("\nLanguage: %s\nVersion: %s\n",
-			projectOutput.Metadata.Language,
-			projectOutput.Metadata.Version))
-		if len(projectOutput.Metadata.Dependencies) > 0 {
-			displayBuilder.WriteString("Dependencies:\n")
-			for _, dep := range projectOutput.Metadata.Dependencies {
-				displayBuilder.WriteString(fmt.Sprintf("  - %s\n", dep))
-			}
-		}
-	}
-
-	return displayBuilder.String()
-}
-
-// processFile handles the processing of a single file
-func processFile(path string, config Config) (*format.FileInfo, error) {
-	if !config.Filter.ShouldProcess(path) {
-		return nil, nil
-	}
-
-	// Skip .DS_Store files immediately
-	if filepath.Base(path) == ".DS_Store" {
-		return nil, nil
-	}
-
-	// Get file info first to check if it's a directory or has read permissions
-	fileInfo, err := os.Stat(path)
-	if err != nil {
-		log.Debug("Warning: Cannot stat file %s: %v", path, err)
-		return nil, nil
-	}
-
-	// Skip directories
-	if fileInfo.IsDir() {
-		return nil, nil
-	}
-
-	// Check read permissions
-	if fileInfo.Mode().Perm()&0444 == 0 {
-		log.Debug("Warning: No read permission for file %s", path)
-		return nil, nil
-	}
-
-	content, err := os.ReadFile(path)
-	if err != nil {
-		log.Debug("Warning: Cannot read file %s: %v", path, err)
-		return nil, nil
-	}
-
-	// Check if file appears to be binary
-	if len(content) > 0 {
-		// Check first 1024 bytes for null bytes
-		if bytes.IndexByte(content[:min(1024, len(content))], 0) != -1 {
-			return nil, nil
-		}
-
-		// Check file extension for common binary types
-		ext := strings.ToLower(filepath.Ext(path))
-		binaryExts := map[string]bool{
-			".exe": true, ".dll": true, ".so": true, ".dylib": true,
-			".bin": true, ".obj": true, ".o": true,
-			".zip": true, ".tar": true, ".gz": true, ".7z": true,
-			".pdf": true, ".doc": true, ".docx": true,
-			".xls": true, ".xlsx": true, ".ppt": true,
-			".db": true, ".sqlite": true, ".sqlite3": true,
-		}
-		if binaryExts[ext] {
-			return nil, nil
-			return nil, nil
-		}
-	}
-
-	rel, err := filepath.Rel(config.DirPath, path)
-	if err != nil {
-		return nil, fmt.Errorf("error getting relative path for %s: %w", path, err)
-	}
-
-	return &format.FileInfo{
-		Path:    rel,
-		Content: string(content),
-	}, nil
-}
-
 func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	log.StartTimer("Project Processing")
 	defer log.EndTimer("Project Processing")
 
-	// Initialize project output and get project info using shared filter
-	log.StartTimer("Project Analysis")
-	projectOutput, err := initializeProjectOutput(config.DirPath, config.Filter)
-	if err != nil {
-		return nil, err
-	}
-	projectInfo, err := info.GetProjectInfo(config.DirPath, config.Filter)
-	if err != nil {
-		return &ProcessResult{}, fmt.Errorf("error getting project info: %w", err)
-	}
-	log.EndTimer("Project Analysis")
-
-	// Populate project information
-	populateProjectInfo(projectOutput, projectInfo)
+	// Initialize project output
+	projectOutput := &format.ProjectOutput{}
 
 	// Combined file processing and token analysis
-	log.StartTimer("Project Analysis")
+	log.StartTimer("Processing Files")
 	tokenCounter := token.NewTokenCounter()
 	log.Debug("=== Processing Files & Counting Tokens ===")
 	var totalTokens int
 
-	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
+	// Process all files first
+	var processedFiles []format.FileInfo
+	err := filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -225,6 +168,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			return nil
 		}
 
+		// Process file
 		fileInfo, err := processFile(path, config)
 		if err != nil {
 			log.Debug("Error processing file %s: %v", path, err)
@@ -232,12 +176,12 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		}
 
 		if fileInfo != nil {
-			projectOutput.Files = append(projectOutput.Files, *fileInfo)
+			processedFiles = append(processedFiles, *fileInfo)
 
 			// Count tokens and log immediately
 			fileTokens := tokenCounter.EstimateTokens(fileInfo.Content)
 			totalTokens += fileTokens
-			log.Debug("  %s: %d tokens", relPath, fileTokens)
+			log.Debug("Processing: %s (%d tokens)", relPath, fileTokens)
 
 			if verbose && !log.IsDebugEnabled() {
 				fmt.Printf("\n### File: %s\n```\n%s\n```\n",
@@ -251,6 +195,21 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error processing files: %w", err)
 	}
+	log.EndTimer("Processing Files")
+
+	// Store processed files
+	projectOutput.Files = processedFiles
+
+	// Get project info using processed files
+	log.StartTimer("Project Analysis")
+	projectInfo, err := info.GetProjectInfo(config.DirPath, config.Filter)
+	if err != nil {
+		return &ProcessResult{}, fmt.Errorf("error getting project info: %w", err)
+	}
+	log.EndTimer("Project Analysis")
+
+	// Populate project information
+	populateProjectInfo(projectOutput, projectInfo)
 
 	// Get formatter for output
 	formatter, err := format.GetFormatter("markdown") // Default to markdown for token counting
@@ -290,7 +249,6 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	// Add timing summary
 	log.Debug("=== Performance ===")
 	log.Debug("Total processing time: %.2fms", float64(time.Since(log.GetPhaseStart()).Microseconds())/1000.0)
-	log.EndTimer("Token Counting")
 
 	// Format the full output
 	formattedOutput, err := formatter.Format(projectOutput)
@@ -303,99 +261,22 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		displayContent = formattedOutput
 	}
 
-	if err != nil {
-		return &ProcessResult{}, fmt.Errorf("error walking directory: %w", err)
-	}
-
 	return &ProcessResult{
 		ProjectOutput:    projectOutput,
 		DisplayContent:   displayContent,
 		ClipboardContent: formattedOutput,
-		TokenCount:       tokenCounter.EstimateTokens(formattedOutput),
+		TokenCount:       totalTokens,
+		ProjectInfo:      projectInfo,
 	}, nil
 }
 
-// buildProjectSummary creates the project name summary
-func buildProjectSummary(projectInfo *info.ProjectInfo, config Config) string {
-	var summary strings.Builder
-	summary.WriteString("📦 Project Summary:\n")
-
-	if projectInfo.Metadata != nil && projectInfo.Metadata.Name != "" {
-		summary.WriteString(fmt.Sprintf("   Project: %s\n", projectInfo.Metadata.Name))
-	} else {
-		if absPath, err := filepath.Abs(config.DirPath); err == nil {
-			summary.WriteString(fmt.Sprintf("   Project: %s\n", filepath.Base(absPath)))
-		}
-	}
-	return summary.String()
-}
-
-// buildLanguageInfo creates the language and dependencies summary
-func buildLanguageInfo(metadata *info.ProjectMetadata) string {
-	if metadata == nil {
-		return ""
-	}
-
-	var info strings.Builder
-	info.WriteString(fmt.Sprintf("   Language: %s", metadata.Language))
-	if metadata.Version != "" {
-		info.WriteString(fmt.Sprintf(" %s", metadata.Version))
-	}
-	info.WriteString("\n")
-
-	if len(metadata.Dependencies) > 0 {
-		mainDeps, devDeps := countDependencies(metadata.Dependencies)
-		if devDeps > 0 {
-			info.WriteString(fmt.Sprintf("   Dependencies: %d packages (%d main, %d dev)\n",
-				len(metadata.Dependencies), mainDeps, devDeps))
-		} else {
-			info.WriteString(fmt.Sprintf("   Dependencies: %d packages\n", mainDeps))
-		}
-	}
-
-	return info.String()
-}
-
-// countDependencies counts main and dev dependencies
-func countDependencies(deps []string) (main, dev int) {
-	for _, dep := range deps {
-		if strings.HasPrefix(dep, "[dev] ") {
-			dev++
-		} else {
-			main++
-		}
-	}
-	return main, dev
-}
-
-// countIncludedFiles counts files that match the filter criteria
-func countIncludedFiles(config Config) (int, error) {
-	fileCount := 0
-	err := filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return nil
-		}
-		rel, _ := filepath.Rel(config.DirPath, path)
-		if config.Filter.ShouldProcess(rel) {
-			fileCount++
-		}
-		return nil
-	})
-	return fileCount, err
-}
-
 // GetMetadataSummary returns a concise summary of project metadata
-func GetMetadataSummary(config Config, tokenCount int) (string, error) {
-	projectInfo, err := info.GetProjectInfo(config.DirPath, config.Filter)
-	if err != nil {
-		return "", err
-	}
-
+func GetMetadataSummary(config Config, result *ProcessResult) (string, error) {
 	var content strings.Builder
 
 	// Project name
-	if projectInfo.Metadata != nil && projectInfo.Metadata.Name != "" {
-		content.WriteString("📦 " + projectInfo.Metadata.Name)
+	if result.ProjectInfo.Metadata != nil && result.ProjectInfo.Metadata.Name != "" {
+		content.WriteString("📦 " + result.ProjectInfo.Metadata.Name)
 	} else {
 		if absPath, err := filepath.Abs(config.DirPath); err == nil {
 			content.WriteString("📦 " + filepath.Base(absPath))
@@ -403,22 +284,19 @@ func GetMetadataSummary(config Config, tokenCount int) (string, error) {
 	}
 
 	// Language if detected
-	if projectInfo.Metadata != nil && projectInfo.Metadata.Language != "" {
-		content.WriteString(fmt.Sprintf(" (%s)", projectInfo.Metadata.Language))
+	if result.ProjectInfo.Metadata != nil && result.ProjectInfo.Metadata.Language != "" {
+		content.WriteString(fmt.Sprintf(" (%s)", result.ProjectInfo.Metadata.Language))
 	}
 
 	content.WriteString("\n")
 
 	// File count
-	fileCount, err := countIncludedFiles(config)
-	if err != nil {
-		return "", fmt.Errorf("error counting files: %w", err)
-	}
+	fileCount := len(result.ProjectOutput.Files)
 	content.WriteString(fmt.Sprintf("   Files: %d", fileCount))
 
 	// Token count
-	if tokenCount > 0 {
-		content.WriteString(fmt.Sprintf(" • Tokens: ~%d", tokenCount))
+	if result.TokenCount > 0 {
+		content.WriteString(fmt.Sprintf(" • Tokens: ~%d", result.TokenCount))
 	}
 	content.WriteString("\n")
 
@@ -510,38 +388,28 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		Filter:     f,
 	}
 
-	if infoOnly {
-		// Process directory just to get token count
-		result, err := ProcessDirectory(procConfig, false)
-		if err != nil {
-			return fmt.Errorf("error processing directory: %v", err)
-		}
-
-		// Display project summary with token count
-		if info, err := GetMetadataSummary(procConfig, result.TokenCount); err == nil {
-			fmt.Printf("\033[32m%s\033[0m\n", info)
-		} else {
-			return fmt.Errorf("error getting project info: %v", err)
-		}
-		return nil
-	}
-
-	// Single pass processing
+	// Process directory once and reuse results
 	result, err := ProcessDirectory(procConfig, verboseFlag)
 	if err != nil {
 		return fmt.Errorf("error processing directory: %v", err)
 	}
 
-	// Format output once
+	// Get metadata summary using the already processed result
+	info, err := GetMetadataSummary(procConfig, result)
+	if err != nil {
+		return fmt.Errorf("error getting project info: %v", err)
+	}
+
+	// If info-only flag is set, just display the summary and return
+	if infoOnly {
+		fmt.Printf("\033[32m%s\033[0m\n", info)
+		return nil
+	}
+
+	// Format output for the selected format
 	formattedOutput, err := formatter.Format(result.ProjectOutput)
 	if err != nil {
 		return fmt.Errorf("error formatting output: %w", err)
-	}
-
-	// Get metadata summary
-	info, err := GetMetadataSummary(procConfig, result.TokenCount)
-	if err != nil {
-		return fmt.Errorf("error getting project info: %v", err)
 	}
 
 	// Handle output based on flags
