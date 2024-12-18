@@ -78,7 +78,7 @@ func TestMergeWithFlags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotExt, gotExc, gotVerb, _ := tt.config.MergeWithFlags(tt.flagExt, tt.flagExclude, tt.flagVerbose, false)
+			gotExt, gotExc, gotVerb, _, _ := tt.config.MergeWithFlags(tt.flagExt, tt.flagExclude, tt.flagVerbose, false, nil)
 
 			if !reflect.DeepEqual(gotExt, tt.wantExtensions) {
 				t.Errorf("Extensions = %v, want %v", gotExt, tt.wantExtensions)
