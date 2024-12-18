@@ -69,36 +69,34 @@ func New(opts Options) *Filter {
 	var filterRules []types.Rule
 	var excludePatterns []string
 	
-	// Start with default excludes if enabled
-	if opts.IgnoreDefault {
-		defaultRules := rules.DefaultExcludes()
-		var defaultPatterns []string
-		for _, rule := range defaultRules {
-			if patternRule, ok := rule.(*rules.PatternRule); ok {
-				defaultPatterns = append(defaultPatterns, patternRule.Patterns()...)
+	var gitPatterns, configPatterns []string
+
+	// Get gitignore patterns if enabled
+	if opts.UseGitIgnore {
+		if patterns, err := ParseGitIgnore("."); err == nil && len(patterns) > 0 {
+			gitPatterns = patterns
+			log.Debug("Found .gitignore patterns (%d):", len(patterns))
+			for _, p := range patterns {
+				log.Debug("  - %s", p)
 			}
 		}
-		excludePatterns = append(excludePatterns, defaultPatterns...)
 	}
-	
-	// Add gitignore patterns if enabled
-	if opts.UseGitIgnore {
-		if gitPatterns, err := ParseGitIgnore("."); err == nil && len(gitPatterns) > 0 {
-			excludePatterns = append(excludePatterns, gitPatterns...)
+
+	// Get config file and CLI excludes
+	if len(opts.Excludes) > 0 {
+		configPatterns = opts.Excludes
+		log.Debug("Found config excludes (%d):", len(opts.Excludes))
+		for _, p := range opts.Excludes {
+			log.Debug("  - %s", p)
 		}
 	}
+
+	// Merge all patterns
+	excludePatterns = MergeAndDedupePatterns([][]string{gitPatterns, configPatterns}...)
 	
-	// Add user-specified excludes
-	if len(opts.Excludes) > 0 {
-		excludePatterns = append(excludePatterns, opts.Excludes...)
-	}
-	
-	// Deduplicate patterns
-	excludePatterns = MergeAndDedupePatterns([][]string{excludePatterns}...)
-	
-	// Log final pattern list once
+	// Log final merged patterns
 	if len(excludePatterns) > 0 {
-		log.Debug("Using exclude patterns:")
+		log.Debug("Final merged patterns (%d):", len(excludePatterns))
 		for _, p := range excludePatterns {
 			log.Debug("  - %s", p)
 		}
