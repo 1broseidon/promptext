@@ -2,6 +2,7 @@ excludes:
   - samples/
   - dist/
   - .git/
-  - .aider.tags.cache.v3/
+  - .aider*/
+  - .aider.*
 verbose: true
 debug: true
