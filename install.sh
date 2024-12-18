@@ -79,25 +79,47 @@ echo "Cleaning up..."
 cd - >/dev/null
 rm -rf "$TMP_DIR"
 
-# Function to check if alias exists
+# Function to check if alias exists and what it points to
 check_alias_exists() {
-    if [ -f "$HOME/.bashrc" ] && grep -q "alias prx=" "$HOME/.bashrc"; then
-        return 0
+    local alias_target=""
+    
+    # Check in .zshrc
+    if [ -f "$HOME/.zshrc" ]; then
+        alias_target=$(grep "alias prx=" "$HOME/.zshrc" | cut -d= -f2- 2>/dev/null)
     fi
-    if [ -f "$HOME/.zshrc" ] && grep -q "alias prx=" "$HOME/.zshrc"; then
-        return 0
+    
+    # Check in .bashrc if not found in .zshrc
+    if [ -z "$alias_target" ] && [ -f "$HOME/.bashrc" ]; then
+        alias_target=$(grep "alias prx=" "$HOME/.bashrc" | cut -d= -f2- 2>/dev/null)
     fi
-    if command -v prx >/dev/null 2>&1; then
-        return 0
+    
+    # Check if prx exists as a command
+    if [ -z "$alias_target" ] && command -v prx >/dev/null 2>&1; then
+        alias_target=$(command -v prx)
     fi
-    return 1
+    
+    if [ -n "$alias_target" ]; then
+        # Remove quotes and whitespace
+        alias_target=$(echo "$alias_target" | tr -d '"' | tr -d "'" | xargs)
+        if [ "$alias_target" = "promptext" ]; then
+            echo "exists_and_matches"
+        else
+            echo "exists_different:$alias_target"
+        fi
+    else
+        echo "not_exists"
+    fi
 }
 
 # Try to create alias if it doesn't exist
-if check_alias_exists; then
-    echo "⚠️  Note: 'prx' alias already exists on your system."
+ALIAS_STATUS=$(check_alias_exists)
+if [ "$ALIAS_STATUS" = "exists_and_matches" ]; then
+    echo "✨ Installation complete! The 'prx' alias is already correctly set to promptext."
+elif [[ "$ALIAS_STATUS" == exists_different:* ]]; then
+    CURRENT_TARGET="${ALIAS_STATUS#exists_different:}"
+    echo "⚠️  Note: 'prx' alias exists but points to: $CURRENT_TARGET"
     echo "✨ Installation complete! You can use the 'promptext' command."
-else
+elif [ "$ALIAS_STATUS" = "not_exists" ]; then
     # Determine the appropriate shell config file
     SHELL_CONFIG=""
     if [ -f "$HOME/.zshrc" ]; then
