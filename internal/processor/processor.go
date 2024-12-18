@@ -201,6 +201,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	log.Debug("=== Token Analysis ===")
 	var totalTokens int
 
+	// Process files and count tokens
 	log.Debug("Processing project files:")
 	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -226,11 +227,6 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			return nil
 		}
 
-		// Only log files that will be processed
-		if config.Filter.ShouldProcess(relPath) {
-			log.Debug("  Processing: %s", relPath)
-		}
-
 		fileInfo, err := processFile(path, config)
 		if err != nil {
 			log.Debug("Error processing file %s: %v", path, err)
@@ -240,9 +236,10 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		if fileInfo != nil {
 			projectOutput.Files = append(projectOutput.Files, *fileInfo)
 
-			// Count tokens for this file
+			// Count tokens for this file and log the count
 			fileTokens := tokenCounter.EstimateTokens(fileInfo.Content)
 			totalTokens += fileTokens
+			log.Debug("  %s: %d tokens", relPath, fileTokens)
 
 			if verbose && !log.IsDebugEnabled() {
 				fmt.Printf("\n### File: %s\n```\n%s\n```\n",
