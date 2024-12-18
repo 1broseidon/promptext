@@ -2,14 +2,13 @@ package filter
 
 import (
 	"bufio"
-	"os"
-	"path/filepath"
-	"strings"
 	"github.com/1broseidon/promptext/internal/filter/rules"
 	"github.com/1broseidon/promptext/internal/filter/types"
 	"github.com/1broseidon/promptext/internal/log"
+	"os"
+	"path/filepath"
+	"strings"
 )
-
 
 type Options struct {
 	Includes      []string
@@ -48,7 +47,7 @@ func ParseGitIgnore(rootDir string) ([]string, error) {
 func MergeAndDedupePatterns(patterns ...[]string) []string {
 	seen := make(map[string]bool)
 	var result []string
-	
+
 	for _, patternSet := range patterns {
 		for _, pattern := range patternSet {
 			if !seen[pattern] {
@@ -57,7 +56,7 @@ func MergeAndDedupePatterns(patterns ...[]string) []string {
 			}
 		}
 	}
-	
+
 	return result
 }
 
@@ -68,11 +67,11 @@ type Filter struct {
 func New(opts Options) *Filter {
 	var filterRules []types.Rule
 	var excludePatterns []string
-	
+
 	var defaultPatterns, gitPatterns, configPatterns []string
 
 	log.Phase("Filter Configuration")
-	
+
 	// Collect patterns from all sources
 	if opts.IgnoreDefault {
 		defaultRules := rules.DefaultExcludes()
@@ -98,7 +97,7 @@ func New(opts Options) *Filter {
 
 	// Merge all patterns
 	excludePatterns = MergeAndDedupePatterns([][]string{defaultPatterns, gitPatterns, configPatterns}...)
-	
+
 	// Log final consolidated patterns
 	if len(excludePatterns) > 0 {
 		log.Debug("Final consolidated exclude patterns (%d):", len(excludePatterns))
@@ -106,45 +105,45 @@ func New(opts Options) *Filter {
 			log.Debug("  - %s", p)
 		}
 	}
-	
+
 	// Create rules from final pattern list
 	if len(excludePatterns) > 0 {
 		filterRules = append(filterRules,
 			rules.NewPatternRule(excludePatterns, types.Exclude),
 			rules.NewExtensionRule(excludePatterns, types.Exclude))
 	}
-	
+
 	// Add include rules
 	if len(opts.Includes) > 0 {
 		filterRules = append(filterRules, rules.NewExtensionRule(opts.Includes, types.Include))
 	}
-	
+
 	return &Filter{rules: filterRules}
 }
 
 // ShouldProcess determines if a path should be processed
 func (f *Filter) ShouldProcess(path string) bool {
 	path = filepath.Clean(path)
-	
+
 	// First check excludes
 	if f.IsExcluded(path) {
 		return false
 	}
-	
+
 	// Then check includes
 	for _, rule := range f.rules {
 		if rule.Match(path) && rule.Action() == types.Include {
 			return true
 		}
 	}
-	
+
 	// If there are include rules but none matched, exclude the file
 	for _, rule := range f.rules {
 		if rule.Action() == types.Include {
 			return false
 		}
 	}
-	
+
 	// No rules matched, default to include
 	return true
 }
@@ -152,13 +151,13 @@ func (f *Filter) ShouldProcess(path string) bool {
 // IsExcluded checks if a path is explicitly excluded
 func (f *Filter) IsExcluded(path string) bool {
 	path = filepath.Clean(path)
-	
+
 	for _, rule := range f.rules {
 		if rule.Match(path) && rule.Action() == types.Exclude {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -185,13 +184,13 @@ func GetFileType(path string, f *Filter) string {
 	case ".yml", ".yaml", ".json", ".toml", ".ini", ".conf", ".config":
 		return "config"
 	}
-	
+
 	// Check for documentation
 	switch filepath.Ext(path) {
 	case ".md", ".txt", ".rst", ".adoc":
 		return "doc"
 	}
-	
+
 	// Default to empty string for other files
 	return ""
 }

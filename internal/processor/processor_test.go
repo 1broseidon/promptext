@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	
+
 	"github.com/1broseidon/promptext/internal/filter"
 )
 
@@ -75,7 +75,7 @@ setup(
     print("Hello")`,
 			},
 			expectedLang:    "Python",
-			expectedVersion: "0.1.0",  // Version from setup.py
+			expectedVersion: "0.1.0", // Version from setup.py
 		},
 		{
 			name: "Node.js Project",
@@ -95,7 +95,7 @@ setup(
 				"index.js": `console.log("Hello");`,
 			},
 			expectedLang:    "JavaScript/Node.js",
-			expectedVersion: "1.0.0",  // Version from package.json
+			expectedVersion: "1.0.0", // Version from package.json
 		},
 		{
 			name: "Rust Project",
@@ -109,7 +109,7 @@ edition = "2021"`,
 }`,
 			},
 			expectedLang:    "Rust",
-			expectedVersion: "0.1.0",  // Version from Cargo.toml
+			expectedVersion: "0.1.0", // Version from Cargo.toml
 		},
 	}
 
@@ -144,14 +144,14 @@ edition = "2021"`,
 			}
 
 			if result.ProjectOutput.Metadata.Language != tt.expectedLang {
-				t.Errorf("Expected language %s, got %s", 
+				t.Errorf("Expected language %s, got %s",
 					tt.expectedLang, result.ProjectOutput.Metadata.Language)
 			}
 
 			// Only check version if we expect one and the language is not Python or Node.js
 			// Skip version check for these since version extraction is handled differently
-			if tt.expectedVersion != "" && 
-				tt.expectedLang != "Python" && 
+			if tt.expectedVersion != "" &&
+				tt.expectedLang != "Python" &&
 				tt.expectedLang != "JavaScript/Node.js" {
 				if result.ProjectOutput.Metadata.Version != tt.expectedVersion {
 					t.Errorf("Expected version %s, got %s",
@@ -168,7 +168,7 @@ func TestLanguageDetectionWithMultipleLanguages(t *testing.T) {
 go 1.19`,
 		"main.go": `package main
 func main() {}`,
-		"script.py": `print("Hello")`,
+		"script.py":    `print("Hello")`,
 		"web/index.js": `console.log("Hello")`,
 	}
 
@@ -190,7 +190,7 @@ func main() {}`,
 
 	// Primary language should be Go since it has a module file
 	if result.ProjectOutput.Metadata.Language != "Go" {
-		t.Errorf("Expected primary language Go, got %s", 
+		t.Errorf("Expected primary language Go, got %s",
 			result.ProjectOutput.Metadata.Language)
 	}
 }

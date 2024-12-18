@@ -125,7 +125,7 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 			return nil, nil
 			return nil, nil
 		}
-		
+
 		// Check file extension for common binary types
 		ext := strings.ToLower(filepath.Ext(path))
 		binaryExts := map[string]bool{
@@ -164,7 +164,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		return nil, err
 	}
 	log.EndTimer("Initialize Output")
-	
+
 	var displayContent string
 
 	// Get project information using shared filter
@@ -184,7 +184,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	log.StartTimer("Token Counting")
 	log.Debug("=== Token Analysis ===")
 	var totalTokens int
-	
+
 	log.Debug("Processing project files:")
 	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -222,7 +222,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 		if fileInfo != nil {
 			projectOutput.Files = append(projectOutput.Files, *fileInfo)
-			
+
 			// Count tokens for this file
 			fileTokens := tokenCounter.EstimateTokens(fileInfo.Content)
 			totalTokens += fileTokens
@@ -251,7 +251,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	treeTokens := tokenCounter.EstimateTokens(treeOutput)
 	totalTokens += treeTokens
 	log.Debug("Directory structure: %d tokens", treeTokens)
-	
+
 	// Count tokens for git info
 	gitTokens := 0
 	if projectOutput.GitInfo != nil {
@@ -260,7 +260,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		totalTokens += gitTokens
 	}
 	log.Debug("Git information: %d tokens", gitTokens)
-	
+
 	// Count tokens for metadata
 	metaTokens := 0
 	if projectOutput.Metadata != nil {
@@ -452,7 +452,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	if outputFormat == "md" {
 		outputFormat = "markdown"
 	}
-	
+
 	// Validate format
 	formatter, err := format.GetFormatter(outputFormat)
 	if err != nil {
@@ -489,7 +489,6 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	// Create the filter once and reuse it
 	f := filter.New(filterOpts)
 
-
 	// Create processor configuration with filter
 	procConfig := Config{
 		DirPath:    absPath,
@@ -505,7 +504,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		if err != nil {
 			return fmt.Errorf("error processing directory: %v", err)
 		}
-		
+
 		// Display project summary with token count
 		if info, err := GetMetadataSummary(procConfig, result.TokenCount); err == nil {
 			fmt.Printf("\033[32m%s\033[0m\n", info)

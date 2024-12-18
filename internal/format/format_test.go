@@ -68,7 +68,7 @@ func TestGetFormatter(t *testing.T) {
 
 func TestMarkdownFormatter_Format(t *testing.T) {
 	formatter := &MarkdownFormatter{}
-	
+
 	tests := []struct {
 		name    string
 		input   *ProjectOutput
@@ -80,8 +80,8 @@ func TestMarkdownFormatter_Format(t *testing.T) {
 			name: "basic project",
 			input: &ProjectOutput{
 				Metadata: &Metadata{
-					Language: "Go",
-					Version: "1.17",
+					Language:     "Go",
+					Version:      "1.17",
 					Dependencies: []string{"dep1", "dep2"},
 				},
 				DirectoryTree: &DirectoryNode{
@@ -153,7 +153,7 @@ func TestMarkdownFormatter_Format(t *testing.T) {
 
 func TestXMLFormatter_Format(t *testing.T) {
 	formatter := &XMLFormatter{}
-	
+
 	tests := []struct {
 		name    string
 		input   *ProjectOutput

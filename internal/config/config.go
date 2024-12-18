@@ -14,8 +14,8 @@ type FileConfig struct {
 	Extensions []string `yaml:"extensions"`
 	Excludes   []string `yaml:"excludes"`
 	Verbose    bool     `yaml:"verbose"`
-	Format     string   `yaml:"format"` // Add format field: "markdown", "xml", "json"
-	Debug      bool     `yaml:"debug"`  // Add debug field
+	Format     string   `yaml:"format"`    // Add format field: "markdown", "xml", "json"
+	Debug      bool     `yaml:"debug"`     // Add debug field
 	GitIgnore  bool     `yaml:"gitignore"` // Use .gitignore patterns
 }
 

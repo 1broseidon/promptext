@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/spf13/pflag"
 	"github.com/1broseidon/promptext/internal/processor"
+	"github.com/spf13/pflag"
 )
 
 func main() {

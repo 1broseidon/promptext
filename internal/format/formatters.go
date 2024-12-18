@@ -118,7 +118,6 @@ func (m *MarkdownFormatter) formatSourceFiles(sb *strings.Builder, files []FileI
 	}
 }
 
-
 func (m *MarkdownFormatter) Format(project *ProjectOutput) (string, error) {
 	var sb strings.Builder
 
