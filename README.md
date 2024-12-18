@@ -41,16 +41,19 @@ go install github.com/1broseidon/promptext/cmd/promptext@latest
 promptext
 
 # Process specific file types
-promptext -extension .go,.js
+promptext -e .go,.js
 
-# Show project summary with token counts
-promptext -info
+# Show project summary
+promptext -i
 
 # Export as XML with debug logging
-promptext -format xml -output project.xml -debug
+promptext -f xml -o project.xml -D
 
-# Process with custom exclusions
-promptext -exclude "test/,vendor/" -verbose
+# Process with custom exclusions and verbose output
+promptext -x "test/,vendor/" -v
+
+# Process using .gitignore patterns
+promptext -g
 ```
 
 ## Configuration
