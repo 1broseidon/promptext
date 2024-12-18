@@ -463,7 +463,7 @@ func GetMetadataSummary(config Config, tokenCount int) (string, error) {
 }
 
 // Run executes the promptext tool with the given configuration
-func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string, debug bool) error {
+func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string, debug bool, gitignore bool) error {
 	// Enable debug logging if flag is set
 	if debug {
 		log.Enable()
@@ -489,7 +489,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	}
 
 	// Merge file config with command line flags
-	extensions, excludes, verboseFlag, _ := fileConfig.MergeWithFlags(extension, exclude, verbose, debug)
+	extensions, excludes, verboseFlag, _, useGitIgnore := fileConfig.MergeWithFlags(extension, exclude, verbose, debug, &gitignore)
 	log.Debug("Using extensions: %v", extensions)
 	log.Debug("Using excludes: %v", excludes)
 
@@ -518,6 +518,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		DirPath:    absPath,
 		Extensions: extensions,
 		Excludes:   excludes,
+		GitIgnore:  useGitIgnore,
 	}
 
 	if infoOnly {

@@ -16,6 +16,7 @@ type FileConfig struct {
 	Verbose    bool     `yaml:"verbose"`
 	Format     string   `yaml:"format"` // Add format field: "markdown", "xml", "json"
 	Debug      bool     `yaml:"debug"`  // Add debug field
+	GitIgnore  bool     `yaml:"gitignore"` // Add gitignore support
 }
 
 // LoadConfig attempts to load and parse the .promptext.yml file
@@ -42,7 +43,7 @@ func LoadConfig(dirPath string) (*FileConfig, error) {
 
 // MergeWithFlags merges the file config with command line flags
 // Command line flags take precedence over file config
-func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bool, flagDebug bool) (extensions []string, excludes []string, verbose bool, debug bool) {
+func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bool, flagDebug bool, flagGitIgnore *bool) (extensions []string, excludes []string, verbose bool, debug bool, useGitIgnore bool) {
 	// Handle extensions
 	if flagExt != "" {
 		extensions = parseCommaSeparated(flagExt)
@@ -64,7 +65,15 @@ func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bo
 	// Handle debug flag
 	debug = fc.Debug || flagDebug
 
-	return extensions, excludes, verbose, debug
+	// Handle gitignore - default to true unless explicitly disabled
+	useGitIgnore = true
+	if flagGitIgnore != nil {
+		useGitIgnore = *flagGitIgnore
+	} else if !fc.GitIgnore {
+		useGitIgnore = false
+	}
+
+	return extensions, excludes, verbose, debug, useGitIgnore
 }
 
 func parseCommaSeparated(input string) []string {

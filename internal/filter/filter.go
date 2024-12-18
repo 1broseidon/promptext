@@ -11,6 +11,50 @@ type Options struct {
 	Includes      []string
 	Excludes      []string
 	IgnoreDefault bool
+	UseGitIgnore  bool
+}
+
+// ParseGitIgnore reads .gitignore file and returns patterns
+func ParseGitIgnore(rootDir string) ([]string, error) {
+	gitignorePath := filepath.Join(rootDir, ".gitignore")
+	file, err := os.Open(gitignorePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	defer file.Close()
+
+	var patterns []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		// Skip empty lines and comments
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		patterns = append(patterns, line)
+	}
+
+	return patterns, scanner.Err()
+}
+
+// MergeAndDedupePatterns combines and deduplicates patterns
+func MergeAndDedupePatterns(patterns ...[]string) []string {
+	seen := make(map[string]bool)
+	var result []string
+	
+	for _, patternSet := range patterns {
+		for _, pattern := range patternSet {
+			if !seen[pattern] {
+				seen[pattern] = true
+				result = append(result, pattern)
+			}
+		}
+	}
+	
+	return result
 }
 
 type Filter struct {
@@ -19,22 +63,41 @@ type Filter struct {
 
 func New(opts Options) *Filter {
 	var filterRules []types.Rule
+	var excludePatterns []string
 	
-	// Add exclude rules first to ensure they take precedence
-	if len(opts.Excludes) > 0 {
-		filterRules = append(filterRules, 
-			rules.NewPatternRule(opts.Excludes, types.Exclude),
-			rules.NewExtensionRule(opts.Excludes, types.Exclude))
+	// Start with default excludes if enabled
+	if opts.IgnoreDefault {
+		defaultRules := rules.DefaultExcludes()
+		for _, rule := range defaultRules {
+			if patternRule, ok := rule.(*rules.PatternRule); ok {
+				excludePatterns = append(excludePatterns, patternRule.Patterns()...)
+			}
+		}
+	}
+	
+	// Add gitignore patterns if enabled
+	if opts.UseGitIgnore {
+		if gitPatterns, err := ParseGitIgnore("."); err == nil && len(gitPatterns) > 0 {
+			excludePatterns = append(excludePatterns, gitPatterns...)
+		}
+	}
+	
+	// Add user-specified excludes
+	excludePatterns = append(excludePatterns, opts.Excludes...)
+	
+	// Deduplicate patterns
+	excludePatterns = MergeAndDedupePatterns([][]string{excludePatterns}...)
+	
+	// Create rules from final pattern list
+	if len(excludePatterns) > 0 {
+		filterRules = append(filterRules,
+			rules.NewPatternRule(excludePatterns, types.Exclude),
+			rules.NewExtensionRule(excludePatterns, types.Exclude))
 	}
 	
 	// Add include rules
 	if len(opts.Includes) > 0 {
 		filterRules = append(filterRules, rules.NewExtensionRule(opts.Includes, types.Include))
-	}
-	
-	// Add default excludes if enabled
-	if opts.IgnoreDefault {
-		filterRules = append(filterRules, rules.DefaultExcludes()...)
 	}
 	
 	return &Filter{rules: filterRules}

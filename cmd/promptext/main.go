@@ -18,10 +18,11 @@ func main() {
 	format := flag.String("format", "markdown", "Output format (markdown, xml, json)")
 	outFile := flag.String("out", "", "Output file path (if specified, output will be written to file instead of clipboard)")
 	debug := flag.Bool("debug", false, "Enable debug logging")
+	gitignore := flag.Bool("gitignore", true, "Use .gitignore patterns (default: true)")
 
 	flag.Parse()
 
-	if err := processor.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose, *format, *outFile, *debug); err != nil {
+	if err := processor.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose, *format, *outFile, *debug, *gitignore); err != nil {
 		log.Fatal(err)
 	}
 }
