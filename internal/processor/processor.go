@@ -108,14 +108,7 @@ func buildVerboseDisplay(projectOutput *format.ProjectOutput) string {
 
 // processFile handles the processing of a single file
 func processFile(path string, config Config) (*format.FileInfo, error) {
-	f := filter.New(filter.Options{
-		Includes:      config.Extensions,
-		Excludes:      config.Excludes,
-		IgnoreDefault: true,
-		UseGitIgnore:  config.GitIgnore,
-	})
-
-	if !f.ShouldProcess(path) {
+	if !config.Filter.ShouldProcess(path) {
 		return nil, nil
 	}
 
@@ -360,12 +353,7 @@ func countIncludedFiles(config Config) (int, error) {
 			return nil
 		}
 		rel, _ := filepath.Rel(config.DirPath, path)
-		f := filter.New(filter.Options{
-			Includes:      config.Extensions,
-			Excludes:      config.Excludes,
-			IgnoreDefault: true,
-		})
-		if f.ShouldProcess(rel) {
+		if config.Filter.ShouldProcess(rel) {
 			fileCount++
 		}
 		return nil
