@@ -1,58 +1,67 @@
 # promptext Documentation
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Configuration](#configuration)
 - [File Filtering](#file-filtering)
-- [Output Formats](#output-formats)
-- [Project Analysis](#project-analysis)
 - [Token Analysis](#token-analysis)
+- [Project Analysis](#project-analysis)
+- [Output Formats](#output-formats)
 - [Performance](#performance)
 
 ## Overview
-promptext is a command-line tool designed to extract and analyze code context for AI assistants. It intelligently processes your project files, respecting various filtering rules and generating structured output suitable for AI interactions. The tool focuses on smart file filtering, token counting, and providing comprehensive project analysis while maintaining efficient performance.
+
+promptext is a command-line tool designed to extract and analyze code context for AI assistants. It intelligently processes your project files, using tiktoken for accurate GPT token counting, and generates structured output suitable for AI interactions.
 
 ### Key Features
+
 - Smart file filtering with .gitignore integration
-- Automatic token counting and estimation
+- Accurate token counting using tiktoken (GPT-3.5/4 compatible)
+- Comprehensive project analysis
 - Multiple output formats (Markdown, XML)
-- Project structure analysis
+- Project metadata extraction
 - Git repository information
-- Dependency analysis
-- Performance monitoring
+- Performance monitoring and debug logging
 
 ## Installation
 
 ### Prerequisites
+
 - Go 1.22 or higher
 - Git (for version control features)
 
 ### Installation Methods
 
 1. Quick Install (Linux/macOS):
+
 ```bash
 curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/install.sh | bash
 ```
 
 2. Using Go Install:
+
 ```bash
 go install github.com/1broseidon/promptext/cmd/promptext@latest
 ```
 
 3. Manual Installation:
+
 - Download the appropriate binary from the [releases page](https://github.com/1broseidon/promptext/releases)
 - Add it to your PATH
 
 ## Usage
 
 ### Basic Command Structure
+
 ```bash
 promptext [flags]
 ```
 
 ### Available Flags
+
 - `-directory, -d string`: Directory to process (default ".")
 - `-extension, -e string`: File extensions to include (comma-separated, e.g., ".go,.js")
 - `-exclude, -x string`: Patterns to exclude (comma-separated)
@@ -67,33 +76,33 @@ promptext [flags]
 ### Examples
 
 1. Process specific file types:
+
 ```bash
 promptext -extension .go,.js
 ```
 
 2. Export as XML with debug info:
+
 ```bash
 promptext -format xml -output project.xml -debug
 ```
 
 3. Show project overview with token counts:
+
 ```bash
 promptext -info
 ```
 
-4. Process with exclusions and custom output:
-```bash
-promptext -exclude "test/,vendor/" -verbose -output summary.md
-```
+4. Process with exclusions:
 
-5. Disable gitignore patterns:
 ```bash
-promptext -gitignore=false
+promptext -exclude "test/,vendor/" -verbose
 ```
 
 ## Configuration
 
 ### Configuration File (.promptext.yml)
+
 Place a `.promptext.yml` file in your project root:
 
 ```yaml
@@ -102,12 +111,13 @@ extensions:
   - .js
 excludes:
   - vendor/
-  - "*.test.go"
+  - '*.test.go'
 format: markdown
 verbose: false
 ```
 
 ### Configuration Priority
+
 1. Command-line flags (highest priority)
 2. .promptext.yml file
 3. Default settings
@@ -115,86 +125,134 @@ verbose: false
 ## File Filtering
 
 ### Default Ignored Extensions
-- Images: .jpg, .jpeg, .png, .gif, .bmp, etc.
-- Binaries: .exe, .dll, .so, .dylib, etc.
-- Archives: .zip, .tar, .gz, .7z, etc.
-- Other: .pdf, .doc, .class, .pyc, etc.
+
+- Images: .jpg, .jpeg, .png, .gif, .bmp, .tiff, .webp, etc.
+- Binaries: .exe, .dll, .so, .dylib, .bin, .obj, etc.
+- Archives: .zip, .tar, .gz, .7z, .rar, .iso, etc.
+- Documents: .pdf, .doc, .docx, .xls, .xlsx, .ppt, etc.
+- Other: .class, .pyc, .pyo, .pyd, .o, .a, .db, etc.
 
 ### Default Ignored Directories
-- Version Control: .git
-- Dependencies: node_modules, vendor
-- IDE: .idea, .vscode
-- Build: dist, build, coverage
-- Cache: __pycache__, .pytest_cache
+
+- Version Control: .git/, .svn/, .hg/
+- Dependencies: node_modules/, vendor/, bower_components/
+- IDE/Editor: .idea/, .vscode/, .vs/
+- Build/Output: dist/, build/, out/, bin/, target/
+- Cache: **pycache**/, .pytest_cache/, .sass-cache/
+- Test Coverage: coverage/, .nyc_output/
+- Infrastructure: .terraform/, .vagrant/
+- Logs/Temp: logs/, tmp/, temp/
 
 ### GitIgnore Integration
-promptext respects your project's .gitignore patterns for consistent filtering.
 
-## Output Formats
+promptext respects your project's .gitignore patterns by default. This can be disabled with `-gitignore=false`.
 
-### Markdown (Default)
-- Clean, readable format
-- Suitable for documentation
-- GitHub-compatible
+## Token Analysis
 
-### XML
-- Structured data format
-- Good for automated processing
-- Includes detailed metadata
+### Token Counting
 
-### JSON
-- Machine-readable format
-- Ideal for API integration
-- Compact representation
+- Uses tiktoken library for accurate GPT-3.5/4 token counting
+- Separate token counts for:
+  - Directory structure
+  - Git repository information
+  - Project metadata
+  - Source code content
+- Real-time token estimation
+- Token usage optimization suggestions
+
+### Token Cache
+
+- Caches tiktoken encodings in ~/.promptext/cache
+- Improves performance for repeated operations
+- Automatically manages cache directory
 
 ## Project Analysis
 
 ### File Classification
-promptext automatically categorizes files into:
+
+Automatically categorizes files into:
+
 - Entry Points: Main application entry points
 - Configuration Files: Project settings and configs
 - Core Implementation: Core business logic
 - Test Files: Unit and integration tests
 - Documentation: README, docs, and comments
 
-### Token Analysis
-- Automatic token counting for AI context limits using tiktoken
-- Separate token counts for:
-  - Directory structure and file hierarchy
-  - Git repository information (branch, commits)
-  - Project metadata (language, version, dependencies)
-  - Source code content and documentation
-- Real-time token estimation for different output formats
-- Token usage optimization suggestions
-- Configurable token counting strategies
+### Git Information
 
-### Performance
+Extracts:
+
+- Current branch
+- Latest commit hash
+- Commit message
+- Repository status
+
+### Project Metadata
+
+Detects:
+
+- Primary language
+- Project version
+- Dependencies (with dev vs. prod distinction)
+
+### Language Support
+
+Automatic detection for:
+
+- Go (go.mod)
+- Node.js (package.json)
+- Python (requirements.txt, pyproject.toml)
+- Rust (Cargo.toml)
+- Java (pom.xml, build.gradle)
+
+### Dependency Analysis
+
+Supports multiple package managers:
+
+- go.mod
+- package.json
+- requirements.txt
+- Cargo.toml
+- pom.xml
+- build.gradle
+
+## Output Formats
+
+### Markdown (Default)
+
+- Clean, readable format
+- GitHub-compatible
+- Suitable for documentation
+
+### XML
+
+- Structured data format
+- Good for automated processing
+- Includes detailed metadata
+
+## Performance
+
+### Optimization Features
+
 - Efficient file traversal with early filtering
 - Concurrent processing for large codebases
 - Memory-efficient token counting
-- Progress tracking and timing information
-- Debug mode for detailed performance metrics
-- Configurable processing options:
-  - File extension filtering
-  - Directory exclusions
-  - GitIgnore integration
-  - Token counting optimization
+- Smart binary file detection
+- Caching of tiktoken encodings
 
-### Language Detection
-Supports automatic detection of:
-- Go
-- Python
-- Node.js
-- Rust
-- Java (Maven/Gradle)
+### Debug Mode
 
-### Dependency Analysis
-- Extracts dependencies from package managers
-- Identifies dev vs. production dependencies
-- Supports multiple package formats:
-  - go.mod
-  - package.json
-  - requirements.txt
-  - Cargo.toml
-  - pom.xml
-  - build.gradle
+Enable with `-debug` flag to see:
+
+- Processing timings
+- Token analysis breakdown
+- File filtering decisions
+- Memory usage statistics
+- Performance metrics
+
+### Progress Tracking
+
+- Real-time file processing status
+- Token counting progress
+- Performance statistics
+- Error reporting and handling

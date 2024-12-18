@@ -46,12 +46,17 @@ ARCH=$(detect_arch)
 RELEASE_URL=$(get_latest_release $OS $ARCH)
 INSTALL_DIR="/usr/local/bin"
 
+echo "Installing promptext..."
+echo "OS: $OS"
+echo "Architecture: $ARCH"
+echo "Installation directory: $INSTALL_DIR"
+
 # Create temporary directory
 TMP_DIR=$(mktemp -d)
 cd $TMP_DIR
 
 echo "Downloading latest promptext release..."
-if ! curl -sL "$RELEASE_URL" -o promptext.tar.gz; then
+if ! curl -#L "$RELEASE_URL" -o promptext.tar.gz; then
     echo "Failed to download release"
     exit 1
 fi
@@ -66,6 +71,7 @@ if [ -f "$INSTALL_DIR/promptext" ]; then
     sudo rm "$INSTALL_DIR/promptext"
 fi
 
+echo "Moving binary to $INSTALL_DIR..."
 sudo mv promptext "$INSTALL_DIR/"
 sudo chmod +x "$INSTALL_DIR/promptext"
 
@@ -73,4 +79,4 @@ echo "Cleaning up..."
 cd - > /dev/null
 rm -rf "$TMP_DIR"
 
-echo "Installation complete! You can now use 'promptext' command."
+echo "✨ Installation complete! You can now use 'promptext' command."

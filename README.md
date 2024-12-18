@@ -10,16 +10,18 @@
 
 </div>
 
-promptext is an intelligent code context extraction tool designed specifically for AI assistant interactions. It analyzes your codebase, filters relevant files, estimates token usage, and provides formatted output suitable for AI prompts.
+promptext is an intelligent code context extraction tool designed specifically for AI assistant interactions. It analyzes your codebase, filters relevant files, estimates token usage using tiktoken (GPT-3.5/4 compatible), and provides formatted output suitable for AI prompts.
 
 ## Key Features
 
-- 🔍 Smart file filtering with .gitignore support
-- 📊 Automatic token counting for AI context limits
-- 🗂️ Intelligent project structure analysis
+- 🔍 Smart file filtering with .gitignore support and intelligent defaults
+- 📊 Accurate token counting using tiktoken (GPT-3.5/4 compatible)
+- 🗂️ Comprehensive project analysis (entry points, configs, core files, tests, docs)
 - 📝 Multiple output formats (Markdown, XML)
 - 🔧 Configurable via CLI flags or .promptext.yml
-- 📈 Project statistics and metadata extraction
+- 📈 Project metadata extraction (language, version, dependencies)
+- 🔄 Git repository information extraction
+- ⚡ Performance monitoring and debug logging
 
 ## Quick Install
 
@@ -45,14 +47,34 @@ promptext -info
 
 # Export as XML with debug logging
 promptext -format xml -output project.xml -debug
+
+# Process with custom exclusions
+promptext -exclude "test/,vendor/" -verbose
+```
+
+## Configuration
+
+Create a `.promptext.yml` in your project root:
+
+```yaml
+extensions:
+  - .go
+  - .js
+excludes:
+  - vendor/
+  - '*.test.go'
+format: markdown
+verbose: false
 ```
 
 See our [full documentation](docs/docs.md) for:
-- Advanced configuration options
-- Output format details
-- File filtering rules
+
+- Detailed configuration options
+- Output format specifications
+- File filtering rules and defaults
 - Project analysis features
 - Token counting methodology
+- Performance optimization tips
 - And more!
 
 ## License
