@@ -8,9 +8,20 @@
 - [File Filtering](#file-filtering)
 - [Output Formats](#output-formats)
 - [Project Analysis](#project-analysis)
+- [Token Analysis](#token-analysis)
+- [Performance](#performance)
 
 ## Overview
-promptext is a command-line tool designed to extract and analyze code context for AI assistants. It intelligently processes your project files, respecting various filtering rules and generating structured output suitable for AI interactions.
+promptext is a command-line tool designed to extract and analyze code context for AI assistants. It intelligently processes your project files, respecting various filtering rules and generating structured output suitable for AI interactions. The tool focuses on smart file filtering, token counting, and providing comprehensive project analysis while maintaining efficient performance.
+
+### Key Features
+- Smart file filtering with .gitignore integration
+- Automatic token counting and estimation
+- Multiple output formats (Markdown, XML)
+- Project structure analysis
+- Git repository information
+- Dependency analysis
+- Performance monitoring
 
 ## Installation
 
@@ -147,13 +158,27 @@ promptext automatically categorizes files into:
 - Documentation: README, docs, and comments
 
 ### Token Analysis
-- Automatic token counting for AI context limits
-- Separate counts for:
-  - Directory structure
-  - Git information
-  - Project metadata
-  - Source code content
-- Total token estimation for output formats
+- Automatic token counting for AI context limits using tiktoken
+- Separate token counts for:
+  - Directory structure and file hierarchy
+  - Git repository information (branch, commits)
+  - Project metadata (language, version, dependencies)
+  - Source code content and documentation
+- Real-time token estimation for different output formats
+- Token usage optimization suggestions
+- Configurable token counting strategies
+
+### Performance
+- Efficient file traversal with early filtering
+- Concurrent processing for large codebases
+- Memory-efficient token counting
+- Progress tracking and timing information
+- Debug mode for detailed performance metrics
+- Configurable processing options:
+  - File extension filtering
+  - Directory exclusions
+  - GitIgnore integration
+  - Token counting optimization
 
 ### Language Detection
 Supports automatic detection of:
