@@ -379,37 +379,60 @@ func GetMetadataSummary(config Config, tokenCount int) (string, error) {
 		return "", err
 	}
 
-	var summary strings.Builder
-	summary.WriteString("📦 ")
+	var content strings.Builder
 
 	// Project name
 	if projectInfo.Metadata != nil && projectInfo.Metadata.Name != "" {
-		summary.WriteString(projectInfo.Metadata.Name)
+		content.WriteString("📦 " + projectInfo.Metadata.Name)
 	} else {
 		if absPath, err := filepath.Abs(config.DirPath); err == nil {
-			summary.WriteString(filepath.Base(absPath))
+			content.WriteString("📦 " + filepath.Base(absPath))
 		}
 	}
 
 	// Language if detected
 	if projectInfo.Metadata != nil && projectInfo.Metadata.Language != "" {
-		summary.WriteString(fmt.Sprintf(" (%s)", projectInfo.Metadata.Language))
+		content.WriteString(fmt.Sprintf(" (%s)", projectInfo.Metadata.Language))
 	}
 
-	summary.WriteString("\n")
+	content.WriteString("\n")
 
 	// File count
 	fileCount, err := countIncludedFiles(config)
 	if err != nil {
 		return "", fmt.Errorf("error counting files: %w", err)
 	}
-	summary.WriteString(fmt.Sprintf("   Files: %d", fileCount))
+	content.WriteString(fmt.Sprintf("   Files: %d", fileCount))
 
 	// Token count
 	if tokenCount > 0 {
-		summary.WriteString(fmt.Sprintf(" • Tokens: ~%d", tokenCount))
+		content.WriteString(fmt.Sprintf(" • Tokens: ~%d", tokenCount))
 	}
-	summary.WriteString("\n")
+	content.WriteString("\n")
+
+	// Create bordered output
+	contentLines := strings.Split(strings.TrimRight(content.String(), "\n"), "\n")
+	maxWidth := 0
+	for _, line := range contentLines {
+		if len(line) > maxWidth {
+			maxWidth = len(line)
+		}
+	}
+
+	var summary strings.Builder
+	summary.WriteString("\033[32m") // Start green color
+
+	// Top border
+	summary.WriteString("╭" + strings.Repeat("─", maxWidth+2) + "╮\n")
+
+	// Content lines with borders
+	for _, line := range contentLines {
+		summary.WriteString("│ " + line + strings.Repeat(" ", maxWidth-len(line)) + " │\n")
+	}
+
+	// Bottom border
+	summary.WriteString("╰" + strings.Repeat("─", maxWidth+2) + "╯")
+	summary.WriteString("\033[0m") // Reset color
 
 	return summary.String(), nil
 }
