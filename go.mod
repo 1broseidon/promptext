@@ -2,6 +2,8 @@ module github.com/1broseidon/promptext
 
 go 1.22.4
 
+// Version: 0.2.0
+
 require (
 	github.com/atotto/clipboard v0.1.4
 	github.com/pkoukk/tiktoken-go v0.1.7
