@@ -160,11 +160,13 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 }
 
 func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
-	// Initialize project output
+	// Initialize project output and display content
 	projectOutput, err := initializeProjectOutput(config)
 	if err != nil {
 		return nil, err
 	}
+	
+	var displayContent string
 
 	// Get project information
 	infoConfig := &info.Config{
