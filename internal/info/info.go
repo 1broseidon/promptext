@@ -690,7 +690,7 @@ func getCoreDescription(_ string) string {
 	return "Core implementation"
 }
 
-func AnalyzeProject(rootPath string) *ProjectAnalysis {
+func AnalyzeProject(rootPath string, f *filter.Filter) *ProjectAnalysis {
 	analysis := &ProjectAnalysis{
 		EntryPoints:   make(map[string]string),
 		ConfigFiles:   make(map[string]string),
@@ -698,12 +698,6 @@ func AnalyzeProject(rootPath string) *ProjectAnalysis {
 		TestFiles:     make(map[string]string),
 		Documentation: make(map[string]string),
 	}
-
-	// Create filter with default settings and node_modules exclusion
-	f := filter.New(filter.Options{
-		IgnoreDefault: true,
-		Excludes:     []string{"node_modules/", "vendor/"}, // Add explicit excludes
-	})
 
 	filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {

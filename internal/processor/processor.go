@@ -42,11 +42,11 @@ type ProcessResult struct {
 }
 
 // initializeProjectOutput sets up the initial project output structure
-func initializeProjectOutput(config Config) (*format.ProjectOutput, error) {
+func initializeProjectOutput(dirPath string, f *filter.Filter) (*format.ProjectOutput, error) {
 	projectOutput := &format.ProjectOutput{}
 
-	// Get project analysis
-	analysis := info.AnalyzeProject(config.DirPath)
+	// Get project analysis using shared filter
+	analysis := info.AnalyzeProject(dirPath, f)
 	projectOutput.Analysis = &format.ProjectAnalysis{
 		EntryPoints:   analysis.EntryPoints,
 		ConfigFiles:   analysis.ConfigFiles,
@@ -157,9 +157,9 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	log.StartTimer("Project Processing")
 	defer log.EndTimer("Project Processing")
 
-	// Initialize project output and display content using shared filter
+	// Initialize project output using shared filter
 	log.StartTimer("Initialize Output")
-	projectOutput, err := initializeProjectOutput(config)
+	projectOutput, err := initializeProjectOutput(config.DirPath, config.Filter)
 	if err != nil {
 		return nil, err
 	}

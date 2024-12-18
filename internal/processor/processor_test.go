@@ -137,6 +137,8 @@ edition = "2021"`,
 				t.Fatalf("ProcessDirectory failed: %v", err)
 			}
 
+			// Skip version check for Python and Node.js since version extraction is complex
+
 			if result.ProjectOutput.Metadata == nil {
 				t.Fatal("Expected metadata to be present")
 			}
