@@ -111,6 +111,7 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 		Includes:      config.Extensions,
 		Excludes:      config.Excludes,
 		IgnoreDefault: true,
+		UseGitIgnore:  config.GitIgnore,
 	})
 
 	if !f.ShouldProcess(path) {
@@ -206,6 +207,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			Includes:      config.Extensions,
 			Excludes:      config.Excludes,
 			IgnoreDefault: true,
+			UseGitIgnore:  config.GitIgnore,
 		})
 
 		// Skip excluded files
@@ -519,6 +521,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		DirPath:    absPath,
 		Extensions: extensions,
 		Excludes:   excludes,
+		GitIgnore:  useGitIgnore,
 	}
 
 	if infoOnly {
