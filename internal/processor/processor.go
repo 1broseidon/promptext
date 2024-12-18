@@ -113,9 +113,28 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 		return nil, nil
 	}
 
+	// Get file info first to check if it's a directory or has read permissions
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		log.Debug("Warning: Cannot stat file %s: %v", path, err)
+		return nil, nil
+	}
+
+	// Skip directories
+	if fileInfo.IsDir() {
+		return nil, nil
+	}
+
+	// Check read permissions
+	if fileInfo.Mode().Perm()&0444 == 0 {
+		log.Debug("Warning: No read permission for file %s", path)
+		return nil, nil
+	}
+
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("error reading file %s: %w", path, err)
+		log.Debug("Warning: Cannot read file %s: %v", path, err)
+		return nil, nil
 	}
 
 	// Check if file appears to be binary
@@ -217,7 +236,8 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 		fileInfo, err := processFile(path, config)
 		if err != nil {
-			return err
+			log.Debug("Error processing file %s: %v", path, err)
+			return nil // Continue processing other files
 		}
 
 		if fileInfo != nil {
