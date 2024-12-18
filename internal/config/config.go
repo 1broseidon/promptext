@@ -16,6 +16,7 @@ type FileConfig struct {
 	Verbose    bool     `yaml:"verbose"`
 	Format     string   `yaml:"format"` // Add format field: "markdown", "xml", "json"
 	Debug      bool     `yaml:"debug"`  // Add debug field
+	GitIgnore  bool     `yaml:"gitignore"` // Use .gitignore patterns
 	GitIgnore  bool     `yaml:"gitignore"` // Add gitignore support
 }
 
