@@ -2,143 +2,115 @@ name: Go Build and Release
 
 on:
   push:
-    branches:
-      - main
+    branches: ['main']
     tags:
       - 'v*'
   pull_request:
-    branches:
-      - main
+    branches: ['main']
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
+  test:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Set Up Go
+      - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.22'
+
+      - name: Run Tests
+        run: go test -v ./...
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
 
       - name: Go Mod Tidy
         run: go mod tidy
 
-      - name: Clear Go Build Cache
-        run: go clean -cache -testcache
-
-      - name: Run Tests
-        run: go test ./...
-
       - name: Build Binaries
+        env:
+          CGO_ENABLED: 0
         run: |
-          set -e
-          GOOS_LIST=("linux" "darwin" "windows")
-          GOARCH_LIST=("amd64" "arm64")
-
-          for GOOS in "${GOOS_LIST[@]}"; do
-            for GOARCH in "${GOARCH_LIST[@]}"; do
-              # Skip ignored combinations
-              if [[ "$GOOS" == "darwin" && "$GOARCH" == "amd64" ]]; then
-                continue
-              fi
+          mkdir -p dist
+          for GOOS in linux darwin windows; do
+            for GOARCH in amd64 arm64; do
+              # Skip Windows ARM64 build
               if [[ "$GOOS" == "windows" && "$GOARCH" == "arm64" ]]; then
                 continue
               fi
               
-              # Format OS and Arch names
-              if [[ "$GOOS" == "darwin" ]]; then
-                FORMATTED_OS="Darwin"
-              else
-                FORMATTED_OS=$(echo "$GOOS" | tr '[:lower:]' '[:upper:]')
-              fi
+              # Format OS name
+              GOOS_FORMATTED=$(echo "$GOOS" | sed -e 's/darwin/Darwin/' -e 's/linux/Linux/' -e 's/windows/Windows/')
               
-              if [[ "$GOARCH" == "amd64" ]]; then
-                FORMATTED_ARCH="x86_64"
-              else
-                FORMATTED_ARCH="$GOARCH"
-              fi
+              # Format architecture
+              ARCH_FORMATTED=$([ "$GOARCH" == "amd64" ] && echo "x86_64" || echo "$GOARCH")
               
-              BINARY_NAME="promptext-${FORMATTED_OS}-${FORMATTED_ARCH}"
-              OUTPUT_FILE="${BINARY_NAME}"
-              
-              # Set GOOS and GOARCH for cross-compilation
-              export GOOS GOARCH
-              
-              # Build the binary
-              go build -o "$OUTPUT_FILE" -v -ldflags="-s -w" ./cmd/promptext/main.go
-              echo "Built $OUTPUT_FILE"
-              
-              # Create archives
+              # Set output names
+              BINARY_NAME="promptext"
               if [[ "$GOOS" == "windows" ]]; then
-                zip "${OUTPUT_FILE}.zip" "$OUTPUT_FILE" README.md LICENSE
-              else
-                tar czf "${OUTPUT_FILE}.tar.gz" "$OUTPUT_FILE" README.md LICENSE
+                BINARY_NAME="${BINARY_NAME}.exe"
               fi
+              
+              DIST_NAME="promptext_${GOOS_FORMATTED}_${ARCH_FORMATTED}"
+              
+              echo "Building for ${GOOS}/${GOARCH}..."
+              GOOS=$GOOS GOARCH=$GOARCH go build -trimpath -ldflags="-s -w" -o "dist/${BINARY_NAME}" ./cmd/promptext/main.go
+              
+              # Create archive
+              cd dist
+              if [[ "$GOOS" == "windows" ]]; then
+                zip -r "${DIST_NAME}.zip" "${BINARY_NAME}" "../README.md" "../LICENSE"
+              else
+                tar czf "${DIST_NAME}.tar.gz" "${BINARY_NAME}" "../README.md" "../LICENSE"
+              fi
+              rm "${BINARY_NAME}"
+              cd ..
             done
           done
 
       - name: Generate Checksums
+        working-directory: dist
         run: |
-          find . -maxdepth 1 -type f -name "promptext-*" -print0 | xargs -0 sha256sum > checksums.txt
+          sha256sum * > checksums.txt
 
-      - name: Upload Binaries as Artifacts
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: promptext-binaries
-          path: |
-            *.zip
-            *.tar.gz
-            checksums.txt
+          name: dist
+          path: dist/*
+          retention-days: 1
 
   release:
     needs: build
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
     steps:
-      - name: Download Binaries
+      - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: promptext-binaries
+          name: dist
+          path: dist
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
+        run: |
+          # Extract changelog since last release
+          CHANGELOG=$(git log --pretty=format:"* %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD | grep -v '^docs:' | grep -v '^test:' | grep -v '^chore:')
 
-      - name: Upload Release Assets (ZIP)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./*.zip
-          asset_name: ${{ github.ref_name }}.zip
-          asset_content_type: application/zip
-
-      - name: Upload Release Assets (tar.gz)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./*.tar.gz
-          asset_name: ${{ github.ref_name }}.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload Release Assets (checksums.txt)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./checksums.txt
-          asset_name: checksums.txt
-          asset_content_type: text/plain
+          # Create release
+          gh release create ${{ github.ref_name }} \
+            --title "Release ${{ github.ref_name }}" \
+            --notes "$CHANGELOG" \
+            ./dist/*
