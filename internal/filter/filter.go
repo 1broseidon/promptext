@@ -106,7 +106,12 @@ func New(opts Options) *Filter {
 		}
 	}
 
-	// Create rules from final pattern list
+	// Add default rules first if enabled
+	if opts.IgnoreDefault {
+		filterRules = append(filterRules, rules.DefaultExcludes()...)
+	}
+
+	// Add pattern-based rules
 	if len(excludePatterns) > 0 {
 		filterRules = append(filterRules,
 			rules.NewPatternRule(excludePatterns, types.Exclude),
