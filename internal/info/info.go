@@ -10,6 +10,7 @@ import (
 
 	"github.com/1broseidon/promptext/internal/filter"
 	"github.com/1broseidon/promptext/internal/format"
+	"github.com/1broseidon/promptext/internal/log"
 )
 
 // Config holds directory processing configuration
