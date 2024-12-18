@@ -1,19 +1,20 @@
 package main
 
 import (
-	"flag"
 	"os"
 	"testing"
+
+	"github.com/spf13/pflag"
 )
 
 func TestMainFlags(t *testing.T) {
-	// Save original os.Args and flag.CommandLine
+	// Save original os.Args and pflag.CommandLine
 	oldArgs := os.Args
-	oldFlagCommandLine := flag.CommandLine
+	oldFlagCommandLine := pflag.CommandLine
 	defer func() {
 		// Restore original values after test
 		os.Args = oldArgs
-		flag.CommandLine = oldFlagCommandLine
+		pflag.CommandLine = oldFlagCommandLine
 	}()
 
 	tests := []struct {
@@ -57,14 +58,14 @@ func TestMainFlags(t *testing.T) {
 			name: "all flags set",
 			args: []string{
 				"promptext",
-				"-d", "/test/path",
-				"-e", ".go,.js",
-				"-x", "vendor,node_modules",
-				"-n",
-				"-i",
-				"-v",
-				"-f", "xml",
-				"-o", "output.xml",
+				"--directory", "/test/path",
+				"--extension", ".go,.js",
+				"--exclude", "vendor,node_modules",
+				"--no-copy",
+				"--info",
+				"--verbose",
+				"--format", "xml",
+				"--output", "output.xml",
 			},
 			expected: struct {
 				dir      string
@@ -90,37 +91,22 @@ func TestMainFlags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Reset flag.CommandLine for each test
-			flag.CommandLine = flag.NewFlagSet(tt.args[0], flag.ExitOnError)
+			// Reset pflag.CommandLine for each test
+			pflag.CommandLine = pflag.NewFlagSet(tt.args[0], pflag.ExitOnError)
 			os.Args = tt.args
 
 			// Define flags again (since we're using a new FlagSet)
-			dirPath := flag.String("directory", ".", "Directory path to process (-directory, -d)")
-			flag.StringVar(dirPath, "d", ".", "Directory path to process (-directory, -d)")
-			
-			extension := flag.String("extension", "", "File extension to filter, e.g., .go,.js (-extension, -e)")
-			flag.StringVar(extension, "e", "", "File extension to filter, e.g., .go,.js (-extension, -e)")
-			
-			exclude := flag.String("exclude", "", "Patterns to exclude, comma-separated (-exclude, -x)")
-			flag.StringVar(exclude, "x", "", "Patterns to exclude, comma-separated (-exclude, -x)")
-			
-			noCopy := flag.Bool("nocopy", false, "Disable automatic copying to clipboard (-nocopy, -n)")
-			flag.BoolVar(noCopy, "n", false, "Disable automatic copying to clipboard (-nocopy, -n)")
-			
-			infoOnly := flag.Bool("info", false, "Only display project summary (-info, -i)")
-			flag.BoolVar(infoOnly, "i", false, "Only display project summary (-info, -i)")
-			
-			verbose := flag.Bool("verbose", false, "Show full code content in terminal (-verbose, -v)")
-			flag.BoolVar(verbose, "v", false, "Show full code content in terminal (-verbose, -v)")
-			
-			format := flag.String("format", "markdown", "Output format: markdown, xml, json (-format, -f)")
-			flag.StringVar(format, "f", "markdown", "Output format: markdown, xml, json (-format, -f)")
-			
-			outFile := flag.String("output", "", "Output file path (-output, -o)")
-			flag.StringVar(outFile, "o", "", "Output file path (-output, -o)")
+			dirPath := pflag.StringP("directory", "d", ".", "Directory path to process")
+			extension := pflag.StringP("extension", "e", "", "File extension to filter, e.g., .go,.js")
+			exclude := pflag.StringP("exclude", "x", "", "Patterns to exclude, comma-separated")
+			noCopy := pflag.BoolP("no-copy", "n", false, "Disable automatic copying to clipboard")
+			infoOnly := pflag.BoolP("info", "i", false, "Only display project summary")
+			verbose := pflag.BoolP("verbose", "v", false, "Show full code content in terminal")
+			format := pflag.StringP("format", "f", "markdown", "Output format: markdown, xml, json")
+			outFile := pflag.StringP("output", "o", "", "Output file path")
 
 			// Parse flags
-			flag.Parse()
+			pflag.Parse()
 
 			// Check if parsed values match expected values
 			if *dirPath != tt.expected.dir {
