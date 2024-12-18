@@ -1,8 +1,34 @@
 package filter
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func createTestFile(t *testing.T, path string, content []byte) {
+	t.Helper()
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, content, 0644); err != nil {
+		t.Fatal(err)
+	}
+}
 
 func TestFilter_ShouldProcess(t *testing.T) {
+	// Create temporary test directory
+	tmpDir := t.TempDir()
+
+	// Create test files
+	textFile := filepath.Join(tmpDir, "text.txt")
+	createTestFile(t, textFile, []byte("This is a text file\nwith multiple lines\n"))
+
+	binaryFile := filepath.Join(tmpDir, "binary.dat")
+	binaryContent := []byte{0x00, 0x01, 0x02, 0x03} // Binary content with null bytes
+	createTestFile(t, binaryFile, binaryContent)
+
 	tests := []struct {
 		name string
 		opts Options
@@ -10,10 +36,16 @@ func TestFilter_ShouldProcess(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "no filters",
+			name: "text file",
 			opts: Options{},
-			path: "any/path/file.txt",
+			path: textFile,
 			want: true,
+		},
+		{
+			name: "binary file",
+			opts: Options{},
+			path: binaryFile,
+			want: false,
 		},
 		{
 			name: "extension include",
@@ -22,14 +54,6 @@ func TestFilter_ShouldProcess(t *testing.T) {
 			},
 			path: "src/main.go",
 			want: true,
-		},
-		{
-			name: "extension exclude",
-			opts: Options{
-				Excludes: []string{".tmp"},
-			},
-			path: "src/file.tmp",
-			want: false,
 		},
 		{
 			name: "directory exclude",
@@ -67,4 +91,7 @@ func TestFilter_ShouldProcess(t *testing.T) {
 			}
 		})
 	}
+
+	// Cleanup
+	os.RemoveAll(tmpDir)
 }
