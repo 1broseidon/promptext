@@ -464,13 +464,6 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	// Create the filter once and reuse it
 	f := filter.New(filterOpts)
 
-	// Log filter configuration after creation
-	if len(excludes) > 0 {
-		log.Debug("Config excludes (%d):", len(excludes))
-		log.Debug("  %s", strings.Join(excludes, ", "))
-	}
-
-
 
 	// Create processor configuration with filter
 	procConfig := Config{
