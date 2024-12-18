@@ -58,7 +58,6 @@ func TestMainFlags(t *testing.T) {
 				"--directory", "/test/path",
 				"--extension", ".go,.js",
 				"--exclude", "vendor,node_modules",
-				"--no-copy",
 				"--info",
 				"--verbose",
 				"--format", "xml",
@@ -68,7 +67,6 @@ func TestMainFlags(t *testing.T) {
 				dir      string
 				ext      string
 				exclude  string
-				noCopy   bool
 				infoOnly bool
 				verbose  bool
 				format   string
