@@ -17,7 +17,7 @@ func main() {
 	exclude := pflag.StringP("exclude", "x", "", "Patterns to exclude, comma-separated")
 	infoOnly := pflag.BoolP("info", "i", false, "Only display project summary")
 	verbose := pflag.BoolP("verbose", "v", false, "Show full code content in terminal")
-	format := pflag.StringP("format", "f", "markdown", "Output format: markdown, xml, json")
+	format := pflag.StringP("format", "f", "markdown", "Output format: markdown (or md), xml")
 	outFile := pflag.StringP("output", "o", "", "Output file path")
 	debug := pflag.BoolP("debug", "D", false, "Enable debug logging")
 	gitignore := pflag.BoolP("gitignore", "g", true, "Use .gitignore patterns")

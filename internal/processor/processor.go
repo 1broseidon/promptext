@@ -448,10 +448,15 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 
 	log.Debug("=== Promptext Initialization ===")
 	log.Debug("Directory: %s", dirPath)
+	// Handle "md" as alias for "markdown"
+	if outputFormat == "md" {
+		outputFormat = "markdown"
+	}
+	
 	// Validate format
 	formatter, err := format.GetFormatter(outputFormat)
 	if err != nil {
-		return fmt.Errorf("invalid format: %w", err)
+		return fmt.Errorf("invalid format (must be markdown or xml): %w", err)
 	}
 	// Convert dirPath to absolute path
 	absPath, err := filepath.Abs(dirPath)
