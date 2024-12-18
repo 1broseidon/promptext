@@ -130,6 +130,16 @@ func (f *Filter) ShouldProcess(path string) bool {
 		return false
 	}
 
+	// Check for binary files early
+	for _, rule := range f.rules {
+		if br, ok := rule.(*rules.BinaryRule); ok {
+			if br.Match(path) {
+				log.Debug("Skipping binary file: %s", path)
+				return false
+			}
+		}
+	}
+
 	// Then check includes
 	for _, rule := range f.rules {
 		if rule.Match(path) && rule.Action() == types.Include {
