@@ -154,21 +154,63 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	// Create token counter
 	tokenCounter := token.NewTokenCounter()
 
-	// Format the output for both display and clipboard
+	// Initialize token counting
+	log.Debug("\nToken counting breakdown:")
+	var totalTokens int
+	
+	// Process and count tokens for each file first
+	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip directories
+		if d.IsDir() {
+			return nil
+		}
+
+		// Get relative path for filtering
+		relPath, err := filepath.Rel(config.DirPath, path)
+		if err != nil {
+			return err
+		}
+
+		// Create filter instance
+		f := filter.New(filter.Options{
+			Includes:      config.Extensions,
+			Excludes:      config.Excludes,
+			IgnoreDefault: true,
+		})
+
+		// Skip excluded files
+		if f.IsExcluded(relPath) {
+			return nil
+		}
+
+		fileInfo, err := processFile(path, config)
+		if err != nil {
+			return err
+		}
+
+		if fileInfo != nil {
+			projectOutput.Files = append(projectOutput.Files, *fileInfo)
+			fileTokens := tokenCounter.EstimateTokens(fileInfo.Content)
+			totalTokens += fileTokens
+			log.Debug("  File %s: %d tokens", fileInfo.Path, fileTokens)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("error processing files: %w", err)
+	}
+
+	// Get formatter for output
 	formatter, err := format.GetFormatter("markdown") // Default to markdown for token counting
 	if err != nil {
 		return nil, fmt.Errorf("error creating formatter: %w", err)
 	}
-
-	// Format the full output
-	formattedOutput, err := formatter.Format(projectOutput)
-	if err != nil {
-		return nil, fmt.Errorf("error formatting output: %w", err)
-	}
-
-	log.Debug("\nToken counting breakdown:")
-	
-	var totalTokens int
 
 	// Count tokens for directory tree
 	treeOutput, _ := formatter.Format(&format.ProjectOutput{DirectoryTree: projectOutput.DirectoryTree})
@@ -191,17 +233,14 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		totalTokens += metaTokens
 		log.Debug("  Metadata: %d tokens", metaTokens)
 	}
-	
-	// Count tokens for files
-	if len(projectOutput.Files) > 0 {
-		for _, file := range projectOutput.Files {
-			fileTokens := tokenCounter.EstimateTokens(file.Content)
-			totalTokens += fileTokens
-			log.Debug("  File %s: %d tokens", file.Path, fileTokens)
-		}
-	}
-	
+
 	log.Debug("  Total tokens: %d", totalTokens)
+
+	// Format the full output
+	formattedOutput, err := formatter.Format(projectOutput)
+	if err != nil {
+		return nil, fmt.Errorf("error formatting output: %w", err)
+	}
 
 	displayContent := ""
 	if verbose {
