@@ -380,38 +380,36 @@ func GetMetadataSummary(config Config, tokenCount int) (string, error) {
 	}
 
 	var summary strings.Builder
+	summary.WriteString("📦 ")
 
-	// Build project summary
-	summary.WriteString(buildProjectSummary(projectInfo, config))
-
-	// Add language and dependencies info
-	if projectInfo.Metadata != nil {
-		summary.WriteString(buildLanguageInfo(projectInfo.Metadata))
+	// Project name
+	if projectInfo.Metadata != nil && projectInfo.Metadata.Name != "" {
+		summary.WriteString(projectInfo.Metadata.Name)
+	} else {
+		if absPath, err := filepath.Abs(config.DirPath); err == nil {
+			summary.WriteString(filepath.Base(absPath))
+		}
 	}
 
-	// Add git info
-	if projectInfo.GitInfo != nil {
-		summary.WriteString(fmt.Sprintf("   Branch: %s (%s)\n",
-			projectInfo.GitInfo.Branch, projectInfo.GitInfo.CommitHash))
+	// Language if detected
+	if projectInfo.Metadata != nil && projectInfo.Metadata.Language != "" {
+		summary.WriteString(fmt.Sprintf(" (%s)", projectInfo.Metadata.Language))
 	}
 
-	// Count and add included files
+	summary.WriteString("\n")
+
+	// File count
 	fileCount, err := countIncludedFiles(config)
 	if err != nil {
 		return "", fmt.Errorf("error counting files: %w", err)
 	}
-	summary.WriteString(fmt.Sprintf("   Files: %d included\n", fileCount))
+	summary.WriteString(fmt.Sprintf("   Files: %d", fileCount))
 
-	// Add filtering info if specified
-	if len(config.Extensions) > 0 {
-		summary.WriteString(fmt.Sprintf("   Filtering: %s\n",
-			strings.Join(config.Extensions, ", ")))
-	}
-
-	// Add token count to summary
+	// Token count
 	if tokenCount > 0 {
-		summary.WriteString(fmt.Sprintf("   Tokens: ~%d\n", tokenCount))
+		summary.WriteString(fmt.Sprintf(" • Tokens: ~%d", tokenCount))
 	}
+	summary.WriteString("\n")
 
 	return summary.String(), nil
 }
