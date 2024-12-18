@@ -125,14 +125,18 @@ func New(opts Options) *Filter {
 func (f *Filter) ShouldProcess(path string) bool {
 	path = filepath.Clean(path)
 
+	log.Debug("Checking filters for: %s", path)
+
 	// First check excludes
 	if f.IsExcluded(path) {
+		log.Debug("  → Excluded by filter rules")
 		return false
 	}
 
 	// Then check includes
 	for _, rule := range f.rules {
 		if rule.Match(path) && rule.Action() == types.Include {
+			log.Debug("  → Included by filter rule")
 			return true
 		}
 	}
@@ -140,11 +144,13 @@ func (f *Filter) ShouldProcess(path string) bool {
 	// If there are include rules but none matched, exclude the file
 	for _, rule := range f.rules {
 		if rule.Action() == types.Include {
+			log.Debug("  → Excluded (no include rules matched)")
 			return false
 		}
 	}
 
 	// No rules matched, default to include
+	log.Debug("  → Included by default (no rules matched)")
 	return true
 }
 
@@ -154,6 +160,7 @@ func (f *Filter) IsExcluded(path string) bool {
 
 	for _, rule := range f.rules {
 		if rule.Match(path) && rule.Action() == types.Exclude {
+			log.Debug("    • Matched exclude rule: %T", rule)
 			return true
 		}
 	}
