@@ -160,9 +160,6 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		return nil, fmt.Errorf("error creating formatter: %w", err)
 	}
 
-	// Format and count tokens for each section
-	tokenCounter := token.NewTokenCounter()
-	
 	// Format the full output
 	formattedOutput, err := formatter.Format(projectOutput)
 	if err != nil {
