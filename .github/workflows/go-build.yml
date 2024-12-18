@@ -96,6 +96,11 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # This ensures we get the full git history
+
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -106,10 +111,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Extract changelog since last release
-          CHANGELOG=$(git log --pretty=format:"* %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD | grep -v '^docs:' | grep -v '^test:' | grep -v '^chore:')
+          # Get the previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
 
-          # Create release
+          if [ -z "$PREV_TAG" ]; then
+            # If no previous tag exists, use the first commit
+            CHANGELOG=$(git log --pretty=format:"* %s" | grep -v '^docs:' | grep -v '^test:' | grep -v '^chore:')
+          else
+            # Get changes since last tag
+            CHANGELOG=$(git log --pretty=format:"* %s" ${PREV_TAG}..HEAD | grep -v '^docs:' | grep -v '^test:' | grep -v '^chore:')
+          fi
+
+          # Create release with changelog
           gh release create ${{ github.ref_name }} \
             --title "Release ${{ github.ref_name }}" \
             --notes "$CHANGELOG" \
