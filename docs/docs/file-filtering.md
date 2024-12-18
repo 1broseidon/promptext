@@ -8,19 +8,78 @@ sidebar_position: 4
 
 promptext comes with intelligent default filters to exclude common non-source files.
 
-### Ignored Extensions
+### Ignored Directories and Files
 
-- Binary files: `.exe`, `.dll`, `.so`, `.dylib`
-- Images: `.jpg`, `.png`, `.gif`, `.svg`
-- Archives: `.zip`, `.tar.gz`, `.rar`
-- Build artifacts: `.o`, `.obj`, `.class`
+- System files: `.DS_Store`
 
-### Ignored Directories
+- Version Control:
+  - `.git/`, `.git*`
+  - `.svn/`
+  - `.hg/`
 
-- Dependencies: `node_modules/`, `vendor/`
-- Build output: `dist/`, `build/`, `target/`
-- Version control: `.git/`, `.svn/`
-- IDE files: `.idea/`, `.vscode/`
+- Dependencies and Packages:
+  - `node_modules/`
+  - `vendor/`
+  - `bower_components/`
+  - `jspm_packages/`
+
+- IDE and Editor:
+  - `.idea/`
+  - `.vscode/`
+  - `.vs/`
+  - `*.sublime-*`
+
+- Build and Output:
+  - `dist/`
+  - `build/`
+  - `out/`
+  - `bin/`
+  - `target/`
+
+- Cache Directories:
+  - `__pycache__/`
+  - `.pytest_cache/`
+  - `.sass-cache/`
+  - `.npm/`
+  - `.yarn/`
+
+- Test Coverage:
+  - `coverage/`
+  - `.nyc_output/`
+
+- Infrastructure:
+  - `.terraform/`
+  - `.vagrant/`
+
+- Logs and Temp:
+  - `logs/`
+  - `*.log`
+  - `tmp/`
+  - `temp/`
+
+### Ignored File Extensions
+
+- Images:
+  - `.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`
+  - `.tiff`, `.webp`, `.ico`, `.icns`
+  - `.svg`, `.eps`, `.raw`, `.cr2`, `.nef`
+
+- Binary Files:
+  - `.exe`, `.dll`, `.so`, `.dylib`
+  - `.bin`, `.obj`, `.class`
+  - `.pyc`, `.pyo`, `.pyd`
+  - `.o`, `.a`
+
+- Archives:
+  - `.zip`, `.tar`, `.gz`, `.7z`, `.rar`, `.iso`
+
+- Documents:
+  - `.pdf`, `.doc`, `.docx`
+  - `.xls`, `.xlsx`
+  - `.ppt`, `.pptx`
+
+- Database:
+  - `.db`, `.db-shm`, `.db-wal`
 
 ## Custom Filtering
 
