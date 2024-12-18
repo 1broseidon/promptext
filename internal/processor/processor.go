@@ -453,12 +453,6 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	log.Debug("  • Excludes: %#v", excludes)
 	log.Debug("  • Git Ignore: %v", useGitIgnore)
 
-	log.Debug("=== Filter Rules ===")
-	if len(excludes) > 0 {
-		log.Debug("Config excludes (%d):", len(excludes))
-		log.Debug("  %s", strings.Join(excludes, ", "))
-	}
-
 	// Create filter options
 	filterOpts := filter.Options{
 		Includes:      extensions,
@@ -469,6 +463,12 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 
 	// Create the filter once and reuse it
 	f := filter.New(filterOpts)
+
+	// Log filter configuration after creation
+	if len(excludes) > 0 {
+		log.Debug("Config excludes (%d):", len(excludes))
+		log.Debug("  %s", strings.Join(excludes, ", "))
+	}
 
 
 
