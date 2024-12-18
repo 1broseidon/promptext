@@ -172,6 +172,10 @@ func main() {}`,
 
 	config := Config{
 		DirPath: tmpDir,
+		Filter: filter.New(filter.Options{
+			IgnoreDefault: true,
+			UseGitIgnore:  false,
+		}),
 	}
 
 	result, err := ProcessDirectory(config, false)
