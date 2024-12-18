@@ -83,6 +83,31 @@ promptext comes with intelligent default filters to exclude common non-source fi
 
 ## Custom Filtering
 
+### Pattern Matching Options
+
+promptext supports several pattern matching options in both configuration files and command-line arguments:
+
+1. **Directory Patterns**: Ending with `/` matches directories and their contents
+   ```yaml
+   excludes:
+     - test/        # Excludes test directory and all contents
+     - internal/tmp/ # Excludes tmp directory under internal
+   ```
+
+2. **Wildcard Patterns**: Using `*` for flexible matching
+   ```yaml
+   excludes:
+     - "*.generated.go" # Excludes all generated Go files
+     - ".aider*"        # Excludes all files starting with .aider
+   ```
+
+3. **Exact Matches**: For specific files or paths
+   ```yaml
+   excludes:
+     - "config.json"     # Excludes config.json in any directory
+     - "src/constants.go" # Excludes specific file in specific path
+   ```
+
 ### Via Configuration File
 
 ```yaml
