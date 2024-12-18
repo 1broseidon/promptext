@@ -51,9 +51,6 @@ promptext -f xml -o project.xml -D
 
 # Process with custom exclusions and verbose output
 promptext -x "test/,vendor/" -v
-
-# Process using .gitignore patterns
-promptext -g
 ```
 
 ## Configuration
