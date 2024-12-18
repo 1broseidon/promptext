@@ -6,12 +6,15 @@ func DefaultExcludes() []types.Rule {
     return []types.Rule{
         NewPatternRule([]string{
             ".git/",
+            ".git*",
             "node_modules/",
             "vendor/",
             ".idea/",
             ".vscode/",
             "__pycache__/",
             ".pytest_cache/",
+            ".aider*/",
+            ".aider.*",
             "dist/",
             "build/",
             "coverage/",

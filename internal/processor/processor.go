@@ -122,9 +122,27 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 	}
 
 	// Check if file appears to be binary
-	if len(content) > 0 && bytes.IndexByte(content[:min(1024, len(content))], 0) != -1 {
-		log.Debug("  Skipping binary file: %s", path)
-		return nil, nil
+	if len(content) > 0 {
+		// Check first 1024 bytes for null bytes
+		if bytes.IndexByte(content[:min(1024, len(content))], 0) != -1 {
+			log.Debug("  Skipping binary file (null bytes): %s", path)
+			return nil, nil
+		}
+		
+		// Check file extension for common binary types
+		ext := strings.ToLower(filepath.Ext(path))
+		binaryExts := map[string]bool{
+			".exe": true, ".dll": true, ".so": true, ".dylib": true,
+			".bin": true, ".obj": true, ".o": true,
+			".zip": true, ".tar": true, ".gz": true, ".7z": true,
+			".pdf": true, ".doc": true, ".docx": true,
+			".xls": true, ".xlsx": true, ".ppt": true,
+			".db": true, ".sqlite": true, ".sqlite3": true,
+		}
+		if binaryExts[ext] {
+			log.Debug("  Skipping binary file (extension): %s", path)
+			return nil, nil
+		}
 	}
 
 	rel, err := filepath.Rel(config.DirPath, path)
