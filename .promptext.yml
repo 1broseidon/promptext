@@ -1,7 +1,7 @@
-extensions:
-  - .go
 excludes:
   - samples/
   - dist/
+  - .git/
+  - .aider.tags.cache.v3/
 verbose: true
 debug: true
