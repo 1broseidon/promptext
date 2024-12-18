@@ -449,6 +449,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	})
 
 
+
 	if infoOnly {
 		// Only display project summary
 		if info, err := GetMetadataSummary(procConfig, 0); err == nil {
@@ -458,14 +459,6 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		}
 		return nil
 	}
-
-	// Create single filter instance to be used throughout
-	f := filter.New(filter.Options{
-		Includes:      extensions,
-		Excludes:      excludes,
-		IgnoreDefault: true,
-		UseGitIgnore:  useGitIgnore,
-	})
 
 	// Create processor configuration with filter
 	procConfig := Config{
