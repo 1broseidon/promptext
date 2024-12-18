@@ -6,30 +6,34 @@ sidebar_position: 4
 
 ## Default Filters
 
-promptext comes with intelligent default filters to exclude common non-source files.
+promptext comes with intelligent default filters to exclude common non-source files and automatically detects binary files.
 
 ### Ignored Directories and Files
 
 - System files: `.DS_Store`
 
 - Version Control:
+
   - `.git/`, `.git*`
   - `.svn/`
   - `.hg/`
 
 - Dependencies and Packages:
+
   - `node_modules/`
   - `vendor/`
   - `bower_components/`
   - `jspm_packages/`
 
 - IDE and Editor:
+
   - `.idea/`
   - `.vscode/`
   - `.vs/`
   - `*.sublime-*`
 
 - Build and Output:
+
   - `dist/`
   - `build/`
   - `out/`
@@ -37,6 +41,7 @@ promptext comes with intelligent default filters to exclude common non-source fi
   - `target/`
 
 - Cache Directories:
+
   - `__pycache__/`
   - `.pytest_cache/`
   - `.sass-cache/`
@@ -44,10 +49,12 @@ promptext comes with intelligent default filters to exclude common non-source fi
   - `.yarn/`
 
 - Test Coverage:
+
   - `coverage/`
   - `.nyc_output/`
 
 - Infrastructure:
+
   - `.terraform/`
   - `.vagrant/`
 
@@ -57,29 +64,21 @@ promptext comes with intelligent default filters to exclude common non-source fi
   - `tmp/`
   - `temp/`
 
-### Ignored File Extensions
+### Binary File Detection
 
-- Images:
-  - `.jpg`, `.jpeg`, `.png`, `.gif`, `.bmp`
-  - `.tiff`, `.webp`, `.ico`, `.icns`
-  - `.svg`, `.eps`, `.raw`, `.cr2`, `.nef`
+promptext automatically detects and excludes binary files using a sophisticated detection mechanism:
 
-- Binary Files:
-  - `.exe`, `.dll`, `.so`, `.dylib`
-  - `.bin`, `.obj`, `.class`
-  - `.pyc`, `.pyo`, `.pyd`
-  - `.o`, `.a`
+1. **Null Byte Detection**: Files are scanned for null bytes (0x00) in their first 512 bytes, which typically indicates binary content.
+2. **UTF-8 Validation**: Files are validated for proper UTF-8 encoding. If a file cannot be read as valid UTF-8 text, it's considered binary.
 
-- Archives:
-  - `.zip`, `.tar`, `.gz`, `.7z`, `.rar`, `.iso`
+This approach means you don't need to manually specify binary file extensions. The tool will automatically exclude:
 
-- Documents:
-  - `.pdf`, `.doc`, `.docx`
-  - `.xls`, `.xlsx`
-  - `.ppt`, `.pptx`
-
-- Database:
-  - `.db`, `.db-shm`, `.db-wal`
+- Executables and libraries (e.g., .exe, .dll, .so)
+- Object files and compiled code
+- Images and media files
+- Archives and compressed files
+- Database files
+- And any other non-text content
 
 ## Custom Filtering
 
@@ -87,46 +86,62 @@ promptext comes with intelligent default filters to exclude common non-source fi
 
 promptext supports several pattern matching options in both configuration files and command-line arguments:
 
-1. **Directory Patterns**: Ending with `/` matches directories and their contents
+1. **Directory Patterns**: Patterns ending with `/` match directories and their contents. These patterns are matched in two ways:
+
    ```yaml
    excludes:
-     - test/        # Excludes test directory and all contents
-     - internal/tmp/ # Excludes tmp directory under internal
+     - test/ # Matches both 'test/' and 'path/to/test/'
+     - internal/tmp/ # Matches 'internal/tmp/' and 'path/internal/tmp/'
    ```
 
-2. **Wildcard Patterns**: Using `*` for flexible matching
+2. **Wildcard Patterns**: Using `*` for flexible matching. The wildcard is matched against the base filename:
+
    ```yaml
    excludes:
-     - "*.generated.go" # Excludes all generated Go files
-     - ".aider*"        # Excludes all files starting with .aider
+     - "*.generated.go" # Excludes files ending with .generated.go
+     - ".aider*" # Excludes files starting with .aider
    ```
 
-3. **Exact Matches**: For specific files or paths
+3. **Exact Matches**: For specific files or paths. These can be matched in three ways:
    ```yaml
    excludes:
-     - "config.json"     # Excludes config.json in any directory
-     - "src/constants.go" # Excludes specific file in specific path
+     - "config.json" # Matches 'config.json' in any directory
+     - "src/constants.go" # Matches exact path
+     - "internal/" # Matches directory and all contents
    ```
 
 ### Via Configuration File
+
+Create a `.promptext.yml` file in your project root:
 
 ```yaml
 excludes:
   - test/
   - "*.generated.go"
   - "internal/tmp/"
+  - "docs/private/"
 ```
 
 ### Via Command Line
 
+Use the `-x` or `-exclude` flag with comma-separated patterns:
+
 ```bash
-promptext -exclude "test/,*.generated.go"
+promptext -x "test/,*.generated.go,internal/tmp/"
 ```
 
 ## GitIgnore Integration
 
-promptext automatically respects your project's `.gitignore` patterns. This can be disabled with:
+promptext automatically respects your project's `.gitignore` patterns. This means any files or directories listed in your `.gitignore` file will also be excluded from processing. This feature can be disabled with:
 
 ```bash
 promptext -gitignore=false
 ```
+
+The tool merges patterns from multiple sources in this order:
+
+1. Default exclude patterns
+2. GitIgnore patterns (if enabled)
+3. Custom exclude patterns from config file or command line
+
+All patterns are deduplicated to ensure efficient processing.
