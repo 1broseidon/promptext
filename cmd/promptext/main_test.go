@@ -57,14 +57,14 @@ func TestMainFlags(t *testing.T) {
 			name: "all flags set",
 			args: []string{
 				"promptext",
-				"-dir", "/test/path",
-				"-ext", ".go,.js",
-				"-exclude", "vendor,node_modules",
-				"-no-copy",
-				"-info",
-				"-verbose",
-				"-format", "xml",
-				"-out", "output.xml",
+				"-d", "/test/path",
+				"-e", ".go,.js",
+				"-x", "vendor,node_modules",
+				"-n",
+				"-i",
+				"-v",
+				"-f", "xml",
+				"-o", "output.xml",
 			},
 			expected: struct {
 				dir      string
@@ -95,14 +95,29 @@ func TestMainFlags(t *testing.T) {
 			os.Args = tt.args
 
 			// Define flags again (since we're using a new FlagSet)
-			dirPath := flag.String("dir", ".", "Directory path to process")
-			extension := flag.String("ext", "", "File extension to filter (e.g., .go,.js)")
-			exclude := flag.String("exclude", "", "Patterns to exclude (comma-separated)")
-			noCopy := flag.Bool("no-copy", false, "Disable automatic copying to clipboard")
-			infoOnly := flag.Bool("info", false, "Only display project summary")
-			verbose := flag.Bool("verbose", false, "Show full code content in terminal")
-			format := flag.String("format", "markdown", "Output format (markdown, xml, json)")
-			outFile := flag.String("out", "", "Output file path")
+			dirPath := flag.String("d", ".", "Directory path to process")
+			flag.StringVar(dirPath, "dir", ".", "Directory path to process")
+			
+			extension := flag.String("e", "", "File extension to filter (e.g., .go,.js)")
+			flag.StringVar(extension, "ext", "", "File extension to filter (e.g., .go,.js)")
+			
+			exclude := flag.String("x", "", "Patterns to exclude (comma-separated)")
+			flag.StringVar(exclude, "exclude", "", "Patterns to exclude (comma-separated)")
+			
+			noCopy := flag.Bool("n", false, "Disable automatic copying to clipboard")
+			flag.BoolVar(noCopy, "no-copy", false, "Disable automatic copying to clipboard")
+			
+			infoOnly := flag.Bool("i", false, "Only display project summary")
+			flag.BoolVar(infoOnly, "info", false, "Only display project summary")
+			
+			verbose := flag.Bool("v", false, "Show full code content in terminal")
+			flag.BoolVar(verbose, "verbose", false, "Show full code content in terminal")
+			
+			format := flag.String("f", "markdown", "Output format (markdown, xml, json)")
+			flag.StringVar(format, "format", "markdown", "Output format (markdown, xml, json)")
+			
+			outFile := flag.String("o", "", "Output file path")
+			flag.StringVar(outFile, "out", "", "Output file path")
 
 			// Parse flags
 			flag.Parse()
