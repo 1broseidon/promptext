@@ -113,6 +113,11 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 		return nil, nil
 	}
 
+	// Skip .DS_Store files immediately
+	if filepath.Base(path) == ".DS_Store" {
+		return nil, nil
+	}
+
 	// Get file info first to check if it's a directory or has read permissions
 	fileInfo, err := os.Stat(path)
 	if err != nil {
