@@ -43,7 +43,9 @@ func TestFilter_ShouldProcess(t *testing.T) {
 		},
 		{
 			name: "binary file",
-			opts: Options{},
+			opts: Options{
+				IgnoreDefault: true, // Enable default rules including binary detection
+			},
 			path: binaryFile,
 			want: false,
 		},
