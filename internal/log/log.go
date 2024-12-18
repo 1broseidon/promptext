@@ -7,10 +7,10 @@ import (
 )
 
 var (
-	debugMode  bool
-	logger     *log.Logger
-	phaseStart time.Time
-	timeMarks  map[string]time.Time
+	debugMode   bool
+	logger      *log.Logger
+	phaseStart  time.Time
+	timeMarks   map[string]time.Time
 	headerColor = "\033[1;36m" // Cyan
 	debugColor  = "\033[0;37m" // Light gray
 	resetColor  = "\033[0m"
