@@ -9,48 +9,6 @@ import (
 	"github.com/1broseidon/promptext/internal/filter/types"
 )
 
-// ParseGitIgnore reads .gitignore file and returns patterns
-func ParseGitIgnore(rootDir string) ([]string, error) {
-	gitignorePath := filepath.Join(rootDir, ".gitignore")
-	file, err := os.Open(gitignorePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	defer file.Close()
-
-	var patterns []string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		// Skip empty lines and comments
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		patterns = append(patterns, line)
-	}
-
-	return patterns, scanner.Err()
-}
-
-// MergeAndDedupePatterns combines and deduplicates patterns
-func MergeAndDedupePatterns(patterns ...[]string) []string {
-	seen := make(map[string]bool)
-	var result []string
-	
-	for _, patternSet := range patterns {
-		for _, pattern := range patternSet {
-			if !seen[pattern] {
-				seen[pattern] = true
-				result = append(result, pattern)
-			}
-		}
-	}
-	
-	return result
-}
 
 type Options struct {
 	Includes      []string
