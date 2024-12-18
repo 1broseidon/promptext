@@ -359,10 +359,6 @@ func countIncludedFiles(config Config) (int, error) {
 
 // GetMetadataSummary returns a concise summary of project metadata
 func GetMetadataSummary(config Config, tokenCount int) (string, error) {
-	infoConfig := &info.Config{
-		Extensions: config.Extensions,
-		Excludes:   config.Excludes,
-	}
 	projectInfo, err := info.GetProjectInfo(config.DirPath, config.Filter)
 	if err != nil {
 		return "", err

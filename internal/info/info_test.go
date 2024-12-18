@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/1broseidon/promptext/internal/filter"
 	"github.com/stretchr/testify/assert"
 )
 
