@@ -500,8 +500,14 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	}
 
 	if infoOnly {
-		// Only display project summary
-		if info, err := GetMetadataSummary(procConfig, 0); err == nil {
+		// Process directory just to get token count
+		result, err := ProcessDirectory(procConfig, false)
+		if err != nil {
+			return fmt.Errorf("error processing directory: %v", err)
+		}
+		
+		// Display project summary with token count
+		if info, err := GetMetadataSummary(procConfig, result.TokenCount); err == nil {
 			fmt.Printf("\033[32m%s\033[0m\n", info)
 		} else {
 			return fmt.Errorf("error getting project info: %v", err)
