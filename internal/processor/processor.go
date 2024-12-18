@@ -154,7 +154,7 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 
 func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	// Initialize project output and display content using shared filter
-	projectOutput, err := initializeProjectOutput(config.DirPath, config.Filter)
+	projectOutput, err := initializeProjectOutput(config)
 	if err != nil {
 		return nil, err
 	}
@@ -363,7 +363,7 @@ func GetMetadataSummary(config Config, tokenCount int) (string, error) {
 		Extensions: config.Extensions,
 		Excludes:   config.Excludes,
 	}
-	projectInfo, err := info.GetProjectInfo(config.DirPath, infoConfig)
+	projectInfo, err := info.GetProjectInfo(config.DirPath, config.Filter)
 	if err != nil {
 		return "", err
 	}
