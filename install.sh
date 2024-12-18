@@ -79,4 +79,39 @@ echo "Cleaning up..."
 cd - >/dev/null
 rm -rf "$TMP_DIR"
 
-echo "✨ Installation complete! You can now use 'promptext' command."
+# Function to check if alias exists
+check_alias_exists() {
+    if [ -f "$HOME/.bashrc" ] && grep -q "alias prx=" "$HOME/.bashrc"; then
+        return 0
+    fi
+    if [ -f "$HOME/.zshrc" ] && grep -q "alias prx=" "$HOME/.zshrc"; then
+        return 0
+    fi
+    if command -v prx >/dev/null 2>&1; then
+        return 0
+    fi
+    return 1
+}
+
+# Try to create alias if it doesn't exist
+if check_alias_exists; then
+    echo "⚠️  Note: 'prx' alias already exists on your system."
+    echo "✨ Installation complete! You can use the 'promptext' command."
+else
+    # Determine the appropriate shell config file
+    SHELL_CONFIG=""
+    if [ -f "$HOME/.zshrc" ]; then
+        SHELL_CONFIG="$HOME/.zshrc"
+    elif [ -f "$HOME/.bashrc" ]; then
+        SHELL_CONFIG="$HOME/.bashrc"
+    fi
+
+    if [ -n "$SHELL_CONFIG" ]; then
+        echo "alias prx=promptext" >> "$SHELL_CONFIG"
+        echo "✨ Installation complete! You can use either 'promptext' or 'prx' command."
+        echo "Note: Please restart your terminal or run 'source $SHELL_CONFIG' to use the 'prx' alias."
+    else
+        echo "⚠️  Note: Could not create 'prx' alias (shell config file not found)."
+        echo "✨ Installation complete! You can use the 'promptext' command."
+    fi
+fi
