@@ -10,7 +10,16 @@
 
 </div>
 
-promptext helps you extract relevant code context from your projects for AI assistants. It intelligently filters files, respects `.gitignore`, and provides clean, formatted output.
+promptext is an intelligent code context extraction tool designed specifically for AI assistant interactions. It analyzes your codebase, filters relevant files, estimates token usage, and provides formatted output suitable for AI prompts.
+
+## Key Features
+
+- 🔍 Smart file filtering with .gitignore support
+- 📊 Automatic token counting for AI context limits
+- 🗂️ Intelligent project structure analysis
+- 📝 Multiple output formats (Markdown, XML)
+- 🔧 Configurable via CLI flags or .promptext.yml
+- 📈 Project statistics and metadata extraction
 
 ## Quick Install
 
@@ -21,8 +30,6 @@ curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/install.sh
 # Using Go
 go install github.com/1broseidon/promptext/cmd/promptext@latest
 ```
-
-Or download from our [releases page](https://github.com/1broseidon/promptext/releases).
 
 ## Basic Usage
 
@@ -41,10 +48,11 @@ promptext -format xml -output project.xml -debug
 ```
 
 See our [full documentation](docs/docs.md) for:
-- Advanced configuration
-- Output formats
+- Advanced configuration options
+- Output format details
 - File filtering rules
 - Project analysis features
+- Token counting methodology
 - And more!
 
 ## License
