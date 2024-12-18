@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	
+	"github.com/1broseidon/promptext/internal/filter"
 )
 
 func setupTestProject(t *testing.T, files map[string]string) string {
