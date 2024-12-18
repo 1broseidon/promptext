@@ -280,17 +280,10 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			return err
 		}
 
-		// Create filter instance
-		f := filter.New(filter.Options{
-			Includes:      config.Extensions,
-			Excludes:      config.Excludes,
-			IgnoreDefault: true,
-		})
-
 		// For directories
 		if d.IsDir() {
 			// Check exclusion before any processing
-			if f.IsExcluded(relPath) {
+			if config.Filter.IsExcluded(relPath) {
 				log.Debug("  Skipping excluded directory: %s", relPath)
 				return filepath.SkipDir
 			}
@@ -303,7 +296,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		}
 
 		// For files, check exclusion
-		if f.IsExcluded(relPath) {
+		if config.Filter.IsExcluded(relPath) {
 			return nil
 		}
 
