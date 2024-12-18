@@ -289,7 +289,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			}
 			
 			// Only log root level directories that aren't excluded
-			if filepath.Dir(path) == config.DirPath && !f.IsExcluded(relPath) {
+			if filepath.Dir(path) == config.DirPath && !config.Filter.IsExcluded(relPath) {
 				log.Debug("  Scanning directory: %s", relPath)
 			}
 			return nil
