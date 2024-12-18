@@ -69,7 +69,18 @@ func New(opts Options) *Filter {
 	var filterRules []types.Rule
 	var excludePatterns []string
 	
-	var gitPatterns, configPatterns []string
+	var defaultPatterns, gitPatterns, configPatterns []string
+
+	// Get default patterns if enabled
+	if opts.IgnoreDefault {
+		defaultRules := rules.DefaultExcludes()
+		for _, rule := range defaultRules {
+			if patternRule, ok := rule.(*rules.PatternRule); ok {
+				defaultPatterns = append(defaultPatterns, patternRule.Patterns()...)
+			}
+		}
+		log.Debug("Using default exclude patterns (%d)", len(defaultPatterns))
+	}
 
 	// Get gitignore patterns if enabled
 	if opts.UseGitIgnore {
@@ -92,7 +103,7 @@ func New(opts Options) *Filter {
 	}
 
 	// Merge all patterns
-	excludePatterns = MergeAndDedupePatterns([][]string{gitPatterns, configPatterns}...)
+	excludePatterns = MergeAndDedupePatterns([][]string{defaultPatterns, gitPatterns, configPatterns}...)
 	
 	// Log final merged patterns
 	if len(excludePatterns) > 0 {
