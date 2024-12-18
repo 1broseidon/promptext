@@ -186,15 +186,10 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	log.Debug("\nToken counting breakdown:")
 	var totalTokens int
 	
-	// Process and count tokens for each file first
+	log.Debug("\nProcessing project files:")
 	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
-		}
-
-		// Skip directories
-		if d.IsDir() {
-			return nil
 		}
 
 		// Get relative path for filtering
@@ -203,7 +198,22 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			return err
 		}
 
-		// Skip excluded files using shared filter
+		// For directories
+		if d.IsDir() {
+			// Check exclusion before any processing
+			if config.Filter.IsExcluded(relPath) {
+				log.Debug("  Skipping excluded directory: %s", relPath)
+				return filepath.SkipDir
+			}
+			
+			// Only log root level directories that aren't excluded
+			if filepath.Dir(path) == config.DirPath {
+				log.Debug("  Scanning directory: %s", relPath)
+			}
+			return nil
+		}
+
+		// For files, check exclusion
 		if config.Filter.IsExcluded(relPath) {
 			return nil
 		}
@@ -215,9 +225,16 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 		if fileInfo != nil {
 			projectOutput.Files = append(projectOutput.Files, *fileInfo)
+			
+			// Count tokens for this file
 			fileTokens := tokenCounter.EstimateTokens(fileInfo.Content)
 			totalTokens += fileTokens
 			log.Debug("  File %s: %d tokens", fileInfo.Path, fileTokens)
+
+			if verbose {
+				displayContent += fmt.Sprintf("\n### File: %s\n```\n%s\n```\n",
+					path, fileInfo.Content)
+			}
 		}
 
 		return nil
@@ -255,7 +272,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		log.Debug("  Metadata: %d tokens", metaTokens)
 	}
 
-	log.Debug("  Total tokens: %d", totalTokens)
+	log.Debug("Total tokens: %d", totalTokens)
 
 	// Format the full output
 	formattedOutput, err := formatter.Format(projectOutput)
@@ -267,55 +284,6 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	if verbose {
 		displayContent = formattedOutput
 	}
-
-	log.Debug("\nProcessing directories:")
-	err = filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Get relative path for filtering
-		relPath, err := filepath.Rel(config.DirPath, path)
-		if err != nil {
-			return err
-		}
-
-		// For directories
-		if d.IsDir() {
-			// Check exclusion before any processing
-			if config.Filter.IsExcluded(relPath) {
-				log.Debug("  Skipping excluded directory: %s", relPath)
-				return filepath.SkipDir
-			}
-			
-			// Only log root level directories that aren't excluded
-			if filepath.Dir(path) == config.DirPath && !config.Filter.IsExcluded(relPath) {
-				log.Debug("  Scanning directory: %s", relPath)
-			}
-			return nil
-		}
-
-		// For files, check exclusion
-		if config.Filter.IsExcluded(relPath) {
-			return nil
-		}
-
-		fileInfo, err := processFile(path, config)
-		if err != nil {
-			return err
-		}
-
-		if fileInfo != nil {
-			projectOutput.Files = append(projectOutput.Files, *fileInfo)
-
-			if verbose {
-				displayContent += fmt.Sprintf("\n### File: %s\n```\n%s\n```\n",
-					path, fileInfo.Content)
-			}
-		}
-
-		return nil
-	})
 
 	if err != nil {
 		return &ProcessResult{}, fmt.Errorf("error walking directory: %w", err)
