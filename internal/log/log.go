@@ -98,6 +98,11 @@ func Fatal(format string, v ...interface{}) {
 	os.Exit(1)
 }
 
+// IsDebugEnabled returns whether debug mode is enabled
+func IsDebugEnabled() bool {
+	return debugMode
+}
+
 // GetPhaseStart returns the current phase start time
 func GetPhaseStart() time.Time {
 	return phaseStart
