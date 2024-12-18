@@ -59,7 +59,7 @@ func DefaultExcludes() []types.Rule {
 			".zip", ".tar", ".gz", ".7z", ".rar", ".iso",
 			".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
 			".class", ".pyc", ".pyo", ".pyd", ".o", ".a", ".db",
-			".db-shm", ".db-wal", ".DS_Store",
+			".db-shm", ".db-wal", "DS_Store", ".DS_Store",
 		}, types.Exclude),
 	}
 }
