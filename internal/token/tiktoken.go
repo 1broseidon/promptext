@@ -48,5 +48,7 @@ func (tc *TokenCounter) EstimateTokens(text string) int {
 	}
 
 	tokens := tc.encoding.Encode(text, nil, nil)
-	return len(tokens)
+	count := len(tokens)
+	log.Debug("Token count for text (%d chars): %d tokens", len(text), count)
+	return count
 }

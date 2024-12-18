@@ -160,10 +160,40 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		return nil, fmt.Errorf("error creating formatter: %w", err)
 	}
 
+	// Format and count tokens for each section
+	tokenCounter := token.NewTokenCounter()
+	
+	// Format the full output
 	formattedOutput, err := formatter.Format(projectOutput)
 	if err != nil {
 		return nil, fmt.Errorf("error formatting output: %w", err)
 	}
+
+	log.Debug("\nToken counting breakdown:")
+	
+	// Count tokens for directory tree
+	treeOutput, _ := formatter.Format(&format.ProjectOutput{DirectoryTree: projectOutput.DirectoryTree})
+	log.Debug("  Directory tree: %d tokens", tokenCounter.EstimateTokens(treeOutput))
+	
+	// Count tokens for git info
+	if projectOutput.GitInfo != nil {
+		gitOutput, _ := formatter.Format(&format.ProjectOutput{GitInfo: projectOutput.GitInfo})
+		log.Debug("  Git info: %d tokens", tokenCounter.EstimateTokens(gitOutput))
+	}
+	
+	// Count tokens for metadata
+	if projectOutput.Metadata != nil {
+		metaOutput, _ := formatter.Format(&format.ProjectOutput{Metadata: projectOutput.Metadata})
+		log.Debug("  Metadata: %d tokens", tokenCounter.EstimateTokens(metaOutput))
+	}
+	
+	// Count tokens for files
+	if len(projectOutput.Files) > 0 {
+		filesOutput, _ := formatter.Format(&format.ProjectOutput{Files: projectOutput.Files})
+		log.Debug("  Files content: %d tokens", tokenCounter.EstimateTokens(filesOutput))
+	}
+	
+	log.Debug("  Total formatted output: %d tokens", tokenCounter.EstimateTokens(formattedOutput))
 
 	displayContent := ""
 	if verbose {
