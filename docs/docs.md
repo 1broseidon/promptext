@@ -42,35 +42,42 @@ promptext [flags]
 ```
 
 ### Available Flags
-- `-dir string`: Directory to process (default ".")
-- `-ext string`: File extensions to include (comma-separated, e.g., ".go,.js")
-- `-exclude string`: Patterns to exclude (comma-separated)
-- `-format string`: Output format (markdown/xml/json)
-- `-out string`: Output file path
-- `-info`: Show only project summary
-- `-verbose`: Show full file contents
-- `-no-copy`: Disable clipboard copy
+- `-directory, -d string`: Directory to process (default ".")
+- `-extension, -e string`: File extensions to include (comma-separated, e.g., ".go,.js")
+- `-exclude, -x string`: Patterns to exclude (comma-separated)
+- `-format, -f string`: Output format (markdown/xml)
+- `-output, -o string`: Output file path
+- `-info, -i`: Show only project summary with token counts
+- `-verbose, -v`: Show full file contents
+- `-debug, -D`: Enable debug logging
+- `-gitignore, -g`: Use .gitignore patterns (default true)
+- `-help, -h`: Show help message
 
 ### Examples
 
 1. Process specific file types:
 ```bash
-promptext -ext .go,.js
+promptext -extension .go,.js
 ```
 
-2. Export as XML:
+2. Export as XML with debug info:
 ```bash
-promptext -format xml -out project.xml
+promptext -format xml -output project.xml -debug
 ```
 
-3. Show project overview:
+3. Show project overview with token counts:
 ```bash
 promptext -info
 ```
 
-4. Process with exclusions:
+4. Process with exclusions and custom output:
 ```bash
-promptext -exclude "test/,vendor/"
+promptext -exclude "test/,vendor/" -verbose -output summary.md
+```
+
+5. Disable gitignore patterns:
+```bash
+promptext -gitignore=false
 ```
 
 ## Configuration

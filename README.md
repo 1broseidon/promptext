@@ -31,13 +31,13 @@ Or download from our [releases page](https://github.com/1broseidon/promptext/rel
 promptext
 
 # Process specific file types
-promptext -ext .go,.js
+promptext -extension .go,.js
 
-# Show project summary
+# Show project summary with token counts
 promptext -info
 
-# Export as XML
-promptext -format xml -out project.xml
+# Export as XML with debug logging
+promptext -format xml -output project.xml -debug
 ```
 
 See our [full documentation](docs/docs.md) for:
