@@ -244,7 +244,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			fileTokens := tokenCounter.EstimateTokens(fileInfo.Content)
 			totalTokens += fileTokens
 
-			if verbose {
+			if verbose && !log.IsDebugEnabled() {
 				fmt.Printf("\n### File: %s\n```\n%s\n```\n",
 					path, fileInfo.Content)
 			}
