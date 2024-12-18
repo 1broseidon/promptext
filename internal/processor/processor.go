@@ -440,13 +440,16 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	log.Debug("Using extensions: %v", extensions)
 	log.Debug("Using excludes: %#v", excludes)
 
-	// Create the filter once
-	f := filter.New(filter.Options{
+	// Create filter options
+	filterOpts := filter.Options{
 		Includes:      extensions,
 		Excludes:      excludes,
 		IgnoreDefault: true,
 		UseGitIgnore:  useGitIgnore,
-	})
+	}
+
+	// Create the filter once and reuse it
+	f := filter.New(filterOpts)
 
 
 
