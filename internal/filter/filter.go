@@ -57,7 +57,6 @@ type Options struct {
 	Excludes      []string
 	IgnoreDefault bool
 	UseGitIgnore  bool
-	UseGitIgnore  bool
 }
 
 // ParseGitIgnore reads .gitignore file and returns patterns
