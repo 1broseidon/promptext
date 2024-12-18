@@ -41,11 +41,11 @@ type ProjectMetadata struct {
 }
 
 // GetProjectInfo gathers all available information about the project
-func GetProjectInfo(rootPath string, config *Config) (*ProjectInfo, error) {
+func GetProjectInfo(rootPath string, f *filter.Filter) (*ProjectInfo, error) {
 	info := &ProjectInfo{}
 
-	// Get directory tree
-	tree, err := generateDirectoryTree(rootPath, config)
+	// Get directory tree using provided filter
+	tree, err := generateDirectoryTree(rootPath, f)
 	if err != nil {
 		return nil, fmt.Errorf("error generating directory tree: %w", err)
 	}
@@ -66,18 +66,11 @@ func GetProjectInfo(rootPath string, config *Config) (*ProjectInfo, error) {
 	return info, nil
 }
 
-func generateDirectoryTree(root string, config *Config) (*format.DirectoryNode, error) {
+func generateDirectoryTree(root string, f *filter.Filter) (*format.DirectoryNode, error) {
 	rootNode := &format.DirectoryNode{
 		Name: filepath.Base(root),
 		Type: "dir",
 	}
-
-	// Create filter for consistent filtering
-	f := filter.New(filter.Options{
-		Includes: config.Extensions,
-		Excludes: config.Excludes,
-		IgnoreDefault: true,
-	})
 
 	// Map to track directories
 	dirMap := make(map[string]*format.DirectoryNode)

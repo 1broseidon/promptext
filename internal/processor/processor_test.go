@@ -119,13 +119,16 @@ edition = "2021"`,
 			tmpDir := setupTestProject(t, tt.files)
 			defer os.RemoveAll(tmpDir)
 
+			// Create filter
+			f := filter.New(filter.Options{
+				IgnoreDefault: true,
+				UseGitIgnore:  false,
+			})
+
 			// Create processor config with filter
 			config := Config{
 				DirPath: tmpDir,
-				Filter: filter.New(filter.Options{
-					IgnoreDefault: true,
-					UseGitIgnore:  false,
-				}),
+				Filter:  f,
 			}
 
 			// Process directory
