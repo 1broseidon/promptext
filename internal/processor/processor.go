@@ -282,7 +282,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		return nil, fmt.Errorf("error formatting output: %w", err)
 	}
 
-	displayContent := ""
+	displayContent = ""
 	if verbose {
 		displayContent = formattedOutput
 	}
