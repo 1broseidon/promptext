@@ -21,6 +21,7 @@ type Config struct {
 	DirPath    string
 	Extensions []string
 	Excludes   []string
+	GitIgnore  bool
 }
 
 func ParseCommaSeparated(input string) []string {
@@ -518,7 +519,6 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		DirPath:    absPath,
 		Extensions: extensions,
 		Excludes:   excludes,
-		GitIgnore:  useGitIgnore,
 	}
 
 	if infoOnly {
