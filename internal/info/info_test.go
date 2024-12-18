@@ -37,15 +37,15 @@ func TestGetProjectInfo(t *testing.T) {
 		}
 	}
 
-	// Initialize test config
-	config := &Config{
-		Extensions: []string{".go"},
-		Excludes:   []string{},
-	}
+	// Initialize test filter
+	f := filter.New(filter.Options{
+		Includes: []string{".go"},
+		Excludes: []string{},
+	})
 
 	// Test GetProjectInfo
 	t.Run("basic project structure", func(t *testing.T) {
-		info, err := GetProjectInfo(tmpDir, config)
+		info, err := GetProjectInfo(tmpDir, f)
 		assert.NoError(t, err)
 		assert.NotNil(t, info)
 		assert.NotNil(t, info.DirectoryTree)
@@ -83,13 +83,13 @@ func TestGenerateDirectoryTree(t *testing.T) {
 		}
 	}
 
-	config := &Config{
-		Extensions: []string{".go", ".md"},
-		Excludes:   []string{},
-	}
+	f := filter.New(filter.Options{
+		Includes: []string{".go", ".md"},
+		Excludes: []string{},
+	})
 
 	t.Run("directory tree generation", func(t *testing.T) {
-		tree, err := generateDirectoryTree(tmpDir, config)
+		tree, err := generateDirectoryTree(tmpDir, f)
 		assert.NoError(t, err)
 		assert.NotNil(t, tree)
 
