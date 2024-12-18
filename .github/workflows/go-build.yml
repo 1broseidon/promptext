@@ -10,6 +10,7 @@ on:
 
 jobs:
   test:
+    name: Run Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,7 +24,10 @@ jobs:
         run: go test -v ./...
 
   build:
+    name: Build Binaries
     needs: test
+    # Only run on tag pushes
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -90,9 +94,11 @@ jobs:
           retention-days: 1
 
   release:
+    name: Create Release
     needs: build
-    runs-on: ubuntu-latest
+    # This job will only run on tag pushes (redundant but explicit)
     if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
