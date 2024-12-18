@@ -1,0 +1,38 @@
+name: Go Build
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        goarch: [amd64, arm64]
+        exclude:
+          - os: macos-latest
+            goarch: amd64
+          - os: windows-latest
+            goarch: arm64
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Build
+        run: |
+          GOOS=$(echo "${{ matrix.os }}" | tr '[:upper:]' '[:lower:]' | sed 's/-latest//')
+          GOARCH=${{ matrix.goarch }}
+          go build -o promptext-${GOOS}-${GOARCH} ./cmd/promptext/main.go
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: promptext-${{ matrix.os }}-${{ matrix.goarch }}
+          path: promptext-${{ matrix.os }}-${{ matrix.goarch }}
