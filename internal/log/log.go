@@ -64,38 +64,9 @@ func Enable() {
 	debugMode = true
 }
 
-// SetColorEnabled enables or disables color output
-func SetColorEnabled(enabled bool) {
-	useColors = enabled
-}
-
-// Header prints a section header in debug mode
-func Header(format string, v ...interface{}) {
-	if debugMode {
-		msg := fmt.Sprintf(format, v...)
-		if useColors {
-			logger.Printf("%s=== %s ===%s", headerColor, msg, resetColor)
-		} else {
-			logger.Printf("=== %s ===", msg)
-		}
-	}
-}
-
 // Disable turns off debug logging
 func Disable() {
 	debugMode = false
-}
-
-// Header prints a section header in debug mode
-func Header(format string, v ...interface{}) {
-	if debugMode {
-		msg := fmt.Sprintf(format, v...)
-		if useColors {
-			logger.Printf("%s=== %s ===%s", headerColor, msg, resetColor)
-		} else {
-			logger.Printf("=== %s ===", msg)
-		}
-	}
 }
 
 // Debug logs a debug message if debug mode is enabled
