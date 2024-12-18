@@ -16,15 +16,46 @@ func init() {
 	logger = log.New(os.Stderr, "", log.Ltime)
 }
 
+var (
+	debugMode  bool
+	logger     *log.Logger
+	phaseStart time.Time
+	timeMarks  map[string]time.Time
+)
+
+func init() {
+	logger = log.New(os.Stderr, "", log.Ltime)
+	timeMarks = make(map[string]time.Time)
+}
+
 // Phase starts a new logging phase with a header
 func Phase(name string) {
 	if debugMode {
 		if !phaseStart.IsZero() {
 			duration := time.Since(phaseStart)
-			logger.Printf("[DEBUG] Phase completed in %.2fs\n", duration.Seconds())
+			logger.Printf("[DEBUG] Phase completed in %.2fms\n", float64(duration.Microseconds())/1000.0)
 		}
 		logger.Printf("[DEBUG] %s%s%s\n", "=== ", name, " ===")
 		phaseStart = time.Now()
+		timeMarks[name] = phaseStart
+	}
+}
+
+// StartTimer starts timing an operation
+func StartTimer(operation string) {
+	if debugMode {
+		timeMarks[operation] = time.Now()
+	}
+}
+
+// EndTimer ends timing an operation and logs the duration
+func EndTimer(operation string) {
+	if debugMode {
+		if start, ok := timeMarks[operation]; ok {
+			duration := time.Since(start)
+			logger.Printf("[DEBUG] %s completed in %.2fms\n", operation, float64(duration.Microseconds())/1000.0)
+			delete(timeMarks, operation)
+		}
 	}
 }
 

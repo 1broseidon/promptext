@@ -45,17 +45,21 @@ func GetProjectInfo(rootPath string, f *filter.Filter) (*ProjectInfo, error) {
 	info := &ProjectInfo{}
 
 	// Get directory tree using provided filter
+	log.StartTimer("Directory Tree Generation")
 	tree, err := generateDirectoryTree(rootPath, f)
+	log.EndTimer("Directory Tree Generation")
 	if err != nil {
 		return nil, fmt.Errorf("error generating directory tree: %w", err)
 	}
 	info.DirectoryTree = tree
 
 	// Try to get git info if available
+	log.StartTimer("Git Info Collection")
 	gitInfo, err := getGitInfo(rootPath)
 	if err == nil {
 		info.GitInfo = gitInfo
 	}
+	log.EndTimer("Git Info Collection")
 
 	// Try to get project metadata if available
 	metadata, err := getProjectMetadata(rootPath)

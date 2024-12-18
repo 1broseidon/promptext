@@ -153,19 +153,26 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 }
 
 func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
+	log.StartTimer("Project Processing")
+	defer log.EndTimer("Project Processing")
+
 	// Initialize project output and display content using shared filter
+	log.StartTimer("Initialize Output")
 	projectOutput, err := initializeProjectOutput(config)
 	if err != nil {
 		return nil, err
 	}
+	log.EndTimer("Initialize Output")
 	
 	var displayContent string
 
 	// Get project information using shared filter
+	log.StartTimer("Get Project Info")
 	projectInfo, err := info.GetProjectInfo(config.DirPath, config.Filter)
 	if err != nil {
 		return &ProcessResult{}, fmt.Errorf("error getting project info: %w", err)
 	}
+	log.EndTimer("Get Project Info")
 
 	// Populate project information
 	populateProjectInfo(projectOutput, projectInfo)
@@ -173,7 +180,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	// Create token counter
 	tokenCounter := token.NewTokenCounter()
 
-	// Initialize token counting
+	log.StartTimer("Token Counting")
 	log.Debug("\nToken counting breakdown:")
 	var totalTokens int
 	
@@ -264,6 +271,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	}
 
 	log.Debug("Total tokens: %d", totalTokens)
+	log.EndTimer("Token Counting")
 
 	// Format the full output
 	formattedOutput, err := formatter.Format(projectOutput)
