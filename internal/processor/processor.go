@@ -181,31 +181,24 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	log.StartTimer("Project Processing")
 	defer log.EndTimer("Project Processing")
 
-	// Initialize project output using shared filter
-	log.StartTimer("Initialize Output")
+	// Initialize project output and get project info using shared filter
+	log.StartTimer("Project Analysis")
 	projectOutput, err := initializeProjectOutput(config.DirPath, config.Filter)
 	if err != nil {
 		return nil, err
 	}
-	log.EndTimer("Initialize Output")
-
-	var displayContent string
-
-	// Get project information using shared filter
-	log.StartTimer("Get Project Info")
 	projectInfo, err := info.GetProjectInfo(config.DirPath, config.Filter)
 	if err != nil {
 		return &ProcessResult{}, fmt.Errorf("error getting project info: %w", err)
 	}
-	log.EndTimer("Get Project Info")
+	log.EndTimer("Project Analysis")
 
 	// Populate project information
 	populateProjectInfo(projectOutput, projectInfo)
 
-	// Create token counter
+	// Token analysis
+	log.StartTimer("Token Analysis")
 	tokenCounter := token.NewTokenCounter()
-
-	log.StartTimer("Token Counting")
 	log.Debug("=== Token Analysis ===")
 	var totalTokens int
 

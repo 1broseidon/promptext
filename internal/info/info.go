@@ -45,10 +45,7 @@ type ProjectMetadata struct {
 func GetProjectInfo(rootPath string, f *filter.Filter) (*ProjectInfo, error) {
 	info := &ProjectInfo{}
 
-	// Get directory tree using provided filter
-	log.StartTimer("Directory Tree Generation")
 	tree, err := generateDirectoryTree(rootPath, f)
-	log.EndTimer("Directory Tree Generation")
 	if err != nil {
 		return nil, fmt.Errorf("error generating directory tree: %w", err)
 	}
