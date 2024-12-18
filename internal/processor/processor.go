@@ -22,6 +22,7 @@ type Config struct {
 	Extensions []string
 	Excludes   []string
 	GitIgnore  bool
+	Filter     *filter.Filter
 }
 
 func ParseCommaSeparated(input string) []string {
@@ -202,16 +203,8 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			return err
 		}
 
-		// Create filter instance
-		f := filter.New(filter.Options{
-			Includes:      config.Extensions,
-			Excludes:      config.Excludes,
-			IgnoreDefault: true,
-			UseGitIgnore:  config.GitIgnore,
-		})
-
-		// Skip excluded files
-		if f.IsExcluded(relPath) {
+		// Skip excluded files using shared filter
+		if config.Filter.IsExcluded(relPath) {
 			return nil
 		}
 
@@ -496,25 +489,13 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	log.Debug("Using extensions: %v", extensions)
 	log.Debug("Using excludes: %v", excludes)
 
-	// Log final filter configuration
-	if len(extensions) > 0 {
-		log.Debug("Final file filters:")
-		for _, ext := range extensions {
-			log.Debug("  - Include files with extension: %s", ext)
-		}
-	} else {
-		log.Debug("No extension filters - processing all file types")
-	}
-
-
-	if len(excludes) > 0 {
-		log.Debug("Custom exclusion patterns:")
-		for _, excl := range excludes {
-			log.Debug("  - Exclude: %s", excl)
-		}
-	} else {
-		log.Debug("No custom exclusion patterns")
-	}
+	// Create the filter once
+	f := filter.New(filter.Options{
+		Includes:      extensions,
+		Excludes:      excludes,
+		IgnoreDefault: true,
+		UseGitIgnore:  useGitIgnore,
+	})
 
 	// Create processor configuration
 	procConfig := Config{
@@ -522,6 +503,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		Extensions: extensions,
 		Excludes:   excludes,
 		GitIgnore:  useGitIgnore,
+		Filter:     f,
 	}
 
 	if infoOnly {
