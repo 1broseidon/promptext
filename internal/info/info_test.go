@@ -198,7 +198,12 @@ func TestAnalyzeProject(t *testing.T) {
 	}
 
 	t.Run("project analysis", func(t *testing.T) {
-		analysis := AnalyzeProject(tmpDir)
+		// Initialize test filter
+		f := filter.New(filter.Options{
+			IgnoreDefault: true,
+			UseGitIgnore:  false,
+		})
+		analysis := AnalyzeProject(tmpDir, f)
 		assert.NotNil(t, analysis)
 
 		// Check entry points
