@@ -245,8 +245,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			totalTokens += fileTokens
 
 			if verbose {
-				var displayContent string
-				displayContent = fmt.Sprintf("\n### File: %s\n```\n%s\n```\n",
+				fmt.Printf("\n### File: %s\n```\n%s\n```\n",
 					path, fileInfo.Content)
 			}
 		}
