@@ -122,7 +122,7 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 	if len(content) > 0 {
 		// Check first 1024 bytes for null bytes
 		if bytes.IndexByte(content[:min(1024, len(content))], 0) != -1 {
-			return nil
+			return nil, nil
 			return nil, nil
 		}
 		
@@ -137,7 +137,7 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 			".db": true, ".sqlite": true, ".sqlite3": true,
 		}
 		if binaryExts[ext] {
-			return nil
+			return nil, nil
 			return nil, nil
 		}
 	}
