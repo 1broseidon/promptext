@@ -227,7 +227,6 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			// Count tokens for this file
 			fileTokens := tokenCounter.EstimateTokens(fileInfo.Content)
 			totalTokens += fileTokens
-			log.Debug("  File %s (%d chars): %d tokens", fileInfo.Path, len(fileInfo.Content), fileTokens)
 
 			if verbose {
 				displayContent += fmt.Sprintf("\n### File: %s\n```\n%s\n```\n",
