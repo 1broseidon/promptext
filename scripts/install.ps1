@@ -30,18 +30,30 @@ function Get-LatestRelease {
     return $release
 }
 
+function Get-OSInfo {
+    $arch = switch ($env:PROCESSOR_ARCHITECTURE) {
+        "AMD64" { "x86_64" }
+        "ARM64" { "arm64" }
+        default {
+            throw "Unsupported architecture: $env:PROCESSOR_ARCHITECTURE"
+        }
+    }
+    return @{
+        OS = "Windows"
+        Arch = $arch
+    }
+}
+
 function Get-AssetUrl {
     param($Release)
-    $assets = $Release.assets | Where-Object { 
-        $_.name -like "*windows*64*.zip" -or 
-        $_.name -like "*win*64*.zip" -or
-        $_.name -like "*Windows*64*.zip" -or
-        $_.name -like "*Win*64*.zip"
-    }
+    $osInfo = Get-OSInfo
+    $expectedName = "promptext_$($osInfo.OS)_$($osInfo.Arch).zip"
+    
+    $assets = $Release.assets | Where-Object { $_.name -eq $expectedName }
     if (-not $assets) {
         Write-Host "Available assets:" -ForegroundColor Yellow
         $Release.assets | ForEach-Object { Write-Host "- $($_.name)" }
-        throw "No compatible Windows binary found in release. Please report this issue."
+        throw "Could not find release asset: $expectedName"
     }
     return $assets[0].browser_download_url
 }
@@ -88,22 +100,26 @@ function Verify-Checksum {
         $FilePath
     )
     
-    $checksumAsset = $Release.assets | Where-Object { $_.name -like "*checksums.txt" }
+    $osInfo = Get-OSInfo
+    $expectedName = "promptext_$($osInfo.OS)_$($osInfo.Arch).zip"
+    
+    $checksumAsset = $Release.assets | Where-Object { $_.name -eq "checksums.txt" }
     if (-not $checksumAsset) {
         throw "Checksum file not found in release"
     }
     
+    Write-Status "Verifying checksum..."
     $checksumUrl = $checksumAsset.browser_download_url
     $checksumContent = (Invoke-WebRequest -Uri $checksumUrl -UseBasicParsing).Content
-    $expectedChecksum = ($checksumContent -split "`n" | Where-Object { $_ -like "*windows*amd64*.zip" }) -split '\s+' | Select-Object -First 1
+    $expectedChecksum = ($checksumContent -split "`n" | Where-Object { $_ -like "*$expectedName*" }) -split '\s+' | Select-Object -First 1
     
     if (-not $expectedChecksum) {
-        throw "Checksum not found for Windows binary"
+        throw "Checksum not found for $expectedName"
     }
     
     $actualChecksum = Get-FileHash -Path $FilePath -Algorithm SHA256 | Select-Object -ExpandProperty Hash
     if ($actualChecksum -ne $expectedChecksum) {
-        throw "Checksum verification failed. Expected: $expectedChecksum, Got: $actualChecksum"
+        throw "Checksum verification failed.`nExpected: $expectedChecksum`nGot: $actualChecksum"
     }
     
     Write-Status "Checksum verification successful"
@@ -122,7 +138,11 @@ try {
         exit 0
     }
 
+    $osInfo = Get-OSInfo
     Write-Status "Installing promptext..."
+    Write-Status "OS: $($osInfo.OS)"
+    Write-Status "Architecture: $($osInfo.Arch)"
+    Write-Status "Installation directory: $defaultInstallDir"
 
     # Check for admin rights if not user install
     if (-not $UserInstall) {
@@ -142,10 +162,11 @@ try {
     $release = Get-LatestRelease
     $downloadUrl = Get-AssetUrl $release
 
-    # Download and extract
+    # Download and verify
     Write-Status "Downloading binary..."
     $zipPath = Join-Path $env:TEMP "promptext.zip"
     Invoke-WebRequest -Uri $downloadUrl -OutFile $zipPath -UseBasicParsing
+    Verify-Checksum -Release $release -FilePath $zipPath
 
     Write-Status "Extracting files..."
     try {
@@ -211,8 +232,22 @@ try {
         Set-Content -Path $profilePath -Value $aliasContent
     }
 
-    Write-Status "Installation complete! Run 'promptext -v' to verify."
-    Write-Host "Note: You may need to restart your terminal for PATH changes to take effect." -ForegroundColor Yellow
+    # Verify installation
+    $promptextPath = Join-Path $defaultInstallDir "promptext.exe"
+    if (-not (Test-Path $promptextPath)) {
+        throw "Installation failed: promptext.exe not found at $promptextPath"
+    }
+
+    # Test the installation
+    try {
+        $version = & $promptextPath -v
+        Write-Status "Installation verified: $version"
+    } catch {
+        Write-Warning "Installation completed but verification failed: $_"
+    }
+
+    Write-Host "`n✨ Installation complete!" -ForegroundColor Green
+    Write-Host "You can use either 'promptext' or 'prx' command after restarting your terminal." -ForegroundColor Yellow
     Write-Host "To uninstall, run this script with -Uninstall flag" -ForegroundColor Yellow
 
 } catch {
