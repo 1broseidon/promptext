@@ -17,7 +17,7 @@ type FileConfig struct {
 	Format          string   `yaml:"format"`            // Add format field: "markdown", "xml", "json"
 	Debug           bool     `yaml:"debug"`             // Add debug field
 	GitIgnore       bool     `yaml:"gitignore"`         // Use .gitignore patterns
-	UseDefaultRules bool     `yaml:"use-default-rules"` // Use default filtering rules
+	UseDefaultRules bool     `yaml:"use-default-rules"` // Use default filtering rules (true by default)
 }
 
 // LoadConfig attempts to load and parse the .promptext.yml file
