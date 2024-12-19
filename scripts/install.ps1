@@ -32,14 +32,14 @@ function Get-LatestRelease {
 
 function Get-OSInfo {
     $arch = switch ($env:PROCESSOR_ARCHITECTURE) {
-        "AMD64" { "amd64" }
+        "AMD64" { "x86_64" }
         "ARM64" { "arm64" }
         default {
             throw "Unsupported architecture: $env:PROCESSOR_ARCHITECTURE"
         }
     }
     return @{
-        OS = "windows"
+        OS = "Windows"
         Arch = $arch
     }
 }
