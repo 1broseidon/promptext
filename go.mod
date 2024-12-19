@@ -2,7 +2,7 @@ module github.com/1broseidon/promptext
 
 go 1.22.4
 
-// Version: 0.2.3
+// Version: 0.2.4
 
 require (
 	github.com/atotto/clipboard v0.1.4

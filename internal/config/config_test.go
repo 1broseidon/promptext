@@ -88,8 +88,12 @@ func TestMergeWithFlags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var useDefaultRules bool = true
-			gotExt, gotExc, gotVerb, _, _, gotUseDefaultRules := tt.config.MergeWithFlags(tt.flagExt, tt.flagExclude, tt.flagVerbose, false, nil, &useDefaultRules)
+			var useDefaultRules *bool
+			if tt.name == "flags override config" || tt.name == "empty config and flags" || tt.name == "config verbose false with flag true" {
+				trueVal := true
+				useDefaultRules = &trueVal
+			}
+			gotExt, gotExc, gotVerb, _, _, gotUseDefaultRules := tt.config.MergeWithFlags(tt.flagExt, tt.flagExclude, tt.flagVerbose, false, nil, useDefaultRules)
 
 			if !reflect.DeepEqual(gotExt, tt.wantExtensions) {
 				t.Errorf("Extensions = %v, want %v", gotExt, tt.wantExtensions)
