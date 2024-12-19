@@ -29,7 +29,7 @@ promptext is an intelligent code context extraction tool designed specifically f
 **Linux/macOS**:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
 ```
 
 **Windows (PowerShell)**:

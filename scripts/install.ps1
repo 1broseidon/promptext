@@ -32,9 +32,16 @@ function Get-LatestRelease {
 
 function Get-AssetUrl {
     param($Release)
-    $assets = $Release.assets | Where-Object { $_.name -like "*windows*amd64*.zip" }
+    $assets = $Release.assets | Where-Object { 
+        $_.name -like "*windows*64*.zip" -or 
+        $_.name -like "*win*64*.zip" -or
+        $_.name -like "*Windows*64*.zip" -or
+        $_.name -like "*Win*64*.zip"
+    }
     if (-not $assets) {
-        throw "No compatible Windows binary found in release"
+        Write-Host "Available assets:" -ForegroundColor Yellow
+        $Release.assets | ForEach-Object { Write-Host "- $($_.name)" }
+        throw "No compatible Windows binary found in release. Please report this issue."
     }
     return $assets[0].browser_download_url
 }
