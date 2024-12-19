@@ -49,6 +49,7 @@ promptext [flags]
 - `-verbose, -v`: Show full file contents
 - `-debug, -D`: Enable debug logging
 - `-gitignore, -g`: Use .gitignore patterns (default true)
+- `-use-default-rules, -u`: Use default filtering rules (default true)
 - `-help, -h`: Show help message
 
 ### Examples
@@ -75,4 +76,10 @@ promptext -info
 
 ```bash
 promptext -exclude "test/,vendor/" -verbose
+```
+
+5. Process all files including dependencies:
+
+```bash
+promptext -u=false -exclude "test/" # Disable default rules but keep test/ excluded
 ```

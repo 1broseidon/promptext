@@ -200,8 +200,8 @@ func TestAnalyzeProject(t *testing.T) {
 	t.Run("project analysis", func(t *testing.T) {
 		// Initialize test filter
 		f := filter.New(filter.Options{
-			IgnoreDefault: true,
-			UseGitIgnore:  false,
+			UseDefaultRules: true,
+			UseGitIgnore:    false,
 		})
 		analysis := AnalyzeProject(tmpDir, f)
 		assert.NotNil(t, analysis)

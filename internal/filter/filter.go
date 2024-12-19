@@ -12,10 +12,10 @@ import (
 )
 
 type Options struct {
-	Includes      []string
-	Excludes      []string
-	IgnoreDefault bool
-	UseGitIgnore  bool
+	Includes        []string
+	Excludes        []string
+	UseDefaultRules bool // Controls whether to apply default filtering rules
+	UseGitIgnore    bool
 }
 
 // ParseGitIgnore reads .gitignore file and returns patterns
@@ -74,7 +74,7 @@ func New(opts Options) *Filter {
 	log.Phase("Filter Configuration")
 
 	// Collect patterns from all sources
-	if opts.IgnoreDefault {
+	if opts.UseDefaultRules {
 		defaultRules := rules.DefaultExcludes()
 		for _, rule := range defaultRules {
 			if patternRule, ok := rule.(*rules.PatternRule); ok {
@@ -105,7 +105,7 @@ func New(opts Options) *Filter {
 	}
 
 	// Add default rules first if enabled
-	if opts.IgnoreDefault {
+	if opts.UseDefaultRules {
 		filterRules = append(filterRules, rules.DefaultExcludes()...)
 	}
 

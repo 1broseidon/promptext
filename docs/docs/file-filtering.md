@@ -6,7 +6,39 @@ sidebar_position: 4
 
 ## Default Filters
 
-promptext comes with intelligent default filters to exclude common non-source files and automatically detects binary files.
+promptext comes with intelligent default filters to exclude common non-source files and automatically detects binary files. These default filters can be controlled using the `UseDefaultRules` option in configuration.
+
+### Configuring Default Rules
+
+By default, promptext applies a set of standard filtering rules that exclude common non-source files and directories. You can control this behavior in two ways:
+
+1. Via configuration file:
+
+```yaml
+# .promptext.yml
+use-default-rules: true  # Enable default filtering rules (default)
+use-default-rules: false # Process all files except explicitly excluded ones
+```
+
+2. Via command line:
+
+```bash
+promptext -u=false  # Disable default rules, only use explicit excludes
+promptext --use-default-rules=false  # Same as above, long form
+```
+
+When default rules are disabled:
+
+- Common directories (node_modules, vendor, etc.) will not be automatically excluded
+- Binary file detection remains active for safety
+- Your explicit excludes (via -x flag or config file) still apply
+- GitIgnore patterns (if enabled) still apply
+
+This is useful when you need to:
+
+- Process files in typically excluded directories
+- Analyze dependencies or vendor code
+- Create a custom set of exclusion rules from scratch
 
 ### Ignored Directories and Files
 

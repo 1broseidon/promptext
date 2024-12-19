@@ -44,7 +44,7 @@ func TestFilter_ShouldProcess(t *testing.T) {
 		{
 			name: "binary file",
 			opts: Options{
-				IgnoreDefault: true, // Enable default rules including binary detection
+				UseDefaultRules: true, // Enable default rules including binary detection
 			},
 			path: binaryFile,
 			want: false,
@@ -68,7 +68,7 @@ func TestFilter_ShouldProcess(t *testing.T) {
 		{
 			name: "default ignores",
 			opts: Options{
-				IgnoreDefault: true,
+				UseDefaultRules: true,
 			},
 			path: "node_modules/package.json",
 			want: false,
@@ -76,9 +76,9 @@ func TestFilter_ShouldProcess(t *testing.T) {
 		{
 			name: "mixed patterns",
 			opts: Options{
-				Includes:      []string{".go", ".md"},
-				Excludes:      []string{"vendor/", "test/"},
-				IgnoreDefault: true,
+				Includes:        []string{".go", ".md"},
+				Excludes:        []string{"vendor/", "test/"},
+				UseDefaultRules: true,
 			},
 			path: "src/main.go",
 			want: true,

@@ -121,8 +121,8 @@ edition = "2021"`,
 
 			// Create filter
 			f := filter.New(filter.Options{
-				IgnoreDefault: true,
-				UseGitIgnore:  false,
+				UseDefaultRules: true,
+				UseGitIgnore:    false,
 			})
 
 			// Create processor config with filter
@@ -178,8 +178,8 @@ func main() {}`,
 	config := Config{
 		DirPath: tmpDir,
 		Filter: filter.New(filter.Options{
-			IgnoreDefault: true,
-			UseGitIgnore:  false,
+			UseDefaultRules: true,
+			UseGitIgnore:    false,
 		}),
 	}
 

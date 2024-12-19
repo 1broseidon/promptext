@@ -1,7 +1,6 @@
 package processor
 
 import (
-	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/1broseidon/promptext/internal/config"
 	"github.com/1broseidon/promptext/internal/filter"
+	"github.com/1broseidon/promptext/internal/filter/rules"
 	"github.com/1broseidon/promptext/internal/format"
 	"github.com/1broseidon/promptext/internal/info"
 	"github.com/1broseidon/promptext/internal/log"
@@ -75,31 +75,15 @@ func processFile(path string, config Config) (*format.FileInfo, error) {
 		return nil, nil
 	}
 
-	content, err := os.ReadFile(path)
-	if err != nil {
+	// Check if file is binary using BinaryRule
+	binaryRule := rules.NewBinaryRule()
+	if binaryRule.Match(path) {
 		return nil, nil
 	}
 
-	// Check if file appears to be binary
-	if len(content) > 0 {
-		// Check first 1024 bytes for null bytes
-		if bytes.IndexByte(content[:min(1024, len(content))], 0) != -1 {
-			return nil, nil
-		}
-
-		// Check file extension for common binary types
-		ext := strings.ToLower(filepath.Ext(path))
-		binaryExts := map[string]bool{
-			".exe": true, ".dll": true, ".so": true, ".dylib": true,
-			".bin": true, ".obj": true, ".o": true,
-			".zip": true, ".tar": true, ".gz": true, ".7z": true,
-			".pdf": true, ".doc": true, ".docx": true,
-			".xls": true, ".xlsx": true, ".ppt": true,
-			".db": true, ".sqlite": true, ".sqlite3": true,
-		}
-		if binaryExts[ext] {
-			return nil, nil
-		}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return nil, nil
 	}
 
 	return &format.FileInfo{
@@ -329,7 +313,7 @@ func GetMetadataSummary(config Config, result *ProcessResult) (string, error) {
 }
 
 // Run executes the promptext tool with the given configuration
-func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string, debug bool, gitignore bool) error {
+func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string, debug bool, gitignore bool, useDefaultRules bool) error {
 	// Enable debug logging if flag is set
 	if debug {
 		log.Enable()
@@ -362,7 +346,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	}
 
 	// Merge file config with command line flags
-	extensions, excludes, verboseFlag, _, useGitIgnore := fileConfig.MergeWithFlags(extension, exclude, verbose, debug, &gitignore)
+	extensions, excludes, verboseFlag, _, useGitIgnore, useDefaultRules := fileConfig.MergeWithFlags(extension, exclude, verbose, debug, &gitignore, &useDefaultRules)
 	log.Debug("Configuration:")
 	log.Debug("  • Extensions: %v", extensions)
 	log.Debug("  • Excludes: %#v", excludes)
@@ -370,10 +354,10 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 
 	// Create filter options
 	filterOpts := filter.Options{
-		Includes:      extensions,
-		Excludes:      excludes,
-		IgnoreDefault: true,
-		UseGitIgnore:  useGitIgnore,
+		Includes:        extensions,
+		Excludes:        excludes,
+		UseDefaultRules: useDefaultRules,
+		UseGitIgnore:    useGitIgnore,
 	}
 
 	// Create the filter once and reuse it

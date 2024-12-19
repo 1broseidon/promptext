@@ -11,12 +11,13 @@ import (
 
 // FileConfig represents the structure of .promptext.yml
 type FileConfig struct {
-	Extensions []string `yaml:"extensions"`
-	Excludes   []string `yaml:"excludes"`
-	Verbose    bool     `yaml:"verbose"`
-	Format     string   `yaml:"format"`    // Add format field: "markdown", "xml", "json"
-	Debug      bool     `yaml:"debug"`     // Add debug field
-	GitIgnore  bool     `yaml:"gitignore"` // Use .gitignore patterns
+	Extensions      []string `yaml:"extensions"`
+	Excludes        []string `yaml:"excludes"`
+	Verbose         bool     `yaml:"verbose"`
+	Format          string   `yaml:"format"`            // Add format field: "markdown", "xml", "json"
+	Debug           bool     `yaml:"debug"`             // Add debug field
+	GitIgnore       bool     `yaml:"gitignore"`         // Use .gitignore patterns
+	UseDefaultRules bool     `yaml:"use-default-rules"` // Use default filtering rules
 }
 
 // LoadConfig attempts to load and parse the .promptext.yml file
@@ -43,7 +44,7 @@ func LoadConfig(dirPath string) (*FileConfig, error) {
 
 // MergeWithFlags merges the file config with command line flags
 // Command line flags take precedence over file config
-func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bool, flagDebug bool, flagGitIgnore *bool) (extensions []string, excludes []string, verbose bool, debug bool, useGitIgnore bool) {
+func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bool, flagDebug bool, flagGitIgnore *bool, flagUseDefaultRules *bool) (extensions []string, excludes []string, verbose bool, debug bool, useGitIgnore bool, useDefaultRules bool) {
 	// Handle extensions
 	if flagExt != "" {
 		extensions = parseCommaSeparated(flagExt)
@@ -73,7 +74,15 @@ func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bo
 		useGitIgnore = false
 	}
 
-	return extensions, excludes, verbose, debug, useGitIgnore
+	// Handle use-default-rules - default to true unless explicitly disabled
+	useDefaultRules = true
+	if flagUseDefaultRules != nil {
+		useDefaultRules = *flagUseDefaultRules
+	} else if !fc.UseDefaultRules {
+		useDefaultRules = false
+	}
+
+	return extensions, excludes, verbose, debug, useGitIgnore, useDefaultRules
 }
 
 func parseCommaSeparated(input string) []string {

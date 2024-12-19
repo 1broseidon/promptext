@@ -21,6 +21,7 @@ func main() {
 	outFile := pflag.StringP("output", "o", "", "Output file path")
 	debug := pflag.BoolP("debug", "D", false, "Enable debug logging")
 	gitignore := pflag.BoolP("gitignore", "g", true, "Use .gitignore patterns")
+	useDefaultRules := pflag.BoolP("use-default-rules", "u", true, "Use default filtering rules")
 
 	pflag.Parse()
 
@@ -30,7 +31,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if err := processor.Run(*dirPath, *extension, *exclude, false, *infoOnly, *verbose, *format, *outFile, *debug, *gitignore); err != nil {
+	if err := processor.Run(*dirPath, *extension, *exclude, false, *infoOnly, *verbose, *format, *outFile, *debug, *gitignore, *useDefaultRules); err != nil {
 		log.Fatal(err)
 	}
 }
