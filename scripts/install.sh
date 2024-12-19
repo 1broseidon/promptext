@@ -117,10 +117,26 @@ write_status() {
     fi
 }
 
+# Function to check if we have sudo access
+check_sudo_access() {
+    if sudo -n true 2>/dev/null; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Function to confirm sudo usage
 confirm_sudo() {
     local action="$1"
     echo "⚠️  This operation requires sudo to $action"
+    
+    if ! check_sudo_access; then
+        echo "Error: This operation requires sudo privileges." >&2
+        echo "Please run with sudo or use --user flag for user-level installation." >&2
+        exit 1
+    fi
+    
     read -p "Continue? [y/N] " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -246,7 +262,14 @@ uninstall_promptext() {
     fi
 
     if [ -f "$install_path" ]; then
-        sudo rm -f "$install_path"
+        if [ "$install_user_level" = false ]; then
+            if [ ! -w "$install_path" ]; then
+                confirm_sudo "uninstall from $install_path"
+            fi
+            sudo rm -f "$install_path"
+        else
+            rm -f "$install_path"
+        fi
     fi
 
     # Remove alias (simplified, can be improved)
@@ -263,6 +286,13 @@ install_promptext() {
     write_status "OS: $OS"
     write_status "Architecture: $ARCH"
     write_status "Installation directory: $INSTALL_PATH"
+
+    # Early check for sudo if needed
+    if [ "$install_user_level" = false ]; then
+        if [ ! -w "$INSTALL_PATH" ]; then
+            confirm_sudo "install to $INSTALL_PATH"
+        fi
+    fi
 
     # Check installation directory permissions
     if [ ! -w "$(dirname "$INSTALL_PATH")" ] && [ "$install_user_level" = false ]; then
