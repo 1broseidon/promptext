@@ -40,13 +40,14 @@ promptext [flags]
 
 ### Available Flags
 
+- `-version, -v`: Show version information
 - `-directory, -d string`: Directory to process (default ".")
 - `-extension, -e string`: File extensions to include (comma-separated, e.g., ".go,.js")
 - `-exclude, -x string`: Patterns to exclude (comma-separated)
 - `-format, -f string`: Output format (markdown/xml)
 - `-output, -o string`: Output file path
 - `-info, -i`: Show only project summary with token counts
-- `-verbose, -v`: Show full file contents
+- `-verbose, -V`: Show full file contents
 - `-debug, -D`: Enable debug logging
 - `-gitignore, -g`: Use .gitignore patterns (default true)
 - `-use-default-rules, -u`: Use default filtering rules (default true)
@@ -75,7 +76,17 @@ promptext -info
 4. Process with exclusions:
 
 ```bash
-promptext -exclude "test/,vendor/" -verbose
+promptext -exclude "test/,vendor/" -V
+```
+
+5. Check version:
+
+```bash
+promptext -v  # Show version information
+promptext --version  # Same as above
+
+# Example output:
+# promptext version v0.2.4 (2024-12-19)
 ```
 
 5. Process all files including dependencies:
