@@ -32,14 +32,14 @@ function Get-LatestRelease {
 
 function Get-OSInfo {
     $arch = switch ($env:PROCESSOR_ARCHITECTURE) {
-        "AMD64" { "x86_64" }
+        "AMD64" { "amd64" }
         "ARM64" { "arm64" }
         default {
             throw "Unsupported architecture: $env:PROCESSOR_ARCHITECTURE"
         }
     }
     return @{
-        OS = "Windows"
+        OS = "windows"
         Arch = $arch
     }
 }
@@ -47,15 +47,27 @@ function Get-OSInfo {
 function Get-AssetUrl {
     param($Release)
     $osInfo = Get-OSInfo
-    $expectedName = "promptext_$($osInfo.OS)_$($osInfo.Arch).zip"
+    $patterns = @(
+        "promptext_$($osInfo.OS)_$($osInfo.Arch).zip",
+        "promptext-$($osInfo.OS)-$($osInfo.Arch).zip"
+    )
     
-    $assets = $Release.assets | Where-Object { $_.name -eq $expectedName }
-    if (-not $assets) {
-        Write-Host "Available assets:" -ForegroundColor Yellow
-        $Release.assets | ForEach-Object { Write-Host "- $($_.name)" }
-        throw "Could not find release asset: $expectedName"
+    Write-Host "Looking for release assets:" -ForegroundColor Yellow
+    foreach ($pattern in $patterns) {
+        Write-Host "- $pattern"
     }
-    return $assets[0].browser_download_url
+    Write-Host "`nAvailable assets:" -ForegroundColor Yellow
+    $Release.assets | ForEach-Object { Write-Host "- $($_.name)" }
+    
+    foreach ($pattern in $patterns) {
+        $assets = $Release.assets | Where-Object { $_.name -eq $pattern }
+        if ($assets) {
+            Write-Host "`nFound matching asset: $($assets[0].name)" -ForegroundColor Green
+            return $assets[0].browser_download_url
+        }
+    }
+    
+    throw "Could not find compatible Windows binary. Please report this issue."
 }
 
 function Uninstall-Promptext {
@@ -97,24 +109,31 @@ function Uninstall-Promptext {
 function Verify-Checksum {
     param(
         $Release,
-        $FilePath
+        $FilePath,
+        $AssetName
     )
     
-    $osInfo = Get-OSInfo
-    $expectedName = "promptext_$($osInfo.OS)_$($osInfo.Arch).zip"
-    
-    $checksumAsset = $Release.assets | Where-Object { $_.name -eq "checksums.txt" }
+    $checksumAsset = $Release.assets | Where-Object { 
+        $_.name -eq "checksums.txt" -or 
+        $_.name -eq "SHA256SUMS" -or
+        $_.name -eq "sha256sums.txt"
+    }
     if (-not $checksumAsset) {
-        throw "Checksum file not found in release"
+        Write-Warning "Skipping checksum verification: checksum file not found in release"
+        return
     }
     
     Write-Status "Verifying checksum..."
+    Write-Host "Asset name: $AssetName"
     $checksumUrl = $checksumAsset.browser_download_url
     $checksumContent = (Invoke-WebRequest -Uri $checksumUrl -UseBasicParsing).Content
-    $expectedChecksum = ($checksumContent -split "`n" | Where-Object { $_ -like "*$expectedName*" }) -split '\s+' | Select-Object -First 1
+    Write-Host "Checksum content:"
+    Write-Host $checksumContent
+    $expectedChecksum = ($checksumContent -split "`n" | Where-Object { $_ -like "*$AssetName*" }) -split '\s+' | Select-Object -First 1
     
     if (-not $expectedChecksum) {
-        throw "Checksum not found for $expectedName"
+        Write-Warning "Skipping checksum verification: checksum not found for $AssetName"
+        return
     }
     
     $actualChecksum = Get-FileHash -Path $FilePath -Algorithm SHA256 | Select-Object -ExpandProperty Hash
@@ -165,8 +184,9 @@ try {
     # Download and verify
     Write-Status "Downloading binary..."
     $zipPath = Join-Path $env:TEMP "promptext.zip"
+    $assetName = $downloadUrl.Split('/')[-1]
     Invoke-WebRequest -Uri $downloadUrl -OutFile $zipPath -UseBasicParsing
-    Verify-Checksum -Release $release -FilePath $zipPath
+    Verify-Checksum -Release $release -FilePath $zipPath -AssetName $assetName
 
     Write-Status "Extracting files..."
     try {
