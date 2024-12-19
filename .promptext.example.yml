@@ -1,0 +1,38 @@
+# File extensions to analyze (optional)
+# If not specified, all files will be analyzed
+extensions:
+  - .go
+  - .js
+  - .py
+  - .ts
+  - .jsx
+  - .tsx
+
+# Patterns to exclude from analysis (optional)
+# Supports glob patterns
+excludes:
+  - "**/node_modules/**"
+  - "**/vendor/**"
+  - "**/dist/**"
+  - "**/*.test.*"
+  - "**/*.spec.*"
+
+# Enable verbose output (optional, default: false)
+# When enabled, provides more detailed information during processing
+verbose: false
+
+# Output format (optional, default: markdown)
+# Available options: "markdown", "xml", "json"
+format: "markdown"
+
+# Enable debug mode (optional, default: false)
+# When enabled, outputs additional debugging information
+debug: false
+
+# Use .gitignore patterns (optional, default: true)
+# When enabled, files ignored by .gitignore will be excluded from analysis
+gitignore: true
+
+# Use default filtering rules (optional, default: true)
+# When enabled, applies built-in rules for common file types and patterns
+use-default-rules: true

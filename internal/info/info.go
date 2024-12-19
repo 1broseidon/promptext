@@ -39,6 +39,16 @@ type ProjectMetadata struct {
 	Language     string
 	Version      string
 	Dependencies []string
+	Health       *ProjectHealth
+}
+
+// ProjectHealth holds information about project health indicators
+type ProjectHealth struct {
+	HasReadme  bool
+	HasLicense bool
+	HasTests   bool
+	HasCI      bool
+	CISystem   string // e.g., "GitHub Actions", "CircleCI"
 }
 
 // GetProjectInfo gathers all available information about the project
@@ -57,6 +67,11 @@ func GetProjectInfo(rootPath string, f *filter.Filter) (*ProjectInfo, error) {
 	metadata, err := getProjectMetadata(rootPath)
 	if err == nil {
 		info.Metadata = metadata
+		// Add project health information
+		health, err := analyzeProjectHealth(rootPath)
+		if err == nil {
+			info.Metadata.Health = health
+		}
 	}
 
 	// Generate directory tree
@@ -181,6 +196,114 @@ func getGitInfo(root string) (*GitInfo, error) {
 	}
 
 	return info, nil
+}
+
+// analyzeProjectHealth checks for project health indicators
+func analyzeProjectHealth(root string) (*ProjectHealth, error) {
+	health := &ProjectHealth{}
+
+	// Check for README
+	readmePatterns := []string{"README.md", "README.txt", "README", "Readme.md"}
+	for _, pattern := range readmePatterns {
+		if _, err := os.Stat(filepath.Join(root, pattern)); err == nil {
+			health.HasReadme = true
+			break
+		}
+	}
+
+	// Check for LICENSE
+	licensePatterns := []string{"LICENSE", "LICENSE.md", "LICENSE.txt", "License"}
+	for _, pattern := range licensePatterns {
+		if _, err := os.Stat(filepath.Join(root, pattern)); err == nil {
+			health.HasLicense = true
+			break
+		}
+	}
+
+	// Check for CI/CD configurations
+	ciConfigs := map[string][]string{
+		"GitHub Actions": {".github/workflows"},
+		"CircleCI":       {".circleci/config.yml"},
+		"Travis CI":      {".travis.yml"},
+		"GitLab CI":      {".gitlab-ci.yml"},
+		"Jenkins":        {"Jenkinsfile"},
+	}
+
+	for system, paths := range ciConfigs {
+		for _, path := range paths {
+			if _, err := os.Stat(filepath.Join(root, path)); err == nil {
+				health.HasCI = true
+				health.CISystem = system
+				break
+			}
+		}
+		if health.HasCI {
+			break
+		}
+	}
+
+	// Check for tests
+	testDirs := []string{
+		"test", "tests", "Test", "Tests",
+		"__tests__", // React/Node
+		"spec",      // Ruby/Rails
+	}
+
+	// Check test directories
+	for _, dir := range testDirs {
+		if _, err := os.Stat(filepath.Join(root, dir)); err == nil {
+			health.HasTests = true
+			break
+		}
+	}
+
+	// If no test directory found, check for test files
+	if !health.HasTests {
+		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() {
+				return nil
+			}
+
+			fileName := d.Name()
+			switch {
+			// Go
+			case strings.HasSuffix(fileName, "_test.go"):
+				health.HasTests = true
+				return filepath.SkipAll
+			// JavaScript/TypeScript
+			case strings.HasSuffix(fileName, ".test.js") ||
+				strings.HasSuffix(fileName, ".spec.js") ||
+				strings.HasSuffix(fileName, ".test.ts") ||
+				strings.HasSuffix(fileName, ".spec.ts"):
+				health.HasTests = true
+				return filepath.SkipAll
+			// Python
+			case strings.HasPrefix(fileName, "test_") ||
+				strings.HasSuffix(fileName, "_test.py") ||
+				strings.HasSuffix(fileName, "test.py"):
+				health.HasTests = true
+				return filepath.SkipAll
+			// Java
+			case strings.HasSuffix(fileName, "Test.java") ||
+				strings.HasSuffix(fileName, "Tests.java") ||
+				strings.HasSuffix(fileName, "IT.java"): // Integration tests
+				health.HasTests = true
+				return filepath.SkipAll
+			// Ruby
+			case strings.HasSuffix(fileName, "_spec.rb"):
+				health.HasTests = true
+				return filepath.SkipAll
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			log.Debug("Error walking directory for test files: %v", err)
+		}
+	}
+
+	return health, nil
 }
 
 func getProjectMetadata(root string) (*ProjectMetadata, error) {
@@ -367,14 +490,36 @@ func getGoDependencies(root string) []string {
 
 	var deps []string
 	lines := strings.Split(string(content), "\n")
+	inRequire := false
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
+
+		// Skip empty lines, comments, or lines with just parentheses
+		if line == "" || strings.HasPrefix(line, "//") || line == "(" || line == ")" {
+			continue
+		}
+
 		if strings.HasPrefix(line, "require ") {
+			if strings.Contains(line, "(") {
+				inRequire = true
+				continue
+			}
+			// Single-line require
 			parts := strings.Fields(line)
 			if len(parts) > 1 {
 				deps = append(deps, parts[1])
 			}
-		} else if strings.Contains(line, " ") && !strings.HasPrefix(line, "go ") && !strings.HasPrefix(line, "module ") {
+			continue
+		}
+
+		if line == ")" {
+			inRequire = false
+			continue
+		}
+
+		if inRequire {
+			// Inside require block, each line should be a dependency
 			parts := strings.Fields(line)
 			if len(parts) > 0 {
 				deps = append(deps, parts[0])
@@ -708,16 +853,16 @@ func AnalyzeProject(rootPath string, f *filter.Filter) *ProjectAnalysis {
 			return nil
 		}
 
-		fileType := filter.GetFileType(rel, f)
+		typeInfo := filter.GetFileType(rel, f)
 
 		switch {
-		case strings.HasPrefix(fileType, "entry:"):
+		case typeInfo.IsEntryPoint:
 			analysis.EntryPoints[rel] = "Project entry point"
-		case fileType == "config":
+		case typeInfo.Type == "config":
 			analysis.ConfigFiles[rel] = getConfigDescription(rel)
-		case fileType == "test":
+		case typeInfo.Type == "test":
 			analysis.TestFiles[rel] = "Test suite"
-		case fileType == "doc":
+		case typeInfo.Type == "doc":
 			analysis.Documentation[rel] = getDocDescription(rel)
 		case isCoreFile(rel):
 			analysis.CoreFiles[rel] = getCoreDescription(rel)

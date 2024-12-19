@@ -174,36 +174,147 @@ func (f *Filter) IsExcluded(path string) bool {
 	return false
 }
 
-// GetFileType determines the type of file based on its path
-func GetFileType(path string, f *Filter) string {
+// FileTypeInfo contains detailed information about a file's type and category
+type FileTypeInfo struct {
+	Type         string // Primary type (e.g., source, config, doc)
+	Category     string // Specific category (e.g., go-source, yaml-config)
+	IsTest       bool   // Whether it's a test file
+	IsEntryPoint bool   // Whether it's an entry point
+	Size         int64  // File size in bytes
+}
+
+// GetFileType determines detailed type information for a file
+func GetFileType(path string, f *Filter) FileTypeInfo {
+	info := FileTypeInfo{}
+
 	// First check if the path should be excluded
 	if f != nil && f.IsExcluded(path) {
-		return ""
+		return info
 	}
 
+	// Get file size if possible
+	if stat, err := os.Stat(path); err == nil {
+		info.Size = stat.Size()
+	}
+
+	base := filepath.Base(path)
+	ext := filepath.Ext(path)
+
 	// Check for test files
-	if strings.Contains(path, "_test.go") || strings.Contains(path, "test_") || strings.HasPrefix(path, "test_") {
-		return "test"
+	if strings.Contains(path, "_test.go") || strings.Contains(path, "test_") ||
+		strings.HasPrefix(path, "test_") || strings.HasSuffix(base, ".test.js") ||
+		strings.HasSuffix(base, ".spec.js") || strings.HasSuffix(base, "_test.py") {
+		info.IsTest = true
+		info.Type = "test"
+		info.Category = "test:" + strings.TrimPrefix(ext, ".")
+		return info
 	}
 
 	// Check for entry points
-	base := filepath.Base(path)
-	if base == "main.go" || base == "index.js" || base == "app.py" {
-		return "entry:main"
+	if base == "main.go" || base == "index.js" || base == "app.py" ||
+		base == "index.ts" || base == "app.js" || base == "server.js" {
+		info.IsEntryPoint = true
+		info.Type = "source"
+		info.Category = "entry:" + strings.TrimPrefix(ext, ".")
+		return info
 	}
 
 	// Check for config files
-	switch filepath.Ext(path) {
-	case ".yml", ".yaml", ".json", ".toml", ".ini", ".conf", ".config":
-		return "config"
+	switch ext {
+	case ".yml", ".yaml":
+		info.Type = "config"
+		info.Category = "config:yaml"
+	case ".json":
+		info.Type = "config"
+		info.Category = "config:json"
+	case ".toml":
+		info.Type = "config"
+		info.Category = "config:toml"
+	case ".ini", ".conf", ".config":
+		info.Type = "config"
+		info.Category = "config:ini"
 	}
 
 	// Check for documentation
-	switch filepath.Ext(path) {
-	case ".md", ".txt", ".rst", ".adoc":
-		return "doc"
+	switch ext {
+	case ".md":
+		info.Type = "doc"
+		info.Category = "doc:markdown"
+	case ".txt":
+		info.Type = "doc"
+		info.Category = "doc:text"
+	case ".rst":
+		info.Type = "doc"
+		info.Category = "doc:rst"
+	case ".adoc":
+		info.Type = "doc"
+		info.Category = "doc:asciidoc"
 	}
 
-	// Default to empty string for other files
-	return ""
+	// Check for source code files
+	switch ext {
+	case ".go":
+		info.Type = "source"
+		info.Category = "source:go"
+	case ".js":
+		info.Type = "source"
+		info.Category = "source:javascript"
+	case ".ts":
+		info.Type = "source"
+		info.Category = "source:typescript"
+	case ".jsx", ".tsx":
+		info.Type = "source"
+		info.Category = "source:react"
+	case ".py":
+		info.Type = "source"
+		info.Category = "source:python"
+	case ".java":
+		info.Type = "source"
+		info.Category = "source:java"
+	case ".rb":
+		info.Type = "source"
+		info.Category = "source:ruby"
+	case ".php":
+		info.Type = "source"
+		info.Category = "source:php"
+	case ".rs":
+		info.Type = "source"
+		info.Category = "source:rust"
+	}
+
+	// Check for build and dependency files
+	switch base {
+	case "package.json", "package-lock.json", "yarn.lock":
+		info.Type = "dependency"
+		info.Category = "dep:node"
+	case "go.mod", "go.sum":
+		info.Type = "dependency"
+		info.Category = "dep:go"
+	case "requirements.txt", "Pipfile", "pyproject.toml":
+		info.Type = "dependency"
+		info.Category = "dep:python"
+	case "Gemfile", "Gemfile.lock":
+		info.Type = "dependency"
+		info.Category = "dep:ruby"
+	case "composer.json", "composer.lock":
+		info.Type = "dependency"
+		info.Category = "dep:php"
+	case "Cargo.toml", "Cargo.lock":
+		info.Type = "dependency"
+		info.Category = "dep:rust"
+	}
+
+	// If no specific type was set but we have an extension, mark as source
+	if info.Type == "" && ext != "" {
+		info.Type = "source"
+		info.Category = "source:other"
+	}
+
+	// If still no type, mark as unknown
+	if info.Type == "" {
+		info.Type = "unknown"
+		info.Category = "unknown"
+	}
+
+	return info
 }

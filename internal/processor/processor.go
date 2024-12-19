@@ -16,6 +16,7 @@ import (
 	"github.com/1broseidon/promptext/internal/log"
 	"github.com/1broseidon/promptext/internal/token"
 	"github.com/atotto/clipboard"
+	"github.com/jedib0t/go-pretty/v6/text"
 )
 
 type Config struct {
@@ -254,11 +255,13 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	}, nil
 }
 
-// GetMetadataSummary returns a concise summary of project metadata
-func GetMetadataSummary(config Config, result *ProcessResult) (string, error) {
+// GetMetadataSummary returns a summary of project metadata and analysis
+// If infoOnly is true, returns a rich summary with all details
+// Otherwise returns a minimal summary with basic project info
+func GetMetadataSummary(config Config, result *ProcessResult, infoOnly bool) (string, error) {
 	var content strings.Builder
 
-	// Project name
+	// Project name and language (always shown)
 	if result.ProjectInfo.Metadata != nil && result.ProjectInfo.Metadata.Name != "" {
 		content.WriteString("📦 " + result.ProjectInfo.Metadata.Name)
 	} else {
@@ -266,50 +269,176 @@ func GetMetadataSummary(config Config, result *ProcessResult) (string, error) {
 			content.WriteString("📦 " + filepath.Base(absPath))
 		}
 	}
-
-	// Language if detected
 	if result.ProjectInfo.Metadata != nil && result.ProjectInfo.Metadata.Language != "" {
-		content.WriteString(fmt.Sprintf(" (%s)", result.ProjectInfo.Metadata.Language))
+		content.WriteString(fmt.Sprintf(" (%s", result.ProjectInfo.Metadata.Language))
+		if result.ProjectInfo.Metadata.Version != "" && infoOnly {
+			content.WriteString(fmt.Sprintf(" %s", result.ProjectInfo.Metadata.Version))
+		}
+		content.WriteString(")")
 	}
 
-	content.WriteString("\n")
-
-	// File count
+	// Basic file and token count (always shown)
 	fileCount := len(result.ProjectOutput.Files)
-	content.WriteString(fmt.Sprintf("   Files: %d", fileCount))
-
-	// Token count
+	content.WriteString(fmt.Sprintf("\n   Files: %d", fileCount))
 	if result.TokenCount > 0 {
 		content.WriteString(fmt.Sprintf(" • Tokens: ~%d", result.TokenCount))
 	}
-	content.WriteString("\n")
 
-	// Create bordered output
+	// Only show detailed analysis if infoOnly is true
+	if infoOnly {
+		content.WriteString("\n")
+
+		// File Analysis
+		fileTypes := make(map[string]int)
+		fileCategories := make(map[string]int)
+		var totalSize int64
+		var sourceCount, testCount, configCount, docCount int
+		var entryPoints []string
+
+		// Collect file statistics
+		for _, file := range result.ProjectOutput.Files {
+			typeInfo := filter.GetFileType(file.Path, config.Filter)
+			fileTypes[typeInfo.Type]++
+			fileCategories[typeInfo.Category]++
+			totalSize += typeInfo.Size
+
+			// Count by type
+			switch typeInfo.Type {
+			case "source":
+				sourceCount++
+			case "test":
+				testCount++
+			case "config":
+				configCount++
+			case "doc":
+				docCount++
+			}
+
+			// Track entry points
+			if typeInfo.IsEntryPoint {
+				entryPoints = append(entryPoints, file.Path)
+			}
+		}
+
+		// Display File Distribution
+		content.WriteString("\n   Types: ")
+		first := true
+		for typ, count := range fileTypes {
+			if !first {
+				content.WriteString(" • ")
+			}
+			content.WriteString(fmt.Sprintf("%s: %d", typ, count))
+			first = false
+		}
+		content.WriteString("\n")
+
+		// Display Size Information
+		if totalSize > 0 {
+			content.WriteString(fmt.Sprintf("   Total Size: %s\n", formatSize(totalSize)))
+		}
+
+		// Display Entry Points
+		if len(entryPoints) > 0 {
+			content.WriteString("\n🚪 Entry Points\n")
+			for _, entry := range entryPoints {
+				content.WriteString(fmt.Sprintf("   • %s\n", entry))
+			}
+		}
+
+		// Dependencies
+		if result.ProjectOutput.Metadata != nil && len(result.ProjectOutput.Metadata.Dependencies) > 0 {
+			content.WriteString("\n📚 Dependencies\n")
+			for _, dep := range result.ProjectOutput.Metadata.Dependencies {
+				content.WriteString(fmt.Sprintf("   • %s\n", dep))
+			}
+		}
+
+		// Project Health
+		if result.ProjectInfo.Metadata != nil && result.ProjectInfo.Metadata.Health != nil {
+			health := result.ProjectInfo.Metadata.Health
+			content.WriteString("\n🏥 Project Health\n")
+
+			// Documentation
+			content.WriteString(fmt.Sprintf("   • README: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasReadme]))
+			content.WriteString(fmt.Sprintf("   • LICENSE: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasLicense]))
+
+			// Testing
+			content.WriteString(fmt.Sprintf("   • Tests: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasTests]))
+
+			// CI/CD
+			if health.HasCI {
+				content.WriteString(fmt.Sprintf("   • CI/CD: ✓ (%s)\n", health.CISystem))
+			} else {
+				content.WriteString("   • CI/CD: ✗\n")
+			}
+		}
+
+		// Git Information
+		if result.ProjectOutput.GitInfo != nil {
+			content.WriteString("\n🔄 Git Status\n")
+			content.WriteString(fmt.Sprintf("   Branch: %s\n", result.ProjectOutput.GitInfo.Branch))
+			if result.ProjectOutput.GitInfo.CommitHash != "" {
+				shortHash := result.ProjectOutput.GitInfo.CommitHash
+				if len(shortHash) > 7 {
+					shortHash = shortHash[:7]
+				}
+				content.WriteString(fmt.Sprintf("   Latest: %s", shortHash))
+				if result.ProjectOutput.GitInfo.CommitMessage != "" {
+					content.WriteString(fmt.Sprintf(" - %s", result.ProjectOutput.GitInfo.CommitMessage))
+				}
+				content.WriteString("\n")
+			}
+		}
+	}
+
+	// Get content lines and find max width
 	contentLines := strings.Split(strings.TrimRight(content.String(), "\n"), "\n")
 	maxWidth := 0
 	for _, line := range contentLines {
-		if len(line) > maxWidth {
-			maxWidth = len(line)
+		width := text.RuneCount(line)
+		if width > maxWidth {
+			maxWidth = width
 		}
 	}
+
+	// Add padding to max width
+	maxWidth += 4 // 2 spaces on each side
 
 	var summary strings.Builder
 	summary.WriteString("\033[32m") // Start green color
 
 	// Top border
-	summary.WriteString("╭" + strings.Repeat("─", maxWidth+4) + "╮\n")
+	summary.WriteString("╭" + strings.Repeat("─", maxWidth) + "╮\n")
 
-	// Content lines with borders
+	// Content lines
 	for _, line := range contentLines {
-		paddedLine := line + strings.Repeat(" ", maxWidth-len(line))
-		summary.WriteString("│ " + paddedLine + "     │\n")
+		// Calculate padding needed
+		lineWidth := text.RuneCount(line)
+		padding := maxWidth - lineWidth
+
+		// Write line with padding
+		summary.WriteString("│ " + line + strings.Repeat(" ", padding-2) + " │\n")
 	}
 
 	// Bottom border
-	summary.WriteString("╰" + strings.Repeat("─", maxWidth+4) + "╯")
+	summary.WriteString("╰" + strings.Repeat("─", maxWidth) + "╯")
 	summary.WriteString("\033[0m") // Reset color
 
 	return summary.String(), nil
+}
+
+// formatSize converts bytes to human readable string
+func formatSize(bytes int64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
 
 // Run executes the promptext tool with the given configuration
@@ -379,7 +508,7 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 	}
 
 	// Get metadata summary using the already processed result
-	info, err := GetMetadataSummary(procConfig, result)
+	info, err := GetMetadataSummary(procConfig, result, infoOnly)
 	if err != nil {
 		return fmt.Errorf("error getting project info: %v", err)
 	}
