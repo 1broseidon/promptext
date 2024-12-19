@@ -148,7 +148,27 @@ try {
     Invoke-WebRequest -Uri $downloadUrl -OutFile $zipPath -UseBasicParsing
 
     Write-Status "Extracting files..."
-    Expand-Archive -Path $zipPath -DestinationPath $defaultInstallDir -Force
+    # Create a temporary directory for safe extraction
+    $tempExtractDir = Join-Path $env:TEMP "promptext_extract"
+    if (Test-Path $tempExtractDir) {
+        Remove-Item -Path $tempExtractDir -Recurse -Force
+    }
+    New-Item -ItemType Directory -Path $tempExtractDir | Out-Null
+    
+    # Extract to temp directory first
+    Expand-Archive -Path $zipPath -DestinationPath $tempExtractDir -Force
+    
+    # Find and move the executable, ignoring problematic paths
+    $exeFile = Get-ChildItem -Path $tempExtractDir -Recurse -Filter "promptext.exe" | Select-Object -First 1
+    if (-not $exeFile) {
+        throw "Could not find promptext.exe in the downloaded archive"
+    }
+    
+    # Move the executable to the installation directory
+    Copy-Item -Path $exeFile.FullName -Destination (Join-Path $defaultInstallDir "promptext.exe") -Force
+    
+    # Cleanup
+    Remove-Item -Path $tempExtractDir -Recurse -Force
     Remove-Item $zipPath
 
     # Add to PATH
