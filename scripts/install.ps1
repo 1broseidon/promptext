@@ -148,28 +148,33 @@ try {
     Invoke-WebRequest -Uri $downloadUrl -OutFile $zipPath -UseBasicParsing
 
     Write-Status "Extracting files..."
-    # Create a temporary directory for safe extraction
-    $tempExtractDir = Join-Path $env:TEMP "promptext_extract"
-    if (Test-Path $tempExtractDir) {
-        Remove-Item -Path $tempExtractDir -Recurse -Force
+    try {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $zip = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
+        
+        # Find the executable entry
+        $exeEntry = $zip.Entries | Where-Object { 
+            $_.Name -eq "promptext.exe" -and 
+            -not $_.FullName.Contains("../") -and
+            -not $_.FullName.StartsWith("/")
+        } | Select-Object -First 1
+        
+        if (-not $exeEntry) {
+            throw "Could not find valid promptext.exe in the archive"
+        }
+        
+        # Extract the executable
+        $exePath = Join-Path $defaultInstallDir "promptext.exe"
+        [System.IO.Compression.ZipFileExtensions]::ExtractToFile($exeEntry, $exePath, $true)
+        
+    } catch {
+        throw "Failed to extract executable: $_"
+    } finally {
+        if ($zip) {
+            $zip.Dispose()
+        }
+        Remove-Item $zipPath -ErrorAction SilentlyContinue
     }
-    New-Item -ItemType Directory -Path $tempExtractDir | Out-Null
-    
-    # Extract to temp directory first
-    Expand-Archive -Path $zipPath -DestinationPath $tempExtractDir -Force
-    
-    # Find and move the executable, ignoring problematic paths
-    $exeFile = Get-ChildItem -Path $tempExtractDir -Recurse -Filter "promptext.exe" | Select-Object -First 1
-    if (-not $exeFile) {
-        throw "Could not find promptext.exe in the downloaded archive"
-    }
-    
-    # Move the executable to the installation directory
-    Copy-Item -Path $exeFile.FullName -Destination (Join-Path $defaultInstallDir "promptext.exe") -Force
-    
-    # Cleanup
-    Remove-Item -Path $tempExtractDir -Recurse -Force
-    Remove-Item $zipPath
 
     # Add to PATH
     $binPath = $defaultInstallDir
