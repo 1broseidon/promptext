@@ -79,6 +79,7 @@ SKIP_ALIAS=false
 SKIP_VERIFY=false
 install_user_level=false
 INSTALL_PATH="$INSTALL_DIR"
+alias_updated=false                   # Initialize alias status
 
 # Shell configuration files to check (ordered by preference)
 SHELL_CONFIGS=(
