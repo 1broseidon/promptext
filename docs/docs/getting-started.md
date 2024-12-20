@@ -27,30 +27,45 @@ sidebar_position: 2
 **Linux/macOS**:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
+# User installation (recommended)
+curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash --user
+
+# System-wide installation (requires sudo)
+curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | sudo bash
+
+# Additional options
+curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash --help
 ```
+
+The Linux/macOS installer provides:
+- User-level or system-wide installation
+- Custom installation directory support
+- Automatic checksum verification
+- Shell-specific alias configuration
+- Clean uninstallation
+- HTTPS security options
 
 **Windows (PowerShell)**:
 
 ```powershell
-# System-wide installation (Run as Administrator)
-irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
-
-# User installation (Regular PowerShell)
+# User installation (recommended)
 irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex -UserInstall
 
-# Uninstall (Run with same privileges as installation)
+# System-wide installation (requires admin)
+irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
+
+# Uninstall
 irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex -Uninstall
 ```
 
-The Windows installer provides:
-
-- Automatic checksum verification
-- PowerShell execution policy handling
-- System-wide or user-only installation
-- PATH environment configuration
-- Command alias creation (prx)
-- Clean uninstallation
+Both installers provide:
+- ✨ Automatic checksum verification
+- 🔒 Security policy handling
+- 👤 User-level or system-wide installation
+- 🔄 Clean uninstallation process
+- 📁 Custom installation directory support
+- ⚡ PATH environment configuration
+- 💫 Command alias creation (prx)
 
 2. Using Go Install:
 

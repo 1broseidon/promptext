@@ -29,26 +29,38 @@ promptext is an intelligent code context extraction tool designed specifically f
 **Linux/macOS**:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
+# User installation (recommended)
+curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash --user
+
+# More options
+curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash --help
 ```
 
 **Windows (PowerShell)**:
 
 ```powershell
-irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
+# User installation (recommended)
+irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex -UserInstall
 ```
 
-**Using Go**:
+**Using Go** (alternative):
 
 ```bash
 go install github.com/1broseidon/promptext/cmd/promptext@latest
 ```
 
-### Windows Installation Options
+### Installation Features
 
-- **System-wide installation (requires admin)**: Run PowerShell as Administrator and use the command above
-- **User installation**: Add `-UserInstall` flag to install for current user only
-- **Manual installation**: Download the Windows binary from the [releases page](https://github.com/1broseidon/promptext/releases)
+Both installers provide:
+- ✨ User-level or system-wide installation
+- 🔒 Automatic checksum verification
+- 📁 Custom installation directory support
+- ⚡ PATH environment configuration
+- 💫 Shell alias creation (prx)
+- 🔄 Clean uninstallation
+- 🛡️ Security policy handling
+
+For manual installation, download binaries from the [releases page](https://github.com/1broseidon/promptext/releases)
 
 ## Basic Usage
 
