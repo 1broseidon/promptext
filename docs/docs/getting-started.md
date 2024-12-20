@@ -26,24 +26,21 @@ sidebar_position: 2
 **Linux/macOS**:
 
 ```bash
-# User installation (recommended)
-curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash --user
-
-# System-wide installation (requires sudo)
-curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | sudo bash
+# Install
+curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
 
 # Additional options
-curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash --help
+curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash -h
 ```
 
 The Linux/macOS installer provides:
 
-- User-level or system-wide installation
-- Custom installation directory support
-- Automatic checksum verification
-- Shell-specific alias configuration
-- Clean uninstallation
-- HTTPS security options
+- 🏠 User-level installation in ~/.local/bin
+- 🔒 Automatic checksum verification
+- 📁 Custom installation directory support
+- ⚡ PATH environment configuration
+- 💫 Shell alias configuration
+- 🔄 Clean uninstallation
 
 **Windows (PowerShell)**:
 
@@ -55,23 +52,13 @@ irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.
 irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex -Uninstall
 ```
 
-The installers provide:
+Both installers provide:
 
-Linux/macOS:
-
-- ✨ User-level or system-wide installation
+- 🏠 User-level installation (in ~/.local/bin or %LOCALAPPDATA%)
 - 🔒 Automatic checksum verification
 - 📁 Custom installation directory support
 - ⚡ PATH environment configuration
-- 💫 Shell alias configuration
-- 🔄 Clean uninstallation
-
-Windows:
-
-- 🏠 User-level installation in %LOCALAPPDATA%
-- 🔒 Automatic checksum verification
-- ⚡ User PATH configuration
-- 💫 PowerShell alias creation (prx)
+- 💫 Shell/PowerShell alias creation (prx)
 - 🔄 Clean uninstallation
 
 2. Using Go Install:
@@ -88,7 +75,8 @@ Download the appropriate binary for your platform from the [releases page](https
 
 - Download the appropriate binary
 - Make it executable: `chmod +x promptext`
-- Move to PATH: `sudo mv promptext /usr/local/bin/`
+- Create directory: `mkdir -p ~/.local/bin`
+- Move to PATH: `mv promptext ~/.local/bin/`
 
 **Windows**:
 

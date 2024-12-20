@@ -13,16 +13,14 @@ Usage: $0 [options]
 
 Options:
     -h, --help              Show this help message
-    -d, --dir DIR          Install to specific directory (default: /usr/local/bin)
+    -d, --dir DIR          Install to specific directory (default: ~/.local/bin)
     -u, --uninstall        Uninstall promptext
-    --user                 Install for current user only (no sudo required)
     --no-alias             Skip alias creation
     --no-verify            Skip checksum verification (not recommended)
     --insecure            Skip HTTPS certificate validation (not recommended)
 
 Examples:
-    $0                     # Install system-wide (requires sudo)
-    $0 --user             # Install for current user only
+    $0                     # Install to ~/.local/bin
     $0 --dir ~/bin        # Install to custom directory
     $0 --uninstall        # Uninstall promptext
 EOF
@@ -42,10 +40,6 @@ parse_args() {
                 ;;
             -u|--uninstall)
                 DO_UNINSTALL=true
-                ;;
-            --user)
-                install_user_level=true
-                INSTALL_PATH="$USER_INSTALL_DIR"
                 ;;
             --no-alias)
                 SKIP_ALIAS=true
@@ -71,14 +65,11 @@ parse_args() {
 OWNER="1broseidon"
 REPO="promptext"
 BINARY_NAME="promptext"
-INSTALL_DIR="/usr/local/bin"          # Default system-wide install
-USER_INSTALL_DIR="$HOME/.local/bin"   # Default user-level install
+INSTALL_DIR="$HOME/.local/bin"        # Default installation directory
 CURL_OPTS="-fsSL --tlsv1.2"
 DO_UNINSTALL=false
 SKIP_ALIAS=false
 SKIP_VERIFY=false
-install_user_level=false
-INSTALL_PATH="$INSTALL_DIR"
 alias_updated=false                   # Initialize alias status
 
 # Shell configuration files to check (ordered by preference)
@@ -118,33 +109,6 @@ write_status() {
     fi
 }
 
-# Function to check if we have sudo access
-check_sudo_access() {
-    if sudo -n true 2>/dev/null; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-# Function to confirm sudo usage
-confirm_sudo() {
-    local action="$1"
-    echo "⚠️  This operation requires sudo to $action"
-    
-    if ! check_sudo_access; then
-        echo "Error: This operation requires sudo privileges." >&2
-        echo "Please run with sudo or use --user flag for user-level installation." >&2
-        exit 1
-    fi
-    
-    read -p "Continue? [y/N] " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Operation cancelled by user" >&2
-        exit 1
-    fi
-}
 
 # Check for required dependencies
 check_dependencies() {
@@ -255,25 +219,11 @@ verify_checksum() {
 uninstall_promptext() {
     write_status "Uninstalling promptext..."
 
-    local install_path
-    if [ "$install_user_level" = true ]; then
-        install_path="$USER_INSTALL_DIR/$BINARY_NAME"
-    else
-        install_path="$INSTALL_DIR/$BINARY_NAME"
+    if [ -f "$INSTALL_DIR/$BINARY_NAME" ]; then
+        rm -f "$INSTALL_DIR/$BINARY_NAME"
     fi
 
-    if [ -f "$install_path" ]; then
-        if [ "$install_user_level" = false ]; then
-            if [ ! -w "$install_path" ]; then
-                confirm_sudo "uninstall from $install_path"
-            fi
-            sudo rm -f "$install_path"
-        else
-            rm -f "$install_path"
-        fi
-    fi
-
-    # Remove alias (simplified, can be improved)
+    # Remove alias
     sed -i '/alias prx=promptext/d' ~/.bashrc 2>/dev/null
     sed -i '/alias prx=promptext/d' ~/.zshrc 2>/dev/null
 
@@ -286,24 +236,12 @@ install_promptext() {
     write_status "Installing promptext..."
     write_status "OS: $OS"
     write_status "Architecture: $ARCH"
-    write_status "Installation directory: $INSTALL_PATH"
-
-    # Early check for sudo if needed
-    if [ "$install_user_level" = false ]; then
-        if [ ! -w "$INSTALL_PATH" ]; then
-            confirm_sudo "install to $INSTALL_PATH"
-        fi
-    fi
-
-    # Check installation directory permissions
-    if [ ! -w "$(dirname "$INSTALL_PATH")" ] && [ "$install_user_level" = false ]; then
-        confirm_sudo "install to $INSTALL_PATH"
-    fi
+    write_status "Installation directory: $INSTALL_DIR"
 
     # Create installation directory
-    if [ ! -d "$INSTALL_PATH" ]; then
-        mkdir -p "$INSTALL_PATH" || {
-            echo "Error: Failed to create installation directory. Try using --user or sudo." >&2
+    if [ ! -d "$INSTALL_DIR" ]; then
+        mkdir -p "$INSTALL_DIR" || {
+            echo "Error: Failed to create installation directory." >&2
             exit 1
         }
     fi
@@ -334,27 +272,27 @@ install_promptext() {
 
     # Install binary
     write_status "Installing binary..."
-    if [ -f "$INSTALL_PATH/$BINARY_NAME" ]; then
+    if [ -f "$INSTALL_DIR/$BINARY_NAME" ]; then
         write_status "Removing existing installation..."
-        if [ "$install_user_level" = false ]; then
-            confirm_sudo "remove existing installation"
-            sudo rm -f "$INSTALL_PATH/$BINARY_NAME"
-        else
-            rm -f "$INSTALL_PATH/$BINARY_NAME"
-        fi
+        rm -f "$INSTALL_DIR/$BINARY_NAME"
     fi
 
-    if [ "$install_user_level" = false ]; then
-        sudo mv promptext "$INSTALL_PATH/"
-        sudo chmod +x "$INSTALL_PATH/$BINARY_NAME"
-    else
-        mv promptext "$INSTALL_PATH/"
-        chmod +x "$INSTALL_PATH/$BINARY_NAME"
+    mv promptext "$INSTALL_DIR/"
+    chmod +x "$INSTALL_DIR/$BINARY_NAME"
+
+    # Add to PATH if needed
+    if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
+        echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >> "$HOME/.bashrc"
+        echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >> "$HOME/.zshrc"
+        write_status "Added $INSTALL_DIR to PATH"
     fi
 
-    echo "Installation complete!"
-    echo "Add '$INSTALL_PATH' to your PATH and create an alias if desired."
-    echo "Example: export PATH=\"\$PATH:$INSTALL_PATH\" && alias prx=\"$BINARY_NAME\""
+    # Add alias
+    if [ "$SKIP_ALIAS" = false ]; then
+        echo "alias prx='$BINARY_NAME'" >> "$HOME/.bashrc"
+        echo "alias prx='$BINARY_NAME'" >> "$HOME/.zshrc"
+        write_status "Added 'prx' alias"
+    fi
 
     # Verify installation
     if command -v "$BINARY_NAME" >/dev/null 2>&1; then
@@ -363,15 +301,12 @@ install_promptext() {
         write_status "Installation verified: $version"
     else
         echo "⚠️  Warning: Installation completed but binary not found in PATH" >&2
-        echo "Try restarting your terminal or adding '$INSTALL_PATH' to your PATH" >&2
+        echo "Try restarting your terminal or run:" >&2
+        echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >&2
     fi
 
     echo "✨ Installation complete!"
-    if [ "$SKIP_ALIAS" = false ] && [ "$alias_updated" = true ]; then
-        echo "You can use either '$BINARY_NAME' or 'prx' command after restarting your terminal."
-    else
-        echo "You can use the '$BINARY_NAME' command after restarting your terminal."
-    fi
+    echo "You can use either '$BINARY_NAME' or 'prx' command after restarting your terminal."
     echo "To uninstall, run: $0 --uninstall"
 }
 

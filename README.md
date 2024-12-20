@@ -29,11 +29,11 @@ promptext is an intelligent code context extraction tool designed specifically f
 **Linux/macOS**:
 
 ```bash
-# User installation (recommended)
-curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash --user
+# Install
+curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
 
 # More options
-curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash --help
+curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash -h
 ```
 
 **Windows (PowerShell)**:
@@ -54,7 +54,7 @@ The installers provide:
 
 Linux/macOS:
 
-- ✨ User-level or system-wide installation
+- 🏠 User-level installation in ~/.local/bin
 - 🔒 Automatic checksum verification
 - 📁 Custom installation directory support
 - ⚡ PATH environment configuration
