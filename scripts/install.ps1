@@ -86,16 +86,19 @@ function Uninstall-Promptext {
     
     # Remove installation directory
     if (Test-Path $defaultInstallDir) {
+        if (-not $UserInstall) {
+            # Need admin rights to remove from Program Files
+            $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+            if (-not $isAdmin) {
+                throw "Administrator rights required to uninstall from $defaultInstallDir. Run as administrator or use -UserInstall."
+            }
+        }
         Remove-Item -Path $defaultInstallDir -Recurse -Force
     }
     
     # Remove alias from profile
-    $aliasPath = if ($UserInstall) {
-        Join-Path $env:USERPROFILE "Documents\WindowsPowerShell"
-    } else {
-        "$env:SystemRoot\System32\WindowsPowerShell\v1.0"
-    }
-    $profilePath = Join-Path $aliasPath "Microsoft.PowerShell_profile.ps1"
+    $profileType = if ($UserInstall) { "CurrentUserCurrentHost" } else { "AllUsersAllHosts" }
+    $profilePath = $PROFILE.$profileType
     
     if (Test-Path $profilePath) {
         $content = Get-Content $profilePath | Where-Object { $_ -notmatch "Set-Alias.*prx.*promptext" }
@@ -217,10 +220,33 @@ try {
         Remove-Item $zipPath -ErrorAction SilentlyContinue
     }
 
-    Write-Host "`nInstallation complete!"
-    Write-Host "Add $defaultInstallDir to your PATH and optionally create an alias in your PowerShell profile:"
-    Write-Host "   [Environment]::SetEnvironmentVariable(\"Path\", `$( [Environment]::GetEnvironmentVariable(\"Path\", \"User\") + \";$defaultInstallDir\" ), \"User\")"
-    Write-Host "   Set-Alias prx \"$defaultInstallDir\\promptext.exe\""
+    # Update PATH
+    $envTarget = if ($UserInstall) { "User" } else { "Machine" }
+    $currentPath = [Environment]::GetEnvironmentVariable("Path", $envTarget)
+    if (-not ($currentPath -like "*$defaultInstallDir*")) {
+        $newPath = "$currentPath;$defaultInstallDir"
+        [Environment]::SetEnvironmentVariable("Path", $newPath, $envTarget)
+        $env:Path = "$env:Path;$defaultInstallDir"
+        Write-Status "Added $defaultInstallDir to $envTarget PATH"
+    }
+
+    # Add alias to PowerShell profile
+    $profileType = if ($UserInstall) { "CurrentUserCurrentHost" } else { "AllUsersAllHosts" }
+    $profilePath = $PROFILE.$profileType
+    $profileDir = Split-Path $profilePath -Parent
+
+    if (-not (Test-Path $profileDir)) {
+        New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
+    }
+    if (-not (Test-Path $profilePath)) {
+        New-Item -ItemType File -Path $profilePath -Force | Out-Null
+    }
+
+    $aliasLine = "Set-Alias prx '$defaultInstallDir\promptext.exe'"
+    if (-not (Select-String -Path $profilePath -Pattern "Set-Alias.*prx.*promptext" -Quiet)) {
+        Add-Content -Path $profilePath -Value $aliasLine
+        Write-Status "Added 'prx' alias to PowerShell profile"
+    }
 
     # Verify installation
     $promptextPath = Join-Path $defaultInstallDir "promptext.exe"
