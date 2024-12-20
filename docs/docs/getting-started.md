@@ -17,7 +17,6 @@ sidebar_position: 2
 - **Linux/macOS**: No additional requirements
 - **Windows**:
   - PowerShell 5.1 or higher
-  - Administrator rights (for system-wide installation) or user account (for user installation)
 - **Go Installation**: Go 1.22 or higher (if installing via `go install`)
 
 ### Installation Methods
@@ -38,6 +37,7 @@ curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/in
 ```
 
 The Linux/macOS installer provides:
+
 - User-level or system-wide installation
 - Custom installation directory support
 - Automatic checksum verification
@@ -48,24 +48,31 @@ The Linux/macOS installer provides:
 **Windows (PowerShell)**:
 
 ```powershell
-# User installation (recommended)
-irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex -UserInstall
-
-# System-wide installation (requires admin)
+# Install
 irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
 
 # Uninstall
 irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex -Uninstall
 ```
 
-Both installers provide:
-- ✨ Automatic checksum verification
-- 🔒 Security policy handling
-- 👤 User-level or system-wide installation
-- 🔄 Clean uninstallation process
+The installers provide:
+
+Linux/macOS:
+
+- ✨ User-level or system-wide installation
+- 🔒 Automatic checksum verification
 - 📁 Custom installation directory support
 - ⚡ PATH environment configuration
-- 💫 Command alias creation (prx)
+- 💫 Shell alias configuration
+- 🔄 Clean uninstallation
+
+Windows:
+
+- 🏠 User-level installation in %LOCALAPPDATA%
+- 🔒 Automatic checksum verification
+- ⚡ User PATH configuration
+- 💫 PowerShell alias creation (prx)
+- 🔄 Clean uninstallation
 
 2. Using Go Install:
 
@@ -86,10 +93,10 @@ Download the appropriate binary for your platform from the [releases page](https
 **Windows**:
 
 - Download the Windows binary (ZIP file)
-- Extract to a directory (e.g., `C:\Program Files\promptext` or `%LOCALAPPDATA%\promptext`)
+- Extract to a directory (e.g., `%LOCALAPPDATA%\promptext`)
 - Add the directory to your PATH:
   - System Settings > Advanced > Environment Variables
-  - Edit the PATH variable
+  - Edit the User PATH variable
   - Add the installation directory
 
 ## Usage

@@ -1,7 +1,6 @@
 #Requires -Version 5.1
 [CmdletBinding()]
 param (
-    [switch]$UserInstall,
     [string]$Version = "latest",
     [switch]$Uninstall
 )
@@ -13,11 +12,7 @@ $ProgressPreference = "SilentlyContinue"
 $owner = "1broseidon"
 $repo = "promptext"
 $binaryName = "promptext.exe"
-$defaultInstallDir = if ($UserInstall) {
-    Join-Path $env:LOCALAPPDATA "promptext"
-} else {
-    Join-Path ${env:ProgramFiles} "promptext"
-}
+$defaultInstallDir = Join-Path $env:LOCALAPPDATA "promptext"
 
 function Write-Status {
     param([string]$Message)
@@ -74,35 +69,22 @@ function Uninstall-Promptext {
     Write-Status "Uninstalling promptext..."
     
     # Remove from PATH
-    $envTarget = if ($UserInstall) { "User" } else { "Machine" }
-    $currentPath = [Environment]::GetEnvironmentVariable("Path", $envTarget)
-    $binPath = $defaultInstallDir
-    
-    if ($currentPath -like "*$binPath*") {
-        $newPath = ($currentPath.Split(';') | Where-Object { $_ -ne $binPath }) -join ';'
-        [Environment]::SetEnvironmentVariable("Path", $newPath, $envTarget)
-        $env:Path = ($env:Path.Split(';') | Where-Object { $_ -ne $binPath }) -join ';'
+    $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    if ($currentPath -like "*$defaultInstallDir*") {
+        $newPath = ($currentPath.Split(';') | Where-Object { $_ -ne $defaultInstallDir }) -join ';'
+        [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+        $env:Path = ($env:Path.Split(';') | Where-Object { $_ -ne $defaultInstallDir }) -join ';'
     }
     
     # Remove installation directory
     if (Test-Path $defaultInstallDir) {
-        if (-not $UserInstall) {
-            # Need admin rights to remove from Program Files
-            $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-            if (-not $isAdmin) {
-                throw "Administrator rights required to uninstall from $defaultInstallDir. Run as administrator or use -UserInstall."
-            }
-        }
         Remove-Item -Path $defaultInstallDir -Recurse -Force
     }
     
     # Remove alias from profile
-    $profileType = if ($UserInstall) { "CurrentUserCurrentHost" } else { "AllUsersAllHosts" }
-    $profilePath = $PROFILE.$profileType
-    
-    if (Test-Path $profilePath) {
-        $content = Get-Content $profilePath | Where-Object { $_ -notmatch "Set-Alias.*prx.*promptext" }
-        Set-Content -Path $profilePath -Value $content
+    if (Test-Path $PROFILE.CurrentUserCurrentHost) {
+        $content = Get-Content $PROFILE.CurrentUserCurrentHost | Where-Object { $_ -notmatch "Set-Alias.*prx.*promptext" }
+        Set-Content -Path $PROFILE.CurrentUserCurrentHost -Value $content
     }
     
     Write-Host "Promptext has been uninstalled successfully." -ForegroundColor Green
@@ -166,14 +148,6 @@ try {
     Write-Status "Architecture: $($osInfo.Arch)"
     Write-Status "Installation directory: $defaultInstallDir"
 
-    # Check for admin rights if not user install
-    if (-not $UserInstall) {
-        $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-        if (-not $isAdmin) {
-            throw "Administrator rights required. Run as administrator or use -UserInstall for current user installation."
-        }
-    }
-
     # Create install directory
     if (-not (Test-Path $defaultInstallDir)) {
         New-Item -ItemType Directory -Path $defaultInstallDir | Out-Null
@@ -221,30 +195,26 @@ try {
     }
 
     # Update PATH
-    $envTarget = if ($UserInstall) { "User" } else { "Machine" }
-    $currentPath = [Environment]::GetEnvironmentVariable("Path", $envTarget)
+    $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
     if (-not ($currentPath -like "*$defaultInstallDir*")) {
         $newPath = "$currentPath;$defaultInstallDir"
-        [Environment]::SetEnvironmentVariable("Path", $newPath, $envTarget)
+        [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
         $env:Path = "$env:Path;$defaultInstallDir"
-        Write-Status "Added $defaultInstallDir to $envTarget PATH"
+        Write-Status "Added $defaultInstallDir to PATH"
     }
 
     # Add alias to PowerShell profile
-    $profileType = if ($UserInstall) { "CurrentUserCurrentHost" } else { "AllUsersAllHosts" }
-    $profilePath = $PROFILE.$profileType
-    $profileDir = Split-Path $profilePath -Parent
-
+    $profileDir = Split-Path $PROFILE.CurrentUserCurrentHost -Parent
     if (-not (Test-Path $profileDir)) {
         New-Item -ItemType Directory -Path $profileDir -Force | Out-Null
     }
-    if (-not (Test-Path $profilePath)) {
-        New-Item -ItemType File -Path $profilePath -Force | Out-Null
+    if (-not (Test-Path $PROFILE.CurrentUserCurrentHost)) {
+        New-Item -ItemType File -Path $PROFILE.CurrentUserCurrentHost -Force | Out-Null
     }
 
     $aliasLine = "Set-Alias prx '$defaultInstallDir\promptext.exe'"
-    if (-not (Select-String -Path $profilePath -Pattern "Set-Alias.*prx.*promptext" -Quiet)) {
-        Add-Content -Path $profilePath -Value $aliasLine
+    if (-not (Select-String -Path $PROFILE.CurrentUserCurrentHost -Pattern "Set-Alias.*prx.*promptext" -Quiet)) {
+        Add-Content -Path $PROFILE.CurrentUserCurrentHost -Value $aliasLine
         Write-Status "Added 'prx' alias to PowerShell profile"
     }
 

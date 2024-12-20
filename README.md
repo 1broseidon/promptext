@@ -39,8 +39,7 @@ curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/in
 **Windows (PowerShell)**:
 
 ```powershell
-# User installation (recommended)
-irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex -UserInstall
+irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
 ```
 
 **Using Go** (alternative):
@@ -51,14 +50,24 @@ go install github.com/1broseidon/promptext/cmd/promptext@latest
 
 ### Installation Features
 
-Both installers provide:
+The installers provide:
+
+Linux/macOS:
+
 - ✨ User-level or system-wide installation
 - 🔒 Automatic checksum verification
 - 📁 Custom installation directory support
 - ⚡ PATH environment configuration
-- 💫 Shell alias creation (prx)
+- 💫 Shell alias configuration
 - 🔄 Clean uninstallation
-- 🛡️ Security policy handling
+
+Windows:
+
+- 🏠 User-level installation in %LOCALAPPDATA%
+- 🔒 Automatic checksum verification
+- ⚡ User PATH configuration
+- 💫 PowerShell alias creation (prx)
+- 🔄 Clean uninstallation
 
 For manual installation, download binaries from the [releases page](https://github.com/1broseidon/promptext/releases)
 
