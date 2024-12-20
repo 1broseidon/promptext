@@ -351,41 +351,9 @@ install_promptext() {
         chmod +x "$INSTALL_PATH/$BINARY_NAME"
     fi
 
-    # Update PATH if needed
-    if [ "$install_user_level" = true ]; then
-        write_status "Updating PATH..."
-        local path_updated=false
-        for config in "${SHELL_CONFIGS[@]}"; do
-            if [ -f "$config" ]; then
-                if ! grep -q "export PATH=.*:$INSTALL_PATH" "$config"; then
-                    echo "export PATH=\"\$PATH:$INSTALL_PATH\"" >> "$config"
-                    path_updated=true
-                    break
-                fi
-            fi
-        done
-        if [ "$path_updated" = false ]; then
-            echo "⚠️  Warning: Could not update PATH. Add '$INSTALL_PATH' to your PATH manually." >&2
-        fi
-    fi
-
-    # Create alias if requested
-    if [ "$SKIP_ALIAS" = false ]; then
-        write_status "Creating alias..."
-        local alias_updated=false
-        for config in "${SHELL_CONFIGS[@]}"; do
-            if [ -f "$config" ]; then
-                if ! grep -q "alias prx=$BINARY_NAME" "$config"; then
-                    echo "alias prx=$BINARY_NAME" >> "$config"
-                    alias_updated=true
-                    break
-                fi
-            fi
-        done
-        if [ "$alias_updated" = false ]; then
-            echo "⚠️  Warning: Could not create alias. You can still use '$BINARY_NAME' directly." >&2
-        fi
-    fi
+    echo "Installation complete!"
+    echo "Add '$INSTALL_PATH' to your PATH and create an alias if desired."
+    echo "Example: export PATH=\"\$PATH:$INSTALL_PATH\" && alias prx=\"$BINARY_NAME\""
 
     # Verify installation
     if command -v "$BINARY_NAME" >/dev/null 2>&1; then

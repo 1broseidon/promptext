@@ -217,40 +217,10 @@ try {
         Remove-Item $zipPath -ErrorAction SilentlyContinue
     }
 
-    # Add to PATH
-    $binPath = $defaultInstallDir
-    $envTarget = if ($UserInstall) { "User" } else { "Machine" }
-    $currentPath = [Environment]::GetEnvironmentVariable("Path", $envTarget)
-    
-    if ($currentPath -notlike "*$binPath*") {
-        Write-Status "Adding to PATH..."
-        $newPath = "$currentPath;$binPath"
-        [Environment]::SetEnvironmentVariable("Path", $newPath, $envTarget)
-        $env:Path = "$env:Path;$binPath"
-    }
-
-    # Create alias
-    Write-Status "Creating alias..."
-    $aliasPath = if ($UserInstall) {
-        Join-Path $env:USERPROFILE "Documents\WindowsPowerShell"
-    } else {
-        "$env:SystemRoot\System32\WindowsPowerShell\v1.0"
-    }
-    
-    if (-not (Test-Path $aliasPath)) {
-        New-Item -ItemType Directory -Path $aliasPath -Force | Out-Null
-    }
-
-    $profilePath = Join-Path $aliasPath "Microsoft.PowerShell_profile.ps1"
-    $aliasContent = "Set-Alias -Name prx -Value promptext.exe"
-    
-    if (Test-Path $profilePath) {
-        if (-not (Get-Content $profilePath | Select-String "Set-Alias.*prx.*promptext")) {
-            Add-Content -Path $profilePath -Value "`n$aliasContent"
-        }
-    } else {
-        Set-Content -Path $profilePath -Value $aliasContent
-    }
+    Write-Host "`nInstallation complete!"
+    Write-Host "Add $defaultInstallDir to your PATH and optionally create an alias in your PowerShell profile:"
+    Write-Host "   [Environment]::SetEnvironmentVariable(\"Path\", `$( [Environment]::GetEnvironmentVariable(\"Path\", \"User\") + \";$defaultInstallDir\" ), \"User\")"
+    Write-Host "   Set-Alias prx \"$defaultInstallDir\\promptext.exe\""
 
     # Verify installation
     $promptextPath = Join-Path $defaultInstallDir "promptext.exe"
