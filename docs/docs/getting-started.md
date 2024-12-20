@@ -25,11 +25,15 @@ sidebar_position: 2
 
 **Linux/macOS**:
 
-```bash
-# Install
-curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
+Install:
 
-# Additional options
+```bash
+curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
+```
+
+Additional options:
+
+```bash
 curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash -h
 ```
 
@@ -44,11 +48,15 @@ The Linux/macOS installer provides:
 
 **Windows (PowerShell)**:
 
-```powershell
-# Install
-irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
+Install:
 
-# Uninstall
+```powershell
+irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
+```
+
+Uninstall:
+
+```powershell
 irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex -Uninstall
 ```
 

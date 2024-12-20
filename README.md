@@ -4,7 +4,7 @@
 
 📝 Smart code context extractor for AI assistants
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/1broseidon/promptext?prx=v0.2.3)](https://goreportcard.com/report/github.com/1broseidon/promptext)
+[![Go Report Card](https://goreportcard.com/badge/github.com/1broseidon/promptext?prx=v0.2.6)](https://goreportcard.com/report/github.com/1broseidon/promptext)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://img.shields.io/github/release/1broseidon/promptext.svg)](https://github.com/1broseidon/promptext/releases/latest)
 [![Documentation](https://img.shields.io/badge/docs-docusaurus-blue)](https://1broseidon.github.io/promptext/)
@@ -24,52 +24,27 @@ promptext is an intelligent code context extraction tool designed specifically f
 - 🔄 Git repository information extraction
 - ⚡ Performance monitoring and debug logging
 
-## Quick Install
+## Install
 
-**Linux/macOS**:
+Linux/macOS:
 
 ```bash
-# Install
 curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
-
-# More options
-curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash -h
 ```
 
-**Windows (PowerShell)**:
+Windows (PowerShell):
 
 ```powershell
 irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
 ```
 
-**Using Go** (alternative):
+Go install:
 
 ```bash
 go install github.com/1broseidon/promptext/cmd/promptext@latest
 ```
 
-### Installation Features
-
-The installers provide:
-
-Linux/macOS:
-
-- 🏠 User-level installation in ~/.local/bin
-- 🔒 Automatic checksum verification
-- 📁 Custom installation directory support
-- ⚡ PATH environment configuration
-- 💫 Shell alias configuration
-- 🔄 Clean uninstallation
-
-Windows:
-
-- 🏠 User-level installation in %LOCALAPPDATA%
-- 🔒 Automatic checksum verification
-- ⚡ User PATH configuration
-- 💫 PowerShell alias creation (prx)
-- 🔄 Clean uninstallation
-
-For manual installation, download binaries from the [releases page](https://github.com/1broseidon/promptext/releases)
+See our [documentation](https://1broseidon.github.io/promptext/) for more installation options.
 
 ## Basic Usage
 
