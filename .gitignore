@@ -10,3 +10,4 @@ docs-old/
 **/node_modules/
 .jira-config.json
 .promptext.yml
+CLAUDE.md

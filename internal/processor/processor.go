@@ -43,6 +43,24 @@ type ProcessResult struct {
 	ProjectInfo      *info.ProjectInfo
 }
 
+// DryRunResult contains dry-run preview information
+type DryRunResult struct {
+	FilePaths       []string
+	EstimatedTokens int
+	ConfigSummary   *ConfigSummary
+	ProjectInfo     *info.ProjectInfo
+}
+
+// ConfigSummary contains effective configuration information
+type ConfigSummary struct {
+	Extensions      []string
+	Excludes        []string
+	UseGitIgnore    bool
+	UseDefaultRules bool
+	Format          string
+	OutputFile      string
+}
+
 // validateFilePath validates and gets the relative path for a file
 func validateFilePath(path string, config Config) (string, error) {
 	rel, err := filepath.Rel(config.DirPath, path)
@@ -142,6 +160,100 @@ func populateProjectInfo(projectOutput *format.ProjectOutput, projectInfo *info.
 			Dependencies: projectInfo.Metadata.Dependencies,
 		}
 	}
+}
+
+// PreviewDirectory performs a dry-run preview of what files would be processed
+func PreviewDirectory(config Config) (*DryRunResult, error) {
+	log.StartTimer("Dry Run Preview")
+	defer log.EndTimer("Dry Run Preview")
+
+	// Initialize result
+	result := &DryRunResult{
+		FilePaths: []string{},
+		ConfigSummary: &ConfigSummary{
+			Extensions:      config.Extensions,
+			Excludes:        config.Excludes,
+			UseGitIgnore:    config.GitIgnore,
+			UseDefaultRules: config.Filter != nil,
+		},
+	}
+
+	// Collect files that would be processed
+	tokenCounter := token.NewTokenCounter()
+	var estimatedTokens int
+
+	log.Debug("=== Dry Run: Analyzing Files ===")
+
+	err := filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Get relative path for filtering
+		relPath, err := filepath.Rel(config.DirPath, path)
+		if err != nil {
+			return err
+		}
+
+		// For directories
+		if d.IsDir() {
+			if config.Filter.IsExcluded(relPath) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// Skip excluded files silently
+		if config.Filter.IsExcluded(relPath) {
+			return nil
+		}
+
+		// Check if file would pass validation and filtering
+		rel, err := validateFilePath(path, config)
+		if err != nil {
+			return nil // Skip files that would fail validation
+		}
+		if rel == "" {
+			return nil // File should be skipped due to filtering
+		}
+
+		// Check permissions and file type without reading content
+		if err := checkFilePermissions(path); err != nil {
+			return nil // Skip files that would fail permission check
+		}
+
+		// Add to result
+		result.FilePaths = append(result.FilePaths, rel)
+
+		// Estimate tokens based on file size (rough approximation: 4 chars per token)
+		if fileInfo, err := os.Stat(path); err == nil {
+			estimatedFileTokens := int(fileInfo.Size() / 4)
+			estimatedTokens += estimatedFileTokens
+			log.Debug("Would process: %s (estimated %d tokens)", rel, estimatedFileTokens)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("error during dry-run preview: %w", err)
+	}
+
+	result.EstimatedTokens = estimatedTokens
+
+	// Get project info for dry-run
+	if projectInfo, err := info.GetProjectInfo(config.DirPath, config.Filter); err == nil {
+		result.ProjectInfo = projectInfo
+		
+		// Add estimated tokens for metadata (rough approximation)
+		if projectInfo.DirectoryTree != nil {
+			directoryTreeString := projectInfo.DirectoryTree.ToMarkdown(0)
+			result.EstimatedTokens += tokenCounter.EstimateTokens(directoryTreeString)
+		}
+	}
+
+	log.Debug("Dry run complete: %d files, ~%d tokens", len(result.FilePaths), result.EstimatedTokens)
+	return result, nil
 }
 
 func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
@@ -517,12 +629,73 @@ func formatSize(bytes int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
 
+// FormatDryRunOutput formats the dry-run preview results for display
+func FormatDryRunOutput(result *DryRunResult, config Config) string {
+	var content strings.Builder
+
+	// Project header
+	if result.ProjectInfo != nil && result.ProjectInfo.Metadata != nil && result.ProjectInfo.Metadata.Name != "" {
+		content.WriteString("📦 " + result.ProjectInfo.Metadata.Name)
+	} else {
+		if absPath, err := filepath.Abs(config.DirPath); err == nil {
+			content.WriteString("📦 " + filepath.Base(absPath))
+		}
+	}
+
+	if result.ProjectInfo != nil && result.ProjectInfo.Metadata != nil && result.ProjectInfo.Metadata.Language != "" {
+		content.WriteString(fmt.Sprintf(" (%s)", result.ProjectInfo.Metadata.Language))
+	}
+
+	// Dry-run summary
+	content.WriteString(fmt.Sprintf("\n🔍 DRY RUN PREVIEW\n"))
+	content.WriteString(fmt.Sprintf("   Would process: %d files\n", len(result.FilePaths)))
+	content.WriteString(fmt.Sprintf("   Estimated tokens: ~%d\n", result.EstimatedTokens))
+
+	// Configuration summary
+	content.WriteString("\n⚙️ Effective Configuration\n")
+	if len(result.ConfigSummary.Extensions) > 0 {
+		content.WriteString(fmt.Sprintf("   Extensions: %s\n", strings.Join(result.ConfigSummary.Extensions, ", ")))
+	} else {
+		content.WriteString("   Extensions: all supported types\n")
+	}
+
+	if len(result.ConfigSummary.Excludes) > 0 {
+		content.WriteString(fmt.Sprintf("   Excludes: %s\n", strings.Join(result.ConfigSummary.Excludes, ", ")))
+	}
+
+	content.WriteString(fmt.Sprintf("   Git ignore: %v\n", result.ConfigSummary.UseGitIgnore))
+	content.WriteString(fmt.Sprintf("   Default rules: %v\n", result.ConfigSummary.UseDefaultRules))
+
+	// Files to be processed (showing first 10 with more indicator)
+	content.WriteString("\n📂 Files to Process\n")
+	maxDisplay := 10
+	for i, filePath := range result.FilePaths {
+		if i >= maxDisplay {
+			remaining := len(result.FilePaths) - maxDisplay
+			content.WriteString(fmt.Sprintf("   ... and %d more files\n", remaining))
+			break
+		}
+		content.WriteString(fmt.Sprintf("   • %s\n", filePath))
+	}
+
+	if len(result.FilePaths) == 0 {
+		content.WriteString("   ⚠️  No files would be processed\n")
+	}
+
+	return formatBoxedOutput(content.String())
+}
+
 // Run executes the promptext tool with the given configuration
-func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string, debug bool, gitignore bool, useDefaultRules bool) error {
+func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string, debug bool, gitignore bool, useDefaultRules bool, dryRun bool, quiet bool) error {
 	// Enable debug logging if flag is set
 	if debug {
 		log.Enable()
 		log.SetColorEnabled(true)
+	}
+	
+	// Set quiet mode
+	if quiet {
+		log.SetQuiet(true)
 	}
 
 	log.Debug("=== Promptext Initialization ===")
@@ -543,15 +716,22 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		return fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
-	// Load config file from the specified directory
-	fileConfig, err := config.LoadConfig(absPath)
+	// Load global configuration
+	globalConfig, err := config.LoadGlobalConfig()
 	if err != nil {
-		log.Info("Warning: Failed to load .promptext.yml from %s: %v", absPath, err)
-		fileConfig = &config.FileConfig{}
+		log.Info("Warning: Failed to load global config: %v", err)
+		globalConfig = &config.FileConfig{}
 	}
 
-	// Merge file config with command line flags
-	extensions, excludes, verboseFlag, _, useGitIgnore, useDefaultRules := fileConfig.MergeWithFlags(extension, exclude, verbose, debug, &gitignore, &useDefaultRules)
+	// Load project config file from the specified directory
+	projectConfig, err := config.LoadConfig(absPath)
+	if err != nil {
+		log.Info("Warning: Failed to load .promptext.yml from %s: %v", absPath, err)
+		projectConfig = &config.FileConfig{}
+	}
+
+	// Merge global, project, and flag configurations with proper precedence
+	extensions, excludes, verboseFlag, _, useGitIgnore, useDefaultRules := config.MergeConfigs(globalConfig, projectConfig, extension, exclude, verbose, debug, &gitignore, &useDefaultRules)
 	log.Debug("Configuration:")
 	log.Debug("  • Extensions: %v", extensions)
 	log.Debug("  • Excludes: %#v", excludes)
@@ -577,6 +757,29 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		Filter:     f,
 	}
 
+	// Handle dry-run mode
+	if dryRun {
+		dryRunResult, err := PreviewDirectory(procConfig)
+		if err != nil {
+			return fmt.Errorf("error during dry-run preview: %v", err)
+		}
+
+		// Update config summary with additional info
+		dryRunResult.ConfigSummary.Format = outputFormat
+		dryRunResult.ConfigSummary.OutputFile = outFile
+
+		// Display dry-run results
+		preview := FormatDryRunOutput(dryRunResult, procConfig)
+		if quiet {
+			// In quiet mode, output minimal dry-run info
+			fmt.Printf("files=%d tokens=%d\n", len(dryRunResult.FilePaths), dryRunResult.EstimatedTokens)
+		} else {
+			fmt.Printf("\033[32m%s\033[0m\n", preview)
+		}
+		
+		return nil
+	}
+
 	// Process directory once and reuse results
 	result, err := ProcessDirectory(procConfig, verboseFlag)
 	if err != nil {
@@ -591,7 +794,13 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 
 	// If info-only flag is set, just display the summary and return
 	if infoOnly {
-		fmt.Printf("\033[32m%s\033[0m\n", info)
+		if quiet {
+			// In quiet mode, output minimal info
+			fileCount := len(result.ProjectOutput.Files)
+			fmt.Printf("files=%d tokens=%d\n", fileCount, result.TokenCount)
+		} else {
+			fmt.Printf("\033[32m%s\033[0m\n", info)
+		}
 		return nil
 	}
 
@@ -606,14 +815,30 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		if err := os.WriteFile(outFile, []byte(formattedOutput), 0644); err != nil {
 			return fmt.Errorf("error writing to output file: %w", err)
 		}
-		fmt.Printf("\033[32m%s\n✓ code context written to %s (%s format)\033[0m\n",
-			info, outFile, outputFormat)
+		if quiet {
+			// In quiet mode, output minimal success info
+			fmt.Printf("written=%s format=%s files=%d tokens=%d\n", outFile, outputFormat, len(result.ProjectOutput.Files), result.TokenCount)
+		} else {
+			fmt.Printf("\033[32m%s\n✓ code context written to %s (%s format)\033[0m\n",
+				info, outFile, outputFormat)
+		}
 	} else if !noCopy {
 		if err := clipboard.WriteAll(formattedOutput); err != nil {
-			log.Info("Warning: Failed to copy to clipboard: %v", err)
+			if !quiet {
+				log.Info("Warning: Failed to copy to clipboard: %v", err)
+			}
+			// In quiet mode, exit with error code for clipboard failure
+			if quiet {
+				return fmt.Errorf("clipboard copy failed")
+			}
 		} else {
-			fmt.Printf("\033[32m%s\n✓ code context copied to clipboard (%s format)\033[0m\n",
-				info, outputFormat)
+			if quiet {
+				// In quiet mode, output minimal success info
+				fmt.Printf("clipboard=ok format=%s files=%d tokens=%d\n", outputFormat, len(result.ProjectOutput.Files), result.TokenCount)
+			} else {
+				fmt.Printf("\033[32m%s\n✓ code context copied to clipboard (%s format)\033[0m\n",
+					info, outputFormat)
+			}
 		}
 	}
 
