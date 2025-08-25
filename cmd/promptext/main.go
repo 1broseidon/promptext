@@ -47,7 +47,7 @@ OUTPUT OPTIONS:
     -o, --output FILE         Write output to file instead of clipboard
     -n, --no-copy            Don't copy output to clipboard
     -i, --info               Show only project summary (no file contents)
-    -v, --verbose            Display full content in terminal
+        --verbose            Display full content in terminal
 
 PROCESSING OPTIONS:
         --dry-run            Preview files that would be processed without reading content
@@ -56,7 +56,7 @@ PROCESSING OPTIONS:
 DEBUG OPTIONS:
     -D, --debug              Enable debug logging and timing information
     -h, --help               Show this help message
-        --version            Show version information
+    -v, --version            Show version information
 
 EXAMPLES:
     # Basic usage - process current directory, copy to clipboard
@@ -119,7 +119,7 @@ func main() {
 
 	// Define command line flags with improved descriptions
 	help := pflag.BoolP("help", "h", false, "Show this help message")
-	showVersion := pflag.Bool("version", false, "Show version information and exit")
+	showVersion := pflag.BoolP("version", "v", false, "Show version information and exit")
 
 	// Input options
 	dirPath := pflag.StringP("directory", "d", ".", "Directory to process (default: current directory)")
@@ -135,7 +135,7 @@ func main() {
 	outFile := pflag.StringP("output", "o", "", "Write output to file instead of clipboard")
 	noCopy := pflag.BoolP("no-copy", "n", false, "Don't copy output to clipboard")
 	infoOnly := pflag.BoolP("info", "i", false, "Show only project summary without file contents")
-	verbose := pflag.BoolP("verbose", "v", false, "Display full content in terminal while processing")
+	verbose := pflag.Bool("verbose", false, "Display full content in terminal while processing")
 
 	// Processing options
 	dryRun := pflag.Bool("dry-run", false, "Preview files that would be processed without reading content")
