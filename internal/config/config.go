@@ -42,24 +42,28 @@ func LoadConfig(dirPath string) (*FileConfig, error) {
 	return &config, nil
 }
 
-// MergeWithFlags merges the file config with command line flags
-// Command line flags take precedence over file config
-func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bool, flagDebug bool, flagGitIgnore *bool, flagUseDefaultRules *bool) (extensions []string, excludes []string, verbose bool, debug bool, useGitIgnore bool, useDefaultRules bool) {
-	// Handle extensions
+// mergeExtensions handles extension merging logic
+func (fc *FileConfig) mergeExtensions(flagExt string) []string {
 	if flagExt != "" {
-		extensions = parseCommaSeparated(flagExt)
-	} else if len(fc.Extensions) > 0 {
-		extensions = fc.Extensions
-	} else {
-		extensions = nil
+		return parseCommaSeparated(flagExt)
 	}
+	if len(fc.Extensions) > 0 {
+		return fc.Extensions
+	}
+	return nil
+}
 
-	// Handle excludes
-	excludes = append([]string{}, fc.Excludes...)
+// mergeExcludes handles exclude pattern merging logic
+func (fc *FileConfig) mergeExcludes(flagExclude string) []string {
+	excludes := append([]string{}, fc.Excludes...)
 	if flagExclude != "" {
 		excludes = append(excludes, parseCommaSeparated(flagExclude)...)
 	}
+	return excludes
+}
 
+// mergeBooleanFlags handles boolean flag merging with proper precedence
+func (fc *FileConfig) mergeBooleanFlags(flagVerbose, flagDebug bool, flagGitIgnore, flagUseDefaultRules *bool) (verbose, debug, useGitIgnore, useDefaultRules bool) {
 	// Flag verbose overrides config verbose only if set
 	verbose = fc.Verbose || flagVerbose
 
@@ -81,6 +85,16 @@ func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bo
 	} else if !fc.UseDefaultRules {
 		useDefaultRules = false
 	}
+
+	return verbose, debug, useGitIgnore, useDefaultRules
+}
+
+// MergeWithFlags merges the file config with command line flags
+// Command line flags take precedence over file config
+func (fc *FileConfig) MergeWithFlags(flagExt, flagExclude string, flagVerbose bool, flagDebug bool, flagGitIgnore *bool, flagUseDefaultRules *bool) (extensions []string, excludes []string, verbose bool, debug bool, useGitIgnore bool, useDefaultRules bool) {
+	extensions = fc.mergeExtensions(flagExt)
+	excludes = fc.mergeExcludes(flagExclude)
+	verbose, debug, useGitIgnore, useDefaultRules = fc.mergeBooleanFlags(flagVerbose, flagDebug, flagGitIgnore, flagUseDefaultRules)
 
 	return extensions, excludes, verbose, debug, useGitIgnore, useDefaultRules
 }

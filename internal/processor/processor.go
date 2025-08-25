@@ -43,53 +43,83 @@ type ProcessResult struct {
 	ProjectInfo      *info.ProjectInfo
 }
 
-// processFile handles the processing of a single file
-func processFile(path string, config Config) (*format.FileInfo, error) {
-	// Get relative path first for consistent logging
+// validateFilePath validates and gets the relative path for a file
+func validateFilePath(path string, config Config) (string, error) {
 	rel, err := filepath.Rel(config.DirPath, path)
 	if err != nil {
-		return nil, fmt.Errorf("error getting relative path for %s: %w", path, err)
+		return "", fmt.Errorf("error getting relative path for %s: %w", path, err)
 	}
 
 	if !config.Filter.ShouldProcess(rel) {
-		return nil, nil
+		return "", nil
 	}
 
 	// Skip .DS_Store files immediately
 	if filepath.Base(path) == ".DS_Store" {
-		return nil, nil
+		return "", nil
 	}
 
+	return rel, nil
+}
+
+// checkFilePermissions validates file type and permissions
+func checkFilePermissions(path string) error {
 	// Get file info first to check if it's a directory or has read permissions
 	fileInfo, err := os.Stat(path)
 	if err != nil {
-		return nil, nil
+		return err
 	}
 
 	// Skip directories
 	if fileInfo.IsDir() {
-		return nil, nil
+		return fmt.Errorf("is directory")
 	}
 
 	// Check read permissions
 	if fileInfo.Mode().Perm()&0444 == 0 {
-		return nil, nil
+		return fmt.Errorf("no read permissions")
 	}
 
 	// Check if file is binary using BinaryRule
 	binaryRule := rules.NewBinaryRule()
 	if binaryRule.Match(path) {
-		return nil, nil
+		return fmt.Errorf("binary file")
 	}
 
+	return nil
+}
+
+// readFileContent reads and returns file content as string
+func readFileContent(path string) (string, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return nil, nil
+		return "", err
+	}
+	return string(content), nil
+}
+
+// processFile handles the processing of a single file
+func processFile(path string, config Config) (*format.FileInfo, error) {
+	rel, err := validateFilePath(path, config)
+	if err != nil {
+		return nil, err
+	}
+	if rel == "" {
+		return nil, nil // File should be skipped
+	}
+
+	if err := checkFilePermissions(path); err != nil {
+		return nil, nil // File should be skipped
+	}
+
+	content, err := readFileContent(path)
+	if err != nil {
+		return nil, nil // File should be skipped
 	}
 
 	return &format.FileInfo{
 		Path:    rel,
-		Content: string(content),
+		Content: content,
 	}, nil
 }
 
@@ -255,10 +285,8 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	}, nil
 }
 
-// GetMetadataSummary returns a summary of project metadata and analysis
-// If infoOnly is true, returns a rich summary with all details
-// Otherwise returns a minimal summary with basic project info
-func GetMetadataSummary(config Config, result *ProcessResult, infoOnly bool) (string, error) {
+// buildProjectHeader constructs the project name and basic info
+func buildProjectHeader(config Config, result *ProcessResult, infoOnly bool) string {
 	var content strings.Builder
 
 	// Project name and language (always shown)
@@ -269,6 +297,7 @@ func GetMetadataSummary(config Config, result *ProcessResult, infoOnly bool) (st
 			content.WriteString("📦 " + filepath.Base(absPath))
 		}
 	}
+
 	if result.ProjectInfo.Metadata != nil && result.ProjectInfo.Metadata.Language != "" {
 		content.WriteString(fmt.Sprintf(" (%s", result.ProjectInfo.Metadata.Language))
 		if result.ProjectInfo.Metadata.Version != "" && infoOnly {
@@ -284,115 +313,130 @@ func GetMetadataSummary(config Config, result *ProcessResult, infoOnly bool) (st
 		content.WriteString(fmt.Sprintf(" • Tokens: ~%d", result.TokenCount))
 	}
 
-	// Only show detailed analysis if infoOnly is true
-	if infoOnly {
-		content.WriteString("\n")
+	return content.String()
+}
 
-		// File Analysis
-		fileTypes := make(map[string]int)
-		fileCategories := make(map[string]int)
-		var totalSize int64
-		var sourceCount, testCount, configCount, docCount int
-		var entryPoints []string
+// analyzeFileStatistics collects file type and size statistics
+func analyzeFileStatistics(files []format.FileInfo, config Config) (map[string]int, int64, []string) {
+	fileTypes := make(map[string]int)
+	var totalSize int64
+	var entryPoints []string
 
-		// Collect file statistics
-		for _, file := range result.ProjectOutput.Files {
-			typeInfo := filter.GetFileType(file.Path, config.Filter)
-			fileTypes[typeInfo.Type]++
-			fileCategories[typeInfo.Category]++
-			totalSize += typeInfo.Size
+	for _, file := range files {
+		typeInfo := filter.GetFileType(file.Path, config.Filter)
+		fileTypes[typeInfo.Type]++
+		totalSize += typeInfo.Size
 
-			// Count by type
-			switch typeInfo.Type {
-			case "source":
-				sourceCount++
-			case "test":
-				testCount++
-			case "config":
-				configCount++
-			case "doc":
-				docCount++
-			}
-
-			// Track entry points
-			if typeInfo.IsEntryPoint {
-				entryPoints = append(entryPoints, file.Path)
-			}
-		}
-
-		// Display File Distribution
-		content.WriteString("\n   Types: ")
-		first := true
-		for typ, count := range fileTypes {
-			if !first {
-				content.WriteString(" • ")
-			}
-			content.WriteString(fmt.Sprintf("%s: %d", typ, count))
-			first = false
-		}
-		content.WriteString("\n")
-
-		// Display Size Information
-		if totalSize > 0 {
-			content.WriteString(fmt.Sprintf("   Total Size: %s\n", formatSize(totalSize)))
-		}
-
-		// Display Entry Points
-		if len(entryPoints) > 0 {
-			content.WriteString("\n🚪 Entry Points\n")
-			for _, entry := range entryPoints {
-				content.WriteString(fmt.Sprintf("   • %s\n", entry))
-			}
-		}
-
-		// Dependencies
-		if result.ProjectOutput.Metadata != nil && len(result.ProjectOutput.Metadata.Dependencies) > 0 {
-			content.WriteString("\n📚 Dependencies\n")
-			for _, dep := range result.ProjectOutput.Metadata.Dependencies {
-				content.WriteString(fmt.Sprintf("   • %s\n", dep))
-			}
-		}
-
-		// Project Health
-		if result.ProjectInfo.Metadata != nil && result.ProjectInfo.Metadata.Health != nil {
-			health := result.ProjectInfo.Metadata.Health
-			content.WriteString("\n🏥 Project Health\n")
-
-			// Documentation
-			content.WriteString(fmt.Sprintf("   • README: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasReadme]))
-			content.WriteString(fmt.Sprintf("   • LICENSE: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasLicense]))
-
-			// Testing
-			content.WriteString(fmt.Sprintf("   • Tests: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasTests]))
-
-			// CI/CD
-			if health.HasCI {
-				content.WriteString(fmt.Sprintf("   • CI/CD: ✓ (%s)\n", health.CISystem))
-			} else {
-				content.WriteString("   • CI/CD: ✗\n")
-			}
-		}
-
-		// Git Information
-		if result.ProjectOutput.GitInfo != nil {
-			content.WriteString("\n🔄 Git Status\n")
-			content.WriteString(fmt.Sprintf("   Branch: %s\n", result.ProjectOutput.GitInfo.Branch))
-			if result.ProjectOutput.GitInfo.CommitHash != "" {
-				shortHash := result.ProjectOutput.GitInfo.CommitHash
-				if len(shortHash) > 7 {
-					shortHash = shortHash[:7]
-				}
-				content.WriteString(fmt.Sprintf("   Latest: %s", shortHash))
-				if result.ProjectOutput.GitInfo.CommitMessage != "" {
-					content.WriteString(fmt.Sprintf(" - %s", result.ProjectOutput.GitInfo.CommitMessage))
-				}
-				content.WriteString("\n")
-			}
+		// Track entry points
+		if typeInfo.IsEntryPoint {
+			entryPoints = append(entryPoints, file.Path)
 		}
 	}
 
-	// Get content lines and find max width
-	contentLines := strings.Split(strings.TrimRight(content.String(), "\n"), "\n")
+	return fileTypes, totalSize, entryPoints
+}
+
+// buildFileAnalysis creates the file analysis section
+func buildFileAnalysis(fileTypes map[string]int, totalSize int64, entryPoints []string) string {
+	var content strings.Builder
+
+	// Display File Distribution
+	content.WriteString("\n   Types: ")
+	first := true
+	for typ, count := range fileTypes {
+		if !first {
+			content.WriteString(" • ")
+		}
+		content.WriteString(fmt.Sprintf("%s: %d", typ, count))
+		first = false
+	}
+	content.WriteString("\n")
+
+	// Display Size Information
+	if totalSize > 0 {
+		content.WriteString(fmt.Sprintf("   Total Size: %s\n", formatSize(totalSize)))
+	}
+
+	// Display Entry Points
+	if len(entryPoints) > 0 {
+		content.WriteString("\n🚪 Entry Points\n")
+		for _, entry := range entryPoints {
+			content.WriteString(fmt.Sprintf("   • %s\n", entry))
+		}
+	}
+
+	return content.String()
+}
+
+// buildDependenciesSection creates the dependencies section
+func buildDependenciesSection(result *ProcessResult) string {
+	if result.ProjectOutput.Metadata == nil || len(result.ProjectOutput.Metadata.Dependencies) == 0 {
+		return ""
+	}
+
+	var content strings.Builder
+	content.WriteString("\n📚 Dependencies\n")
+	for _, dep := range result.ProjectOutput.Metadata.Dependencies {
+		content.WriteString(fmt.Sprintf("   • %s\n", dep))
+	}
+	return content.String()
+}
+
+// buildHealthSection creates the project health section
+func buildHealthSection(result *ProcessResult) string {
+	if result.ProjectInfo.Metadata == nil || result.ProjectInfo.Metadata.Health == nil {
+		return ""
+	}
+
+	health := result.ProjectInfo.Metadata.Health
+	var content strings.Builder
+	content.WriteString("\n🏥 Project Health\n")
+
+	// Documentation
+	content.WriteString(fmt.Sprintf("   • README: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasReadme]))
+	content.WriteString(fmt.Sprintf("   • LICENSE: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasLicense]))
+
+	// Testing
+	content.WriteString(fmt.Sprintf("   • Tests: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasTests]))
+
+	// CI/CD
+	if health.HasCI {
+		content.WriteString(fmt.Sprintf("   • CI/CD: ✓ (%s)\n", health.CISystem))
+	} else {
+		content.WriteString("   • CI/CD: ✗\n")
+	}
+
+	return content.String()
+}
+
+// buildGitSection creates the git information section
+func buildGitSection(result *ProcessResult) string {
+	if result.ProjectOutput.GitInfo == nil {
+		return ""
+	}
+
+	var content strings.Builder
+	content.WriteString("\n🔄 Git Status\n")
+	content.WriteString(fmt.Sprintf("   Branch: %s\n", result.ProjectOutput.GitInfo.Branch))
+
+	if result.ProjectOutput.GitInfo.CommitHash != "" {
+		shortHash := result.ProjectOutput.GitInfo.CommitHash
+		if len(shortHash) > 7 {
+			shortHash = shortHash[:7]
+		}
+		content.WriteString(fmt.Sprintf("   Latest: %s", shortHash))
+		if result.ProjectOutput.GitInfo.CommitMessage != "" {
+			content.WriteString(fmt.Sprintf(" - %s", result.ProjectOutput.GitInfo.CommitMessage))
+		}
+		content.WriteString("\n")
+	}
+
+	return content.String()
+}
+
+// formatBoxedOutput creates a boxed output with borders
+func formatBoxedOutput(content string) string {
+	contentLines := strings.Split(strings.TrimRight(content, "\n"), "\n")
 	maxWidth := 0
 	for _, line := range contentLines {
 		width := text.RuneCount(line)
@@ -424,7 +468,39 @@ func GetMetadataSummary(config Config, result *ProcessResult, infoOnly bool) (st
 	summary.WriteString("╰" + strings.Repeat("─", maxWidth) + "╯")
 	summary.WriteString("\033[0m") // Reset color
 
-	return summary.String(), nil
+	return summary.String()
+}
+
+// GetMetadataSummary returns a summary of project metadata and analysis
+// If infoOnly is true, returns a rich summary with all details
+// Otherwise returns a minimal summary with basic project info
+func GetMetadataSummary(config Config, result *ProcessResult, infoOnly bool) (string, error) {
+	var content strings.Builder
+
+	// Build basic project header
+	content.WriteString(buildProjectHeader(config, result, infoOnly))
+
+	// Only show detailed analysis if infoOnly is true
+	if infoOnly {
+		content.WriteString("\n")
+
+		// Analyze file statistics
+		fileTypes, totalSize, entryPoints := analyzeFileStatistics(result.ProjectOutput.Files, config)
+
+		// Build file analysis section
+		content.WriteString(buildFileAnalysis(fileTypes, totalSize, entryPoints))
+
+		// Build dependencies section
+		content.WriteString(buildDependenciesSection(result))
+
+		// Build health section
+		content.WriteString(buildHealthSection(result))
+
+		// Build git section
+		content.WriteString(buildGitSection(result))
+	}
+
+	return formatBoxedOutput(content.String()), nil
 }
 
 // formatSize converts bytes to human readable string

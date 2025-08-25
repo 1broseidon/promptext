@@ -105,14 +105,15 @@ promptext [flags]
 
 ### Available Flags
 
-- `-version, -v`: Show version information
+- `--version`: Show version information
 - `-directory, -d string`: Directory to process (default ".")
 - `-extension, -e string`: File extensions to include (comma-separated, e.g., ".go,.js")
 - `-exclude, -x string`: Patterns to exclude (comma-separated)
 - `-format, -f string`: Output format (markdown/xml)
 - `-output, -o string`: Output file path
+- `--no-copy`: Disable automatic clipboard copying
 - `-info, -i`: Show only project summary with token counts
-- `-verbose, -V`: Show full file contents
+- `-verbose, -v`: Show full file contents in terminal
 - `-debug, -D`: Enable debug logging
 - `-gitignore, -g`: Use .gitignore patterns (default true)
 - `-use-default-rules, -u`: Use default filtering rules (default true)
@@ -138,23 +139,28 @@ promptext -format xml -output project.xml -debug
 promptext -info
 ```
 
-4. Process with exclusions:
+4. Process with exclusions and verbose output:
 
 ```bash
-promptext -exclude "test/,vendor/" -V
+promptext -exclude "test/,vendor/" -v
 ```
 
 5. Check version:
 
 ```bash
-promptext -v  # Show version information
-promptext --version  # Same as above
+promptext --version  # Show version information
 
 # Example output:
 # promptext version v0.2.4 (2024-12-19)
 ```
 
-5. Process all files including dependencies:
+6. Process without copying to clipboard:
+
+```bash
+promptext --no-copy -output project.md
+```
+
+7. Process all files including dependencies:
 
 ```bash
 promptext -u=false -exclude "test/" # Disable default rules but keep test/ excluded

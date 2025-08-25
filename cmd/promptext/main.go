@@ -20,19 +20,20 @@ var (
 func main() {
 	// Add help and version flags
 	help := pflag.BoolP("help", "h", false, "Show help message")
-	showVersion := pflag.BoolP("version", "v", false, "Show version information")
+	showVersion := pflag.Bool("version", false, "Show version information")
 
 	// Define command line flags
 	dirPath := pflag.StringP("directory", "d", ".", "Directory path to process")
 	extension := pflag.StringP("extension", "e", "", "File extension to filter, e.g., .go,.js")
 	exclude := pflag.StringP("exclude", "x", "", "Patterns to exclude, comma-separated")
 	infoOnly := pflag.BoolP("info", "i", false, "Only display project summary")
-	verbose := pflag.BoolP("verbose", "V", false, "Show full code content in terminal") // Changed to V to avoid conflict with version
+	verbose := pflag.BoolP("verbose", "v", false, "Show full code content in terminal")
 	format := pflag.StringP("format", "f", "markdown", "Output format: markdown (or md), xml")
 	outFile := pflag.StringP("output", "o", "", "Output file path")
 	debug := pflag.BoolP("debug", "D", false, "Enable debug logging")
 	gitignore := pflag.BoolP("gitignore", "g", true, "Use .gitignore patterns")
 	useDefaultRules := pflag.BoolP("use-default-rules", "u", true, "Use default filtering rules")
+	noCopy := pflag.BoolP("no-copy", "n", false, "Don't copy to clipboard")
 
 	pflag.Parse()
 
@@ -47,7 +48,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if err := processor.Run(*dirPath, *extension, *exclude, false, *infoOnly, *verbose, *format, *outFile, *debug, *gitignore, *useDefaultRules); err != nil {
+	if err := processor.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose, *format, *outFile, *debug, *gitignore, *useDefaultRules); err != nil {
 		log.Fatal(err)
 	}
 }
