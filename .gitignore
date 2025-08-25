@@ -1,13 +1,84 @@
-.aider*
+# Binaries
+promptext
+prx
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Dependency directories (Node.js for docs)
+**/node_modules/
+docs/node_modules/
+
+# Environment files
 .env
+.env.local
+.env.production
+.env.staging
+
+# Build outputs
 dist/
-.release-env
+build/
 _site/
+
+# Configuration files (local/personal)
+.promptext.yml
+
+# Development tools
+.aider*
+.release-env
+.jira-config.json
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Documentation build (Jekyll/Docusaurus)
 .sass-cache/
 .jekyll-cache/
 .jekyll-metadata
 docs-old/
-**/node_modules/
-.jira-config.json
-.promptext.yml
+
+# Claude Code related
 CLAUDE.md
+.claude/
+
+# Test coverage
+coverage.out
+coverage.html
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Log files
+*.log
+
+# Cache directories
+.cache/
+.tiktoken_cache/
