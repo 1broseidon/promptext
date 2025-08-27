@@ -28,12 +28,12 @@ export default {
       {
         "docs": {
           "routeBasePath": "/",
-          "sidebarPath": "/Users/george/Projects/personal/promptext/docs/sidebars.js",
+          "sidebarPath": "/home/george/Projects/personal/promptext/docs/sidebars.js",
           "editUrl": "https://github.com/1broseidon/promptext/tree/main/docs/"
         },
         "blog": false,
         "theme": {
-          "customCss": "/Users/george/Projects/personal/promptext/docs/src/css/custom.css"
+          "customCss": "/home/george/Projects/personal/promptext/docs/src/css/custom.css"
         }
       }
     ]
@@ -63,7 +63,7 @@ export default {
           ]
         }
       ],
-      "copyright": "Copyright © 2024 promptext. Built with Docusaurus."
+      "copyright": "Copyright © 2025 promptext. Built with Docusaurus."
     },
     "prism": {
       "theme": {

@@ -3,6 +3,41 @@ import ComponentCreator from '@docusaurus/ComponentCreator';
 
 export default [
   {
+    path: '/promptext/__docusaurus/debug',
+    component: ComponentCreator('/promptext/__docusaurus/debug', 'e5b'),
+    exact: true
+  },
+  {
+    path: '/promptext/__docusaurus/debug/config',
+    component: ComponentCreator('/promptext/__docusaurus/debug/config', 'ae8'),
+    exact: true
+  },
+  {
+    path: '/promptext/__docusaurus/debug/content',
+    component: ComponentCreator('/promptext/__docusaurus/debug/content', '28f'),
+    exact: true
+  },
+  {
+    path: '/promptext/__docusaurus/debug/globalData',
+    component: ComponentCreator('/promptext/__docusaurus/debug/globalData', 'd39'),
+    exact: true
+  },
+  {
+    path: '/promptext/__docusaurus/debug/metadata',
+    component: ComponentCreator('/promptext/__docusaurus/debug/metadata', '681'),
+    exact: true
+  },
+  {
+    path: '/promptext/__docusaurus/debug/registry',
+    component: ComponentCreator('/promptext/__docusaurus/debug/registry', '653'),
+    exact: true
+  },
+  {
+    path: '/promptext/__docusaurus/debug/routes',
+    component: ComponentCreator('/promptext/__docusaurus/debug/routes', 'ce2'),
+    exact: true
+  },
+  {
     path: '/promptext/',
     component: ComponentCreator('/promptext/', 'c0b'),
     routes: [

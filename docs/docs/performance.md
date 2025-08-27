@@ -56,7 +56,7 @@ Debug output includes:
 
 ### Typical Performance Expectations
 
-- **Small projects** (<100 files): Near-instantaneous processing
+- **Small projects** (&lt;100 files): Near-instantaneous processing
 - **Medium projects** (100-1000 files): Processing in seconds
 - **Large codebases** (1000+ files): Optimized filtering and binary detection provide significant speed improvements
 
