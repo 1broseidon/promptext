@@ -43,53 +43,101 @@ type ProcessResult struct {
 	ProjectInfo      *info.ProjectInfo
 }
 
-// processFile handles the processing of a single file
-func processFile(path string, config Config) (*format.FileInfo, error) {
-	// Get relative path first for consistent logging
+// DryRunResult contains dry-run preview information
+type DryRunResult struct {
+	FilePaths       []string
+	EstimatedTokens int
+	ConfigSummary   *ConfigSummary
+	ProjectInfo     *info.ProjectInfo
+}
+
+// ConfigSummary contains effective configuration information
+type ConfigSummary struct {
+	Extensions      []string
+	Excludes        []string
+	UseGitIgnore    bool
+	UseDefaultRules bool
+	Format          string
+	OutputFile      string
+}
+
+// validateFilePath validates and gets the relative path for a file
+func validateFilePath(path string, config Config) (string, error) {
 	rel, err := filepath.Rel(config.DirPath, path)
 	if err != nil {
-		return nil, fmt.Errorf("error getting relative path for %s: %w", path, err)
+		return "", fmt.Errorf("error getting relative path for %s: %w", path, err)
 	}
 
 	if !config.Filter.ShouldProcess(rel) {
-		return nil, nil
+		return "", nil
 	}
 
 	// Skip .DS_Store files immediately
 	if filepath.Base(path) == ".DS_Store" {
-		return nil, nil
+		return "", nil
 	}
 
+	return rel, nil
+}
+
+// checkFilePermissions validates file type and permissions
+func checkFilePermissions(path string) error {
 	// Get file info first to check if it's a directory or has read permissions
 	fileInfo, err := os.Stat(path)
 	if err != nil {
-		return nil, nil
+		return err
 	}
 
 	// Skip directories
 	if fileInfo.IsDir() {
-		return nil, nil
+		return fmt.Errorf("is directory")
 	}
 
 	// Check read permissions
 	if fileInfo.Mode().Perm()&0444 == 0 {
-		return nil, nil
+		return fmt.Errorf("no read permissions")
 	}
 
 	// Check if file is binary using BinaryRule
 	binaryRule := rules.NewBinaryRule()
 	if binaryRule.Match(path) {
-		return nil, nil
+		return fmt.Errorf("binary file")
 	}
 
+	return nil
+}
+
+// readFileContent reads and returns file content as string
+func readFileContent(path string) (string, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return nil, nil
+		return "", err
+	}
+	return string(content), nil
+}
+
+// processFile handles the processing of a single file
+func processFile(path string, config Config) (*format.FileInfo, error) {
+	rel, err := validateFilePath(path, config)
+	if err != nil {
+		return nil, err
+	}
+	if rel == "" {
+		return nil, nil // File should be skipped
+	}
+
+	if err := checkFilePermissions(path); err != nil {
+		return nil, nil // File should be skipped
+	}
+
+	content, err := readFileContent(path)
+	if err != nil {
+		return nil, nil // File should be skipped
 	}
 
 	return &format.FileInfo{
 		Path:    rel,
-		Content: string(content),
+		Content: content,
 	}, nil
 }
 
@@ -112,6 +160,100 @@ func populateProjectInfo(projectOutput *format.ProjectOutput, projectInfo *info.
 			Dependencies: projectInfo.Metadata.Dependencies,
 		}
 	}
+}
+
+// PreviewDirectory performs a dry-run preview of what files would be processed
+func PreviewDirectory(config Config) (*DryRunResult, error) {
+	log.StartTimer("Dry Run Preview")
+	defer log.EndTimer("Dry Run Preview")
+
+	// Initialize result
+	result := &DryRunResult{
+		FilePaths: []string{},
+		ConfigSummary: &ConfigSummary{
+			Extensions:      config.Extensions,
+			Excludes:        config.Excludes,
+			UseGitIgnore:    config.GitIgnore,
+			UseDefaultRules: config.Filter != nil,
+		},
+	}
+
+	// Collect files that would be processed
+	tokenCounter := token.NewTokenCounter()
+	var estimatedTokens int
+
+	log.Debug("=== Dry Run: Analyzing Files ===")
+
+	err := filepath.WalkDir(config.DirPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Get relative path for filtering
+		relPath, err := filepath.Rel(config.DirPath, path)
+		if err != nil {
+			return err
+		}
+
+		// For directories
+		if d.IsDir() {
+			if config.Filter.IsExcluded(relPath) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// Skip excluded files silently
+		if config.Filter.IsExcluded(relPath) {
+			return nil
+		}
+
+		// Check if file would pass validation and filtering
+		rel, err := validateFilePath(path, config)
+		if err != nil {
+			return nil // Skip files that would fail validation
+		}
+		if rel == "" {
+			return nil // File should be skipped due to filtering
+		}
+
+		// Check permissions and file type without reading content
+		if err := checkFilePermissions(path); err != nil {
+			return nil // Skip files that would fail permission check
+		}
+
+		// Add to result
+		result.FilePaths = append(result.FilePaths, rel)
+
+		// Estimate tokens based on file size (rough approximation: 4 chars per token)
+		if fileInfo, err := os.Stat(path); err == nil {
+			estimatedFileTokens := int(fileInfo.Size() / 4)
+			estimatedTokens += estimatedFileTokens
+			log.Debug("Would process: %s (estimated %d tokens)", rel, estimatedFileTokens)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("error during dry-run preview: %w", err)
+	}
+
+	result.EstimatedTokens = estimatedTokens
+
+	// Get project info for dry-run
+	if projectInfo, err := info.GetProjectInfo(config.DirPath, config.Filter); err == nil {
+		result.ProjectInfo = projectInfo
+		
+		// Add estimated tokens for metadata (rough approximation)
+		if projectInfo.DirectoryTree != nil {
+			directoryTreeString := projectInfo.DirectoryTree.ToMarkdown(0)
+			result.EstimatedTokens += tokenCounter.EstimateTokens(directoryTreeString)
+		}
+	}
+
+	log.Debug("Dry run complete: %d files, ~%d tokens", len(result.FilePaths), result.EstimatedTokens)
+	return result, nil
 }
 
 func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
@@ -255,10 +397,8 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	}, nil
 }
 
-// GetMetadataSummary returns a summary of project metadata and analysis
-// If infoOnly is true, returns a rich summary with all details
-// Otherwise returns a minimal summary with basic project info
-func GetMetadataSummary(config Config, result *ProcessResult, infoOnly bool) (string, error) {
+// buildProjectHeader constructs the project name and basic info
+func buildProjectHeader(config Config, result *ProcessResult, infoOnly bool) string {
 	var content strings.Builder
 
 	// Project name and language (always shown)
@@ -269,6 +409,7 @@ func GetMetadataSummary(config Config, result *ProcessResult, infoOnly bool) (st
 			content.WriteString("📦 " + filepath.Base(absPath))
 		}
 	}
+
 	if result.ProjectInfo.Metadata != nil && result.ProjectInfo.Metadata.Language != "" {
 		content.WriteString(fmt.Sprintf(" (%s", result.ProjectInfo.Metadata.Language))
 		if result.ProjectInfo.Metadata.Version != "" && infoOnly {
@@ -284,115 +425,130 @@ func GetMetadataSummary(config Config, result *ProcessResult, infoOnly bool) (st
 		content.WriteString(fmt.Sprintf(" • Tokens: ~%d", result.TokenCount))
 	}
 
-	// Only show detailed analysis if infoOnly is true
-	if infoOnly {
-		content.WriteString("\n")
+	return content.String()
+}
 
-		// File Analysis
-		fileTypes := make(map[string]int)
-		fileCategories := make(map[string]int)
-		var totalSize int64
-		var sourceCount, testCount, configCount, docCount int
-		var entryPoints []string
+// analyzeFileStatistics collects file type and size statistics
+func analyzeFileStatistics(files []format.FileInfo, config Config) (map[string]int, int64, []string) {
+	fileTypes := make(map[string]int)
+	var totalSize int64
+	var entryPoints []string
 
-		// Collect file statistics
-		for _, file := range result.ProjectOutput.Files {
-			typeInfo := filter.GetFileType(file.Path, config.Filter)
-			fileTypes[typeInfo.Type]++
-			fileCategories[typeInfo.Category]++
-			totalSize += typeInfo.Size
+	for _, file := range files {
+		typeInfo := filter.GetFileType(file.Path, config.Filter)
+		fileTypes[typeInfo.Type]++
+		totalSize += typeInfo.Size
 
-			// Count by type
-			switch typeInfo.Type {
-			case "source":
-				sourceCount++
-			case "test":
-				testCount++
-			case "config":
-				configCount++
-			case "doc":
-				docCount++
-			}
-
-			// Track entry points
-			if typeInfo.IsEntryPoint {
-				entryPoints = append(entryPoints, file.Path)
-			}
-		}
-
-		// Display File Distribution
-		content.WriteString("\n   Types: ")
-		first := true
-		for typ, count := range fileTypes {
-			if !first {
-				content.WriteString(" • ")
-			}
-			content.WriteString(fmt.Sprintf("%s: %d", typ, count))
-			first = false
-		}
-		content.WriteString("\n")
-
-		// Display Size Information
-		if totalSize > 0 {
-			content.WriteString(fmt.Sprintf("   Total Size: %s\n", formatSize(totalSize)))
-		}
-
-		// Display Entry Points
-		if len(entryPoints) > 0 {
-			content.WriteString("\n🚪 Entry Points\n")
-			for _, entry := range entryPoints {
-				content.WriteString(fmt.Sprintf("   • %s\n", entry))
-			}
-		}
-
-		// Dependencies
-		if result.ProjectOutput.Metadata != nil && len(result.ProjectOutput.Metadata.Dependencies) > 0 {
-			content.WriteString("\n📚 Dependencies\n")
-			for _, dep := range result.ProjectOutput.Metadata.Dependencies {
-				content.WriteString(fmt.Sprintf("   • %s\n", dep))
-			}
-		}
-
-		// Project Health
-		if result.ProjectInfo.Metadata != nil && result.ProjectInfo.Metadata.Health != nil {
-			health := result.ProjectInfo.Metadata.Health
-			content.WriteString("\n🏥 Project Health\n")
-
-			// Documentation
-			content.WriteString(fmt.Sprintf("   • README: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasReadme]))
-			content.WriteString(fmt.Sprintf("   • LICENSE: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasLicense]))
-
-			// Testing
-			content.WriteString(fmt.Sprintf("   • Tests: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasTests]))
-
-			// CI/CD
-			if health.HasCI {
-				content.WriteString(fmt.Sprintf("   • CI/CD: ✓ (%s)\n", health.CISystem))
-			} else {
-				content.WriteString("   • CI/CD: ✗\n")
-			}
-		}
-
-		// Git Information
-		if result.ProjectOutput.GitInfo != nil {
-			content.WriteString("\n🔄 Git Status\n")
-			content.WriteString(fmt.Sprintf("   Branch: %s\n", result.ProjectOutput.GitInfo.Branch))
-			if result.ProjectOutput.GitInfo.CommitHash != "" {
-				shortHash := result.ProjectOutput.GitInfo.CommitHash
-				if len(shortHash) > 7 {
-					shortHash = shortHash[:7]
-				}
-				content.WriteString(fmt.Sprintf("   Latest: %s", shortHash))
-				if result.ProjectOutput.GitInfo.CommitMessage != "" {
-					content.WriteString(fmt.Sprintf(" - %s", result.ProjectOutput.GitInfo.CommitMessage))
-				}
-				content.WriteString("\n")
-			}
+		// Track entry points
+		if typeInfo.IsEntryPoint {
+			entryPoints = append(entryPoints, file.Path)
 		}
 	}
 
-	// Get content lines and find max width
-	contentLines := strings.Split(strings.TrimRight(content.String(), "\n"), "\n")
+	return fileTypes, totalSize, entryPoints
+}
+
+// buildFileAnalysis creates the file analysis section
+func buildFileAnalysis(fileTypes map[string]int, totalSize int64, entryPoints []string) string {
+	var content strings.Builder
+
+	// Display File Distribution
+	content.WriteString("\n   Types: ")
+	first := true
+	for typ, count := range fileTypes {
+		if !first {
+			content.WriteString(" • ")
+		}
+		content.WriteString(fmt.Sprintf("%s: %d", typ, count))
+		first = false
+	}
+	content.WriteString("\n")
+
+	// Display Size Information
+	if totalSize > 0 {
+		content.WriteString(fmt.Sprintf("   Total Size: %s\n", formatSize(totalSize)))
+	}
+
+	// Display Entry Points
+	if len(entryPoints) > 0 {
+		content.WriteString("\n🚪 Entry Points\n")
+		for _, entry := range entryPoints {
+			content.WriteString(fmt.Sprintf("   • %s\n", entry))
+		}
+	}
+
+	return content.String()
+}
+
+// buildDependenciesSection creates the dependencies section
+func buildDependenciesSection(result *ProcessResult) string {
+	if result.ProjectOutput.Metadata == nil || len(result.ProjectOutput.Metadata.Dependencies) == 0 {
+		return ""
+	}
+
+	var content strings.Builder
+	content.WriteString("\n📚 Dependencies\n")
+	for _, dep := range result.ProjectOutput.Metadata.Dependencies {
+		content.WriteString(fmt.Sprintf("   • %s\n", dep))
+	}
+	return content.String()
+}
+
+// buildHealthSection creates the project health section
+func buildHealthSection(result *ProcessResult) string {
+	if result.ProjectInfo.Metadata == nil || result.ProjectInfo.Metadata.Health == nil {
+		return ""
+	}
+
+	health := result.ProjectInfo.Metadata.Health
+	var content strings.Builder
+	content.WriteString("\n🏥 Project Health\n")
+
+	// Documentation
+	content.WriteString(fmt.Sprintf("   • README: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasReadme]))
+	content.WriteString(fmt.Sprintf("   • LICENSE: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasLicense]))
+
+	// Testing
+	content.WriteString(fmt.Sprintf("   • Tests: %s\n", map[bool]string{true: "✓", false: "✗"}[health.HasTests]))
+
+	// CI/CD
+	if health.HasCI {
+		content.WriteString(fmt.Sprintf("   • CI/CD: ✓ (%s)\n", health.CISystem))
+	} else {
+		content.WriteString("   • CI/CD: ✗\n")
+	}
+
+	return content.String()
+}
+
+// buildGitSection creates the git information section
+func buildGitSection(result *ProcessResult) string {
+	if result.ProjectOutput.GitInfo == nil {
+		return ""
+	}
+
+	var content strings.Builder
+	content.WriteString("\n🔄 Git Status\n")
+	content.WriteString(fmt.Sprintf("   Branch: %s\n", result.ProjectOutput.GitInfo.Branch))
+
+	if result.ProjectOutput.GitInfo.CommitHash != "" {
+		shortHash := result.ProjectOutput.GitInfo.CommitHash
+		if len(shortHash) > 7 {
+			shortHash = shortHash[:7]
+		}
+		content.WriteString(fmt.Sprintf("   Latest: %s", shortHash))
+		if result.ProjectOutput.GitInfo.CommitMessage != "" {
+			content.WriteString(fmt.Sprintf(" - %s", result.ProjectOutput.GitInfo.CommitMessage))
+		}
+		content.WriteString("\n")
+	}
+
+	return content.String()
+}
+
+// formatBoxedOutput creates a boxed output with borders
+func formatBoxedOutput(content string) string {
+	contentLines := strings.Split(strings.TrimRight(content, "\n"), "\n")
 	maxWidth := 0
 	for _, line := range contentLines {
 		width := text.RuneCount(line)
@@ -424,7 +580,39 @@ func GetMetadataSummary(config Config, result *ProcessResult, infoOnly bool) (st
 	summary.WriteString("╰" + strings.Repeat("─", maxWidth) + "╯")
 	summary.WriteString("\033[0m") // Reset color
 
-	return summary.String(), nil
+	return summary.String()
+}
+
+// GetMetadataSummary returns a summary of project metadata and analysis
+// If infoOnly is true, returns a rich summary with all details
+// Otherwise returns a minimal summary with basic project info
+func GetMetadataSummary(config Config, result *ProcessResult, infoOnly bool) (string, error) {
+	var content strings.Builder
+
+	// Build basic project header
+	content.WriteString(buildProjectHeader(config, result, infoOnly))
+
+	// Only show detailed analysis if infoOnly is true
+	if infoOnly {
+		content.WriteString("\n")
+
+		// Analyze file statistics
+		fileTypes, totalSize, entryPoints := analyzeFileStatistics(result.ProjectOutput.Files, config)
+
+		// Build file analysis section
+		content.WriteString(buildFileAnalysis(fileTypes, totalSize, entryPoints))
+
+		// Build dependencies section
+		content.WriteString(buildDependenciesSection(result))
+
+		// Build health section
+		content.WriteString(buildHealthSection(result))
+
+		// Build git section
+		content.WriteString(buildGitSection(result))
+	}
+
+	return formatBoxedOutput(content.String()), nil
 }
 
 // formatSize converts bytes to human readable string
@@ -441,12 +629,73 @@ func formatSize(bytes int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
 
+// FormatDryRunOutput formats the dry-run preview results for display
+func FormatDryRunOutput(result *DryRunResult, config Config) string {
+	var content strings.Builder
+
+	// Project header
+	if result.ProjectInfo != nil && result.ProjectInfo.Metadata != nil && result.ProjectInfo.Metadata.Name != "" {
+		content.WriteString("📦 " + result.ProjectInfo.Metadata.Name)
+	} else {
+		if absPath, err := filepath.Abs(config.DirPath); err == nil {
+			content.WriteString("📦 " + filepath.Base(absPath))
+		}
+	}
+
+	if result.ProjectInfo != nil && result.ProjectInfo.Metadata != nil && result.ProjectInfo.Metadata.Language != "" {
+		content.WriteString(fmt.Sprintf(" (%s)", result.ProjectInfo.Metadata.Language))
+	}
+
+	// Dry-run summary
+	content.WriteString(fmt.Sprintf("\n🔍 DRY RUN PREVIEW\n"))
+	content.WriteString(fmt.Sprintf("   Would process: %d files\n", len(result.FilePaths)))
+	content.WriteString(fmt.Sprintf("   Estimated tokens: ~%d\n", result.EstimatedTokens))
+
+	// Configuration summary
+	content.WriteString("\n⚙️ Effective Configuration\n")
+	if len(result.ConfigSummary.Extensions) > 0 {
+		content.WriteString(fmt.Sprintf("   Extensions: %s\n", strings.Join(result.ConfigSummary.Extensions, ", ")))
+	} else {
+		content.WriteString("   Extensions: all supported types\n")
+	}
+
+	if len(result.ConfigSummary.Excludes) > 0 {
+		content.WriteString(fmt.Sprintf("   Excludes: %s\n", strings.Join(result.ConfigSummary.Excludes, ", ")))
+	}
+
+	content.WriteString(fmt.Sprintf("   Git ignore: %v\n", result.ConfigSummary.UseGitIgnore))
+	content.WriteString(fmt.Sprintf("   Default rules: %v\n", result.ConfigSummary.UseDefaultRules))
+
+	// Files to be processed (showing first 10 with more indicator)
+	content.WriteString("\n📂 Files to Process\n")
+	maxDisplay := 10
+	for i, filePath := range result.FilePaths {
+		if i >= maxDisplay {
+			remaining := len(result.FilePaths) - maxDisplay
+			content.WriteString(fmt.Sprintf("   ... and %d more files\n", remaining))
+			break
+		}
+		content.WriteString(fmt.Sprintf("   • %s\n", filePath))
+	}
+
+	if len(result.FilePaths) == 0 {
+		content.WriteString("   ⚠️  No files would be processed\n")
+	}
+
+	return formatBoxedOutput(content.String())
+}
+
 // Run executes the promptext tool with the given configuration
-func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string, debug bool, gitignore bool, useDefaultRules bool) error {
+func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string, debug bool, gitignore bool, useDefaultRules bool, dryRun bool, quiet bool) error {
 	// Enable debug logging if flag is set
 	if debug {
 		log.Enable()
 		log.SetColorEnabled(true)
+	}
+	
+	// Set quiet mode
+	if quiet {
+		log.SetQuiet(true)
 	}
 
 	log.Debug("=== Promptext Initialization ===")
@@ -467,15 +716,22 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		return fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
-	// Load config file from the specified directory
-	fileConfig, err := config.LoadConfig(absPath)
+	// Load global configuration
+	globalConfig, err := config.LoadGlobalConfig()
 	if err != nil {
-		log.Info("Warning: Failed to load .promptext.yml from %s: %v", absPath, err)
-		fileConfig = &config.FileConfig{}
+		log.Info("Warning: Failed to load global config: %v", err)
+		globalConfig = &config.FileConfig{}
 	}
 
-	// Merge file config with command line flags
-	extensions, excludes, verboseFlag, _, useGitIgnore, useDefaultRules := fileConfig.MergeWithFlags(extension, exclude, verbose, debug, &gitignore, &useDefaultRules)
+	// Load project config file from the specified directory
+	projectConfig, err := config.LoadConfig(absPath)
+	if err != nil {
+		log.Info("Warning: Failed to load .promptext.yml from %s: %v", absPath, err)
+		projectConfig = &config.FileConfig{}
+	}
+
+	// Merge global, project, and flag configurations with proper precedence
+	extensions, excludes, verboseFlag, _, useGitIgnore, useDefaultRules := config.MergeConfigs(globalConfig, projectConfig, extension, exclude, verbose, debug, &gitignore, &useDefaultRules)
 	log.Debug("Configuration:")
 	log.Debug("  • Extensions: %v", extensions)
 	log.Debug("  • Excludes: %#v", excludes)
@@ -501,6 +757,29 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		Filter:     f,
 	}
 
+	// Handle dry-run mode
+	if dryRun {
+		dryRunResult, err := PreviewDirectory(procConfig)
+		if err != nil {
+			return fmt.Errorf("error during dry-run preview: %v", err)
+		}
+
+		// Update config summary with additional info
+		dryRunResult.ConfigSummary.Format = outputFormat
+		dryRunResult.ConfigSummary.OutputFile = outFile
+
+		// Display dry-run results
+		preview := FormatDryRunOutput(dryRunResult, procConfig)
+		if quiet {
+			// In quiet mode, output minimal dry-run info
+			fmt.Printf("files=%d tokens=%d\n", len(dryRunResult.FilePaths), dryRunResult.EstimatedTokens)
+		} else {
+			fmt.Printf("\033[32m%s\033[0m\n", preview)
+		}
+		
+		return nil
+	}
+
 	// Process directory once and reuse results
 	result, err := ProcessDirectory(procConfig, verboseFlag)
 	if err != nil {
@@ -515,7 +794,13 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 
 	// If info-only flag is set, just display the summary and return
 	if infoOnly {
-		fmt.Printf("\033[32m%s\033[0m\n", info)
+		if quiet {
+			// In quiet mode, output minimal info
+			fileCount := len(result.ProjectOutput.Files)
+			fmt.Printf("files=%d tokens=%d\n", fileCount, result.TokenCount)
+		} else {
+			fmt.Printf("\033[32m%s\033[0m\n", info)
+		}
 		return nil
 	}
 
@@ -530,14 +815,30 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		if err := os.WriteFile(outFile, []byte(formattedOutput), 0644); err != nil {
 			return fmt.Errorf("error writing to output file: %w", err)
 		}
-		fmt.Printf("\033[32m%s\n✓ code context written to %s (%s format)\033[0m\n",
-			info, outFile, outputFormat)
+		if quiet {
+			// In quiet mode, output minimal success info
+			fmt.Printf("written=%s format=%s files=%d tokens=%d\n", outFile, outputFormat, len(result.ProjectOutput.Files), result.TokenCount)
+		} else {
+			fmt.Printf("\033[32m%s\n✓ code context written to %s (%s format)\033[0m\n",
+				info, outFile, outputFormat)
+		}
 	} else if !noCopy {
 		if err := clipboard.WriteAll(formattedOutput); err != nil {
-			log.Info("Warning: Failed to copy to clipboard: %v", err)
+			if !quiet {
+				log.Info("Warning: Failed to copy to clipboard: %v", err)
+			}
+			// In quiet mode, exit with error code for clipboard failure
+			if quiet {
+				return fmt.Errorf("clipboard copy failed")
+			}
 		} else {
-			fmt.Printf("\033[32m%s\n✓ code context copied to clipboard (%s format)\033[0m\n",
-				info, outputFormat)
+			if quiet {
+				// In quiet mode, output minimal success info
+				fmt.Printf("clipboard=ok format=%s files=%d tokens=%d\n", outputFormat, len(result.ProjectOutput.Files), result.TokenCount)
+			} else {
+				fmt.Printf("\033[32m%s\n✓ code context copied to clipboard (%s format)\033[0m\n",
+					info, outputFormat)
+			}
 		}
 	}
 

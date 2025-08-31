@@ -9,6 +9,7 @@ import (
 
 var (
 	debugMode   bool
+	quietMode   bool
 	logger      *log.Logger
 	phaseStart  time.Time
 	timeMarks   map[string]time.Time
@@ -69,6 +70,16 @@ func Disable() {
 	debugMode = false
 }
 
+// SetQuiet enables or disables quiet mode
+func SetQuiet(enabled bool) {
+	quietMode = enabled
+}
+
+// IsQuietMode returns whether quiet mode is enabled
+func IsQuietMode() bool {
+	return quietMode
+}
+
 // Debug logs a debug message if debug mode is enabled
 func Debug(format string, v ...interface{}) {
 	if debugMode {
@@ -80,9 +91,9 @@ func Debug(format string, v ...interface{}) {
 	}
 }
 
-// Info logs an info message if debug mode is enabled
+// Info logs an info message if debug mode is enabled and not in quiet mode
 func Info(format string, v ...interface{}) {
-	if debugMode {
+	if debugMode && !quietMode {
 		logger.Printf("[INFO] "+format, v...)
 	}
 }
@@ -106,4 +117,18 @@ func IsDebugEnabled() bool {
 // GetPhaseStart returns the current phase start time
 func GetPhaseStart() time.Time {
 	return phaseStart
+}
+
+// Warn logs a warning message (always shown unless in quiet mode)
+func Warn(format string, v ...interface{}) {
+	if !quietMode {
+		logger.Printf("[WARN] "+format, v...)
+	}
+}
+
+// Output logs regular output (suppressed in quiet mode)
+func Output(format string, v ...interface{}) {
+	if !quietMode {
+		fmt.Printf(format, v...)
+	}
 }
