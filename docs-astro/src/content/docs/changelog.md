@@ -8,17 +8,44 @@ All notable changes to promptext will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] - 2025-08-31
 
-### Added
-- Astro Starlight documentation migration
-- Enhanced .gitignore patterns for comprehensive Go CLI project filtering
+### Major Changes
+- **New Documentation System**: Migrated from Docusaurus to Astro for better performance and maintainability
+- **Modern CLI Interface**: Complete refactoring with pflag for better flag handling and POSIX compliance
+- **Global Configuration Support**: Added support for global and project-level configuration files
+- **Performance Improvements**: Major refactoring for better performance on large codebases
+- **Code Quality Improvements**: Achieved A+ Go Report Card rating with gofmt formatting fixes and cyclomatic complexity reductions
 
-### Fixed
-- CLI flag mapping for version and verbose commands
-- MDX compilation error in performance documentation
+### Features
+- Implemented modern CLI interface with improved help text and flag descriptions
+- Added global configuration support with proper precedence (CLI flags > project config > global config)
+- Enhanced .gitignore patterns with comprehensive Go CLI project support
+- Improved configuration merging logic for better flexibility
+- Added support for XDG_CONFIG_HOME standard for configuration paths
 
-## [Latest] - Recent Releases
+### Bug Fixes
+- Fixed CLI flag mapping for version and verbose options
+- Corrected angle bracket escaping in MDX documentation
+- Fixed configuration precedence issues
+
+### Documentation
+- Migrated to Astro-based documentation system with improved performance
+- Updated GitHub Actions workflow for new documentation deployment
+- Improved documentation structure and navigation
+
+### Internal Improvements
+- Refactored internal modules for better separation of concerns
+- Enhanced test coverage for configuration and flag handling
+- Improved error handling and user-friendly messages
+- Better cross-platform compatibility
+- Reduced cyclomatic complexity across core functions
+- Applied consistent code formatting with gofmt
+
+### Breaking Changes
+- None - this release maintains backward compatibility
+
+## [Previous Releases]
 
 ### Added
 - Modern CLI interface with pflag integration
