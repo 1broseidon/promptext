@@ -7,10 +7,10 @@ import (
 
 // Scoring weights for different match types
 const (
-	FilenameWeight   = 10.0 // Matches in filename are most important
-	DirectoryWeight  = 5.0  // Matches in directory/package name
-	ImportWeight     = 3.0  // Matches in import statements
-	ContentWeight    = 1.0  // Matches in file content
+	FilenameWeight  = 10.0 // Matches in filename are most important
+	DirectoryWeight = 5.0  // Matches in directory/package name
+	ImportWeight    = 3.0  // Matches in import statements
+	ContentWeight   = 1.0  // Matches in file content
 )
 
 // ScoredFile represents a file with its relevance score
@@ -59,20 +59,22 @@ func (s *Scorer) ScoreFile(path, content string) float64 {
 
 	score := 0.0
 
-	// Extract components for scoring
+	// Extract and normalize components for scoring (normalize once)
 	filename := filepath.Base(path)
+	filenameLower := strings.ToLower(filename)
 	dir := filepath.Dir(path)
+	dirLower := strings.ToLower(dir)
 	contentLower := strings.ToLower(content)
 
 	// Score each keyword
 	for _, keyword := range s.keywords {
 		// 1. Filename matches (highest weight)
-		if strings.Contains(strings.ToLower(filename), keyword) {
+		if strings.Contains(filenameLower, keyword) {
 			score += FilenameWeight
 		}
 
 		// 2. Directory/package name matches
-		if strings.Contains(strings.ToLower(dir), keyword) {
+		if strings.Contains(dirLower, keyword) {
 			score += DirectoryWeight
 		}
 
@@ -100,6 +102,7 @@ func (s *Scorer) scoreImports(content, keyword string) int {
 	inImportBlock := false
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
+		trimmedLower := strings.ToLower(trimmed)
 
 		// Detect import blocks
 		if strings.HasPrefix(trimmed, "import (") {
@@ -113,7 +116,7 @@ func (s *Scorer) scoreImports(content, keyword string) int {
 
 		// Check single-line imports and lines within import blocks
 		if strings.HasPrefix(trimmed, "import ") || inImportBlock {
-			if strings.Contains(strings.ToLower(trimmed), keyword) {
+			if strings.Contains(trimmedLower, keyword) {
 				matches++
 			}
 		}

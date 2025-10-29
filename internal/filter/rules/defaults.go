@@ -4,6 +4,7 @@ import "github.com/1broseidon/promptext/internal/filter/types"
 
 func DefaultExcludes() []types.Rule {
 	return []types.Rule{
+		// Pattern-based exclusions (fastest - checked first)
 		NewPatternRule([]string{
 			".DS_Store",
 
@@ -38,6 +39,7 @@ func DefaultExcludes() []types.Rule {
 			".sass-cache/",
 			".npm/",
 			".yarn/",
+			".pnp.*",
 
 			// Test coverage
 			"coverage/",
@@ -53,6 +55,18 @@ func DefaultExcludes() []types.Rule {
 			"tmp/",
 			"temp/",
 		}, types.Exclude),
+
+		// Lock file detection (multi-layered, ordered by confidence)
+		// Layer 1: Signature-based (99% confidence - most reliable)
+		NewLockFileRule(),
+
+		// Layer 2: Ecosystem-aware (95% confidence - context-aware)
+		NewEcosystemRule("."),
+
+		// Layer 3: Generated file detection (85% confidence - heuristic)
+		NewGeneratedFileRule(1), // 1MB threshold
+
+		// Binary file detection (always reliable)
 		NewBinaryRule(),
 	}
 }

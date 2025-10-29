@@ -112,8 +112,9 @@ func MergeConfigs(globalConfig, projectConfig *FileConfig, flagExt, flagExclude 
 		merged.Extensions = projectConfig.Extensions
 	}
 	// For excludes, we want to merge (append) rather than replace
+	// Use deduplication to avoid duplicate patterns
 	if len(projectConfig.Excludes) > 0 {
-		merged.Excludes = append(merged.Excludes, projectConfig.Excludes...)
+		merged.Excludes = mergeAndDedupe(merged.Excludes, projectConfig.Excludes)
 	}
 	if projectConfig.Verbose != nil {
 		merged.Verbose = projectConfig.Verbose
@@ -148,13 +149,12 @@ func (fc *FileConfig) mergeExtensions(flagExt string) []string {
 	return nil
 }
 
-// mergeExcludes handles exclude pattern merging logic
+// mergeExcludes handles exclude pattern merging logic with deduplication
 func (fc *FileConfig) mergeExcludes(flagExclude string) []string {
-	excludes := append([]string{}, fc.Excludes...)
 	if flagExclude != "" {
-		excludes = append(excludes, parseCommaSeparated(flagExclude)...)
+		return mergeAndDedupe(fc.Excludes, parseCommaSeparated(flagExclude))
 	}
-	return excludes
+	return mergeAndDedupe(fc.Excludes)
 }
 
 // mergeBooleanFlags handles boolean flag merging with proper precedence
@@ -207,4 +207,22 @@ func parseCommaSeparated(input string) []string {
 		return nil
 	}
 	return strings.Split(input, ",")
+}
+
+// mergeAndDedupe merges multiple slices and removes duplicates
+// Returns empty slice (not nil) to maintain consistency with append behavior
+func mergeAndDedupe(slices ...[]string) []string {
+	seen := make(map[string]bool)
+	result := []string{} // Initialize as empty slice, not nil
+
+	for _, slice := range slices {
+		for _, item := range slice {
+			if !seen[item] {
+				seen[item] = true
+				result = append(result, item)
+			}
+		}
+	}
+
+	return result
 }

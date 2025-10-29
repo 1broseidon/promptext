@@ -186,11 +186,11 @@ type FileTypeInfo struct {
 // Helper functions to reduce cyclomatic complexity
 
 func isTestFile(path, base string) bool {
-	return strings.Contains(path, "_test.go") || 
+	return strings.Contains(path, "_test.go") ||
 		strings.Contains(path, "test_") ||
-		strings.HasPrefix(path, "test_") || 
+		strings.HasPrefix(path, "test_") ||
 		strings.HasSuffix(base, ".test.js") ||
-		strings.HasSuffix(base, ".spec.js") || 
+		strings.HasSuffix(base, ".spec.js") ||
 		strings.HasSuffix(base, "_test.py")
 }
 

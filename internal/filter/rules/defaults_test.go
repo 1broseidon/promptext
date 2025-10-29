@@ -438,15 +438,21 @@ func TestDefaultExcludes_RuleCount(t *testing.T) {
 	rules := DefaultExcludes()
 
 	// Verify expected number of rules
-	// Should have exactly 2 rules: PatternRule and BinaryRule
-	assert.Equal(t, 2, len(rules), "Should have exactly 2 default exclude rules")
+	// Should have exactly 5 rules: PatternRule, LockFileRule, EcosystemRule, GeneratedFileRule, and BinaryRule
+	assert.Equal(t, 5, len(rules), "Should have exactly 5 default exclude rules")
 
-	// Verify rule order (pattern rule first, then binary rule)
+	// Verify rule order (by confidence level)
 	_, isFirstPattern := rules[0].(*PatternRule)
-	_, isSecondBinary := rules[1].(*BinaryRule)
+	_, isSecondLockFile := rules[1].(*LockFileRule)
+	_, isThirdEcosystem := rules[2].(*EcosystemRule)
+	_, isFourthGenerated := rules[3].(*GeneratedFileRule)
+	_, isFifthBinary := rules[4].(*BinaryRule)
 
 	assert.True(t, isFirstPattern, "First rule should be PatternRule")
-	assert.True(t, isSecondBinary, "Second rule should be BinaryRule")
+	assert.True(t, isSecondLockFile, "Second rule should be LockFileRule (99% confidence)")
+	assert.True(t, isThirdEcosystem, "Third rule should be EcosystemRule (95% confidence)")
+	assert.True(t, isFourthGenerated, "Fourth rule should be GeneratedFileRule (85% confidence)")
+	assert.True(t, isFifthBinary, "Fifth rule should be BinaryRule")
 }
 
 func TestDefaultExcludes_PatternCount(t *testing.T) {

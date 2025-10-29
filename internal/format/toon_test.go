@@ -142,7 +142,7 @@ func TestTOONEncoder_NestedObjects(t *testing.T) {
 			"id":   123,
 			"name": "Alice",
 			"settings": map[string]interface{}{
-				"theme": "dark",
+				"theme":         "dark",
 				"notifications": true,
 			},
 		},
@@ -273,9 +273,9 @@ func TestTOONEncoder_ComplexStructure(t *testing.T) {
 
 	input := map[string]interface{}{
 		"project": map[string]interface{}{
-			"name":   "promptext",
+			"name":    "promptext",
 			"version": "0.3.0",
-			"tokens": 4250,
+			"tokens":  4250,
 		},
 		"languages": []string{"Go", "YAML", "Shell"},
 		"files": []map[string]interface{}{

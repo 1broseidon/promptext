@@ -47,14 +47,14 @@ type ExcludedFileInfo struct {
 
 // FilePriorityInfo contains information about a file's priority for explain-selection
 type FilePriorityInfo struct {
-	Path      string
-	Tokens    int
-	Score     float64
-	IsEntry   bool
-	IsTest    bool
-	IsConfig  bool
-	Depth     int
-	Included  bool
+	Path     string
+	Tokens   int
+	Score    float64
+	IsEntry  bool
+	IsTest   bool
+	IsConfig bool
+	Depth    int
+	Included bool
 }
 
 // ProcessResult contains both display and clipboard content
@@ -62,12 +62,12 @@ type ProcessResult struct {
 	ProjectOutput    *format.ProjectOutput
 	DisplayContent   string
 	ClipboardContent string
-	TokenCount       int                 // Token count for included files
-	TotalTokens      int                 // Total tokens if all files were included
+	TokenCount       int // Token count for included files
+	TotalTokens      int // Total tokens if all files were included
 	ProjectInfo      *info.ProjectInfo
-	ExcludedFiles    int                 // Number of files excluded due to token budget
-	ExcludedFileList []ExcludedFileInfo  // Details of excluded files
-	PriorityList     []FilePriorityInfo  // Priority breakdown for explain-selection
+	ExcludedFiles    int                // Number of files excluded due to token budget
+	ExcludedFileList []ExcludedFileInfo // Details of excluded files
+	PriorityList     []FilePriorityInfo // Priority breakdown for explain-selection
 }
 
 // DryRunResult contains dry-run preview information
@@ -398,8 +398,8 @@ func prioritizeFiles(files []format.FileInfo, scorer *relevance.Scorer, entryPoi
 		isEntry := entryPoints[file.Path]
 		isTest := strings.Contains(file.Path, "test") || strings.HasSuffix(file.Path, "_test.go")
 		isConfig := strings.Contains(strings.ToLower(filepath.Base(file.Path)), "config") ||
-		            strings.HasSuffix(file.Path, ".yml") || strings.HasSuffix(file.Path, ".yaml") ||
-		            strings.HasSuffix(file.Path, ".json") || strings.HasSuffix(file.Path, ".toml")
+			strings.HasSuffix(file.Path, ".yml") || strings.HasSuffix(file.Path, ".yaml") ||
+			strings.HasSuffix(file.Path, ".json") || strings.HasSuffix(file.Path, ".toml")
 
 		// Calculate relevance score
 		relevanceScore := scorer.ScoreFile(file.Path, file.Content)
@@ -514,17 +514,8 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	if scorer.HasKeywords() || config.MaxTokens > 0 {
 		log.Debug("=== Applying Relevance & Token Budget ===")
 
-		// Build entry points map (detect common entry point patterns)
-		entryPoints := make(map[string]bool)
-		for _, file := range processedFiles {
-			basename := filepath.Base(file.Path)
-			// Detect common entry point file names
-			if basename == "main.go" || basename == "index.js" || basename == "index.ts" ||
-			   basename == "app.js" || basename == "app.ts" || basename == "main.py" ||
-			   basename == "__init__.py" || basename == "index.html" {
-				entryPoints[file.Path] = true
-			}
-		}
+		// Build entry points map using common patterns
+		entryPoints := detectEntryPoints(processedFiles)
 
 		// Prioritize files
 		processedFiles = prioritizeFiles(processedFiles, scorer, entryPoints)
@@ -575,6 +566,13 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 			}
 
 			processedFiles = filteredFiles
+
+			// Recalculate totalTokens based on filtered files only
+			totalTokens = 0
+			for _, file := range processedFiles {
+				totalTokens += tokenCounter.EstimateTokens(file.Content)
+			}
+
 			log.Debug("Included %d files, excluded %d files due to token budget", len(processedFiles), excludedFileCount)
 		}
 	}
@@ -872,7 +870,7 @@ func formatBoxedOutput(content string) string {
 	contentLines := strings.Split(strings.TrimRight(content, "\n"), "\n")
 	maxWidth := 0
 	for _, line := range contentLines {
-		width := text.RuneCount(line)
+		width := text.RuneWidthWithoutEscSequences(line)
 		if width > maxWidth {
 			maxWidth = width
 		}
@@ -890,7 +888,7 @@ func formatBoxedOutput(content string) string {
 	// Content lines
 	for _, line := range contentLines {
 		// Calculate padding needed
-		lineWidth := text.RuneCount(line)
+		lineWidth := text.RuneWidthWithoutEscSequences(line)
 		padding := maxWidth - lineWidth
 
 		// Write line with padding
@@ -968,7 +966,7 @@ func FormatDryRunOutput(result *DryRunResult, config Config) string {
 	}
 
 	// Dry-run summary
-	content.WriteString(fmt.Sprintf("\n🔍 DRY RUN PREVIEW\n"))
+	content.WriteString("\n🔍 DRY RUN PREVIEW\n")
 	content.WriteString(fmt.Sprintf("   Would process: %d files\n", len(result.FilePaths)))
 	content.WriteString(fmt.Sprintf("   Estimated tokens: ~%d\n", result.EstimatedTokens))
 
@@ -1232,4 +1230,65 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 
 	// Handle output
 	return handleOutput(formattedOutput, outputFormat, outFile, info, result, noCopy, quiet)
+}
+
+// Common entry point file patterns across languages
+var entryPointPatterns = map[string]bool{
+	// Go
+	"main.go": true,
+
+	// JavaScript/TypeScript
+	"index.js":   true,
+	"index.ts":   true,
+	"index.jsx":  true,
+	"index.tsx":  true,
+	"app.js":     true,
+	"app.ts":     true,
+	"app.jsx":    true,
+	"app.tsx":    true,
+	"server.js":  true,
+	"server.ts":  true,
+	"index.html": true,
+
+	// Python
+	"main.py":     true,
+	"app.py":      true,
+	"__init__.py": true,
+	"__main__.py": true,
+	"manage.py":   true,
+	"wsgi.py":     true,
+	"asgi.py":     true,
+
+	// Ruby
+	"application.rb": true,
+	"config.ru":      true,
+
+	// PHP
+	"index.php": true,
+	"app.php":   true,
+
+	// Java
+	"Main.java":        true,
+	"Application.java": true,
+
+	// Rust
+	"main.rs": true,
+	"lib.rs":  true,
+
+	// C/C++
+	"main.c":   true,
+	"main.cpp": true,
+	"main.cc":  true,
+}
+
+// detectEntryPoints identifies entry point files from the file list
+func detectEntryPoints(files []format.FileInfo) map[string]bool {
+	entryPoints := make(map[string]bool)
+	for _, file := range files {
+		basename := filepath.Base(file.Path)
+		if entryPointPatterns[basename] {
+			entryPoints[file.Path] = true
+		}
+	}
+	return entryPoints
 }
