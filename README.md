@@ -11,14 +11,18 @@ promptext is a code context extraction tool designed for AI assistant interactio
 
 ## Key Features
 
-- Smart file filtering with .gitignore support and intelligent defaults
-- Accurate token counting using tiktoken (GPT-3.5/4 compatible)
-- Comprehensive project analysis (entry points, configs, core files, tests, docs)
-- Multiple output formats (Markdown, XML)
-- Configurable via CLI flags or configuration files
-- Project metadata extraction (language, version, dependencies)
-- Git repository information extraction
-- Performance monitoring and debug logging
+- **TOON Format Output** - Default token-optimized format (30-60% smaller than JSON/Markdown), inspired by [johannschopplich/toon](https://github.com/johannschopplich/toon)
+- **Smart Relevance Filtering** - Multi-factor scoring prioritizes files by keywords (filename, directory, imports, content)
+- **Token Budget Management** - Limit output to specific token count, automatically excluding lower-priority files
+- **Format Auto-Detection** - Automatically detects output format from file extension (.toon, .md, .xml)
+- **Smart File Filtering** - .gitignore support and intelligent defaults
+- **Accurate Token Counting** - Using tiktoken (GPT-3.5/4 compatible)
+- **Comprehensive Project Analysis** - Entry points, configs, core files, tests, docs
+- **Multiple Output Formats** - TOON (default), Markdown, XML
+- **Flexible Configuration** - CLI flags or configuration files
+- **Project Metadata Extraction** - Language, version, dependencies
+- **Git Repository Information** - Branch, commit, message
+- **Performance Monitoring** - Debug logging and timing analysis
 
 ## Install
 
@@ -45,7 +49,7 @@ See our [documentation](https://1broseidon.github.io/promptext/) for more instal
 ## Basic Usage
 
 ```bash
-# Process current directory (output copied to clipboard)
+# Process current directory (TOON format copied to clipboard)
 prx
 
 # Process specific directory with positional argument
@@ -57,8 +61,13 @@ prx -e .go,.js,.ts
 # Show project summary only
 prx -i
 
-# Export as XML to file
-prx -f xml -o project.xml
+# Auto-detect format from file extension
+prx -o context.toon     # TOON format
+prx -o context.md       # Markdown format
+prx -o project.xml      # XML format
+
+# Explicit format specification
+prx -f markdown -o context.md
 
 # Process with custom exclusions and view output in terminal
 prx -x "test/,vendor/" --verbose
@@ -68,6 +77,58 @@ prx --dry-run -e .go
 
 # Quiet mode for scripting
 prx -q -o output.md
+```
+
+## Advanced Features
+
+### Relevance Filtering
+
+Prioritize files matching specific keywords using multi-factor scoring:
+
+```bash
+# Prioritize authentication-related files
+prx --relevant "auth login OAuth"
+prx -r "database SQL postgres"
+
+# Multi-factor scoring weights:
+# - Filename matches: 10x
+# - Directory matches: 5x
+# - Import matches: 3x
+# - Content matches: 1x
+```
+
+### Token Budget Management
+
+Limit output to stay within token limits for AI models:
+
+```bash
+# Limit to 8000 tokens (fits Claude Haiku context)
+prx --max-tokens 8000
+
+# Combine with relevance to prioritize important files
+prx -r "api routes handlers" --max-tokens 5000
+
+# Cost-optimized queries
+prx --max-tokens 3000 -o quick-context.toon
+```
+
+When the budget is exceeded, promptext:
+- Shows which files were included vs excluded
+- Displays token breakdown for excluded files
+- Filters directory tree to show only included files
+
+```
+╭───────────────────────────────────────────────╮
+│ 📦 promptext (Go)                             │
+│    Included: 7/18 files • ~4,847 tokens       │
+│    Full project: 18 files • ~19,512 tokens    │
+╰───────────────────────────────────────────────╯
+
+⚠️  Excluded 11 files due to token budget:
+    • internal/cli/commands.go (~784 tokens)
+    • internal/app/app.go (~60 tokens)
+    ... and 9 more files (~8,453 tokens)
+    Total excluded: ~9,297 tokens
 ```
 
 ## Configuration
@@ -90,7 +151,7 @@ excludes:
   - vendor/
   - node_modules/
   - "*.test.go"
-format: markdown
+format: toon        # Options: toon, markdown, xml
 verbose: false
 ```
 
@@ -106,7 +167,7 @@ extensions:
 excludes:
   - vendor/
   - __pycache__/
-format: markdown
+format: toon
 ```
 
 ## Documentation
@@ -115,10 +176,12 @@ Visit our [documentation site](https://1broseidon.github.io/promptext/) for comp
 
 - Getting Started Guide
 - Configuration Options
-- File Filtering Rules  
-- Token Analysis
+- File Filtering Rules
+- **Relevance Filtering** - Smart file prioritization
+- **Token Budget Management** - Optimize for AI model context windows
+- Token Analysis & Counting
 - Project Analysis Features
-- Output Format Specifications
+- Output Format Specifications (TOON, Markdown, XML)
 - Performance Tips
 
 ## License

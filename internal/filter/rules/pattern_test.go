@@ -38,10 +38,10 @@ func TestNewPatternRule(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rule := NewPatternRule(tt.patterns, tt.action)
-			
+
 			require.NotNil(t, rule)
 			assert.Equal(t, tt.action, rule.Action())
-			
+
 			// Verify rule type
 			patternRule, ok := rule.(*PatternRule)
 			require.True(t, ok, "Expected PatternRule type")
@@ -121,7 +121,7 @@ func TestPatternRule_Match_WildcardPatterns(t *testing.T) {
 		{"aider log", ".aider.log", true, "aider log file"},
 		{"nested aider", "project/.aider.conf.yml", true, "nested aider file"},
 
-		// Suffix wildcards  
+		// Suffix wildcards
 		{"test prefix", "test_utils.py", true, "test prefix match"},
 		{"backup suffix", "config_backup", true, "backup suffix match"},
 		{"nested test", "src/test_helper.js", true, "nested test file"},
@@ -147,7 +147,7 @@ func TestPatternRule_Match_WildcardPatterns(t *testing.T) {
 func TestPatternRule_Match_ExactAndPathPatterns(t *testing.T) {
 	rule := NewPatternRule([]string{
 		".DS_Store",
-		"Thumbs.db", 
+		"Thumbs.db",
 		"src/generated",
 		"package-lock.json",
 	}, types.Exclude)
@@ -193,10 +193,10 @@ func TestPatternRule_Match_ExactAndPathPatterns(t *testing.T) {
 
 func TestPatternRule_Match_ComplexPatterns(t *testing.T) {
 	rule := NewPatternRule([]string{
-		"*.pyc",           // Wildcard for pyc files
-		"*.sublime-*",     // Complex wildcard
-		"node_modules/",   // Directory
-		".git*",          // Prefix wildcard
+		"*.pyc",         // Wildcard for pyc files
+		"*.sublime-*",   // Complex wildcard
+		"node_modules/", // Directory
+		".git*",         // Prefix wildcard
 	}, types.Exclude)
 
 	tests := []struct {
@@ -287,7 +287,7 @@ func TestPatternRule_Match_EdgeCases(t *testing.T) {
 		// Path normalization edge cases - Note: current implementation may not normalize these
 		{
 			name:     "windows vs unix paths",
-			patterns: []string{"src/build/"},  // Use unix style pattern
+			patterns: []string{"src/build/"}, // Use unix style pattern
 			testPath: "src/build/output.exe",
 			expected: true,
 			desc:     "directory pattern should match",
@@ -296,7 +296,7 @@ func TestPatternRule_Match_EdgeCases(t *testing.T) {
 		// Pattern with trailing/leading slashes
 		{
 			name:     "multiple slashes",
-			patterns: []string{"cache/"},  // Use single slash pattern
+			patterns: []string{"cache/"}, // Use single slash pattern
 			testPath: "cache/file.tmp",
 			expected: true,
 			desc:     "directory pattern should match",
@@ -315,13 +315,13 @@ func TestPatternRule_Match_EdgeCases(t *testing.T) {
 func TestPatternRule_Patterns(t *testing.T) {
 	patterns := []string{"*.log", "temp/", ".hidden*"}
 	rule := NewPatternRule(patterns, types.Exclude)
-	
+
 	patternRule, ok := rule.(*PatternRule)
 	require.True(t, ok, "Expected PatternRule type")
-	
+
 	result := patternRule.Patterns()
 	assert.Equal(t, patterns, result, "Patterns() should return original patterns")
-	
+
 	// Note: The current implementation returns the original slice reference.
 	// This test documents the current behavior. For true immutability,
 	// the implementation would need to return a copy.
@@ -352,7 +352,7 @@ func TestPatternRule_Action(t *testing.T) {
 func BenchmarkPatternRule_DirectoryMatch(b *testing.B) {
 	rule := NewPatternRule([]string{"node_modules/", ".git/", "vendor/"}, types.Exclude)
 	path := "src/node_modules/package/index.js"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		rule.Match(path)
@@ -362,7 +362,7 @@ func BenchmarkPatternRule_DirectoryMatch(b *testing.B) {
 func BenchmarkPatternRule_WildcardMatch(b *testing.B) {
 	rule := NewPatternRule([]string{"*.log", "*.tmp", ".aider*"}, types.Exclude)
 	path := "logs/application.log"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		rule.Match(path)
@@ -372,7 +372,7 @@ func BenchmarkPatternRule_WildcardMatch(b *testing.B) {
 func BenchmarkPatternRule_ExactMatch(b *testing.B) {
 	rule := NewPatternRule([]string{".DS_Store", "Thumbs.db", "package-lock.json"}, types.Exclude)
 	path := "images/.DS_Store"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		rule.Match(path)
@@ -382,7 +382,7 @@ func BenchmarkPatternRule_ExactMatch(b *testing.B) {
 func BenchmarkPatternRule_NoMatch(b *testing.B) {
 	rule := NewPatternRule([]string{"*.log", "node_modules/", ".git*"}, types.Exclude)
 	path := "src/main.go"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		rule.Match(path)

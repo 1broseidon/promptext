@@ -12,16 +12,16 @@ import (
 // createTempFilterTest creates a comprehensive directory structure for filter testing
 func createTempFilterTest(b *testing.B, numFiles int, complexity string) string {
 	b.Helper()
-	
+
 	tempDir, err := os.MkdirTemp("", "filter_bench")
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	// Create directory structure based on complexity
 	var dirs []string
 	var patterns []string
-	
+
 	switch complexity {
 	case "simple":
 		dirs = []string{"src", "test", "docs"}
@@ -29,7 +29,7 @@ func createTempFilterTest(b *testing.B, numFiles int, complexity string) string 
 	case "medium":
 		dirs = []string{
 			"src/main", "src/utils", "src/handlers",
-			"test/unit", "test/integration", 
+			"test/unit", "test/integration",
 			"docs/api", "docs/guides",
 			"build", "dist", "node_modules/pkg1", "node_modules/pkg2",
 		}
@@ -40,7 +40,7 @@ func createTempFilterTest(b *testing.B, numFiles int, complexity string) string 
 			"src/test/java/com/example", "src/test/resources",
 			"target/classes", "target/test-classes", "target/surefire-reports",
 			"node_modules/pkg1/dist", "node_modules/pkg2/lib", "node_modules/pkg3/build",
-			"vendor/github.com/pkg1", "vendor/github.com/pkg2", 
+			"vendor/github.com/pkg1", "vendor/github.com/pkg2",
 			".git/objects", ".git/refs", ".git/hooks",
 			"coverage/html", "coverage/lcov",
 			"docs/api/v1", "docs/api/v2", "docs/guides/getting-started",
@@ -48,47 +48,47 @@ func createTempFilterTest(b *testing.B, numFiles int, complexity string) string 
 			"cache/build", "cache/test", "tmp/uploads",
 		}
 		patterns = []string{
-			"node_modules/", "vendor/", ".git/", "target/", "build/", "dist/", 
-			"coverage/", "tmp/", "cache/", "*.tmp", "*.log", "*.test", 
+			"node_modules/", "vendor/", ".git/", "target/", "build/", "dist/",
+			"coverage/", "tmp/", "cache/", "*.tmp", "*.log", "*.test",
 			"*.class", "*.o", "*.so", "*.exe", "*.dll",
 		}
 	default:
 		dirs = []string{"src"}
 		patterns = []string{"*.tmp"}
 	}
-	
+
 	// Create directories
 	for _, dir := range dirs {
 		if err := os.MkdirAll(filepath.Join(tempDir, dir), 0755); err != nil {
 			b.Fatal(err)
 		}
 	}
-	
+
 	// Create files distributed across directories
 	filesPerDir := numFiles / len(dirs)
 	remainder := numFiles % len(dirs)
-	
+
 	extensions := []string{".go", ".js", ".py", ".java", ".md", ".json", ".yaml", ".tmp", ".log", ".test", ".class"}
 	fileCount := 0
-	
+
 	for i, dir := range dirs {
 		dirFiles := filesPerDir
 		if i < remainder {
 			dirFiles++
 		}
-		
+
 		for j := 0; j < dirFiles && fileCount < numFiles; j++ {
 			ext := extensions[fileCount%len(extensions)]
 			filename := filepath.Join(tempDir, dir, fmt.Sprintf("file_%d%s", j, ext))
 			content := fmt.Sprintf("// File content for %s\n", filename)
-			
+
 			if err := os.WriteFile(filename, []byte(content), 0644); err != nil {
 				b.Fatal(err)
 			}
 			fileCount++
 		}
 	}
-	
+
 	// Create .gitignore file if complex
 	if complexity == "complex" {
 		gitignoreContent := strings.Join(patterns, "\n")
@@ -97,7 +97,7 @@ func createTempFilterTest(b *testing.B, numFiles int, complexity string) string 
 			b.Fatal(err)
 		}
 	}
-	
+
 	return tempDir
 }
 
@@ -116,7 +116,7 @@ func BenchmarkFilter_Creation_ComplexRules(b *testing.B) {
 
 func benchmarkFilterCreation(b *testing.B, complexity string) {
 	var opts Options
-	
+
 	switch complexity {
 	case "simple":
 		opts = Options{
@@ -149,9 +149,9 @@ func benchmarkFilterCreation(b *testing.B, complexity string) {
 			UseGitIgnore:    true,
 		}
 	}
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		filter := New(opts)
 		if filter == nil {
@@ -176,7 +176,7 @@ func BenchmarkFilter_ShouldProcess_10000Files(b *testing.B) {
 func benchmarkFilterShouldProcess(b *testing.B, numFiles int, complexity string) {
 	tempDir := createTempFilterTest(b, numFiles, complexity)
 	defer os.RemoveAll(tempDir)
-	
+
 	// Collect all file paths
 	var files []string
 	err := filepath.Walk(tempDir, func(path string, info os.FileInfo, err error) error {
@@ -195,7 +195,7 @@ func benchmarkFilterShouldProcess(b *testing.B, numFiles int, complexity string)
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	// Create filter based on complexity
 	var opts Options
 	switch complexity {
@@ -208,8 +208,8 @@ func benchmarkFilterShouldProcess(b *testing.B, numFiles int, complexity string)
 		}
 	case "medium":
 		opts = Options{
-			Includes: []string{".go", ".js", ".py", ".md"},
-			Excludes: []string{"*.tmp", "*.log", "node_modules/", "build/"},
+			Includes:        []string{".go", ".js", ".py", ".md"},
+			Excludes:        []string{"*.tmp", "*.log", "node_modules/", "build/"},
 			UseDefaultRules: true,
 			UseGitIgnore:    false,
 		}
@@ -224,11 +224,11 @@ func benchmarkFilterShouldProcess(b *testing.B, numFiles int, complexity string)
 			UseGitIgnore:    false,
 		}
 	}
-	
+
 	filter := New(opts)
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		processedCount := 0
 		for _, file := range files {
@@ -240,7 +240,7 @@ func benchmarkFilterShouldProcess(b *testing.B, numFiles int, complexity string)
 			b.Log("Warning: No files were processed")
 		}
 	}
-	
+
 	b.ReportMetric(float64(len(files)), "files_checked")
 }
 
@@ -267,22 +267,22 @@ func benchmarkPatternMatching(b *testing.B, patterns []string, numFiles int) {
 		"build/output.tmp", "tmp/temp.log", "cache/data.class",
 		"coverage/report.html", "target/classes/App.class",
 	}
-	
+
 	for i := 0; i < numFiles; i++ {
 		template := pathTemplates[i%len(pathTemplates)]
 		testPaths[i] = fmt.Sprintf("%s_%d", template, i)
 	}
-	
+
 	opts := Options{
 		Excludes:        patterns,
 		UseDefaultRules: false,
 		UseGitIgnore:    false,
 	}
-	
+
 	filter := New(opts)
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		for _, path := range testPaths {
 			_ = filter.ShouldProcess(path)
@@ -298,7 +298,7 @@ func BenchmarkFilter_GitIgnore_Parsing(b *testing.B) {
 		b.Fatal(err)
 	}
 	defer os.RemoveAll(tempDir)
-	
+
 	gitignoreContent := `# Dependencies
 node_modules/
 vendor/
@@ -356,12 +356,12 @@ yarn.lock
 *.seed
 *.pid.lock
 `
-	
+
 	gitignorePath := filepath.Join(tempDir, ".gitignore")
 	if err := os.WriteFile(gitignorePath, []byte(gitignoreContent), 0644); err != nil {
 		b.Fatal(err)
 	}
-	
+
 	// Change to temp directory for relative path testing
 	oldWd, err := os.Getwd()
 	if err != nil {
@@ -369,9 +369,9 @@ yarn.lock
 	}
 	defer os.Chdir(oldWd)
 	os.Chdir(tempDir)
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		patterns, err := ParseGitIgnore(".")
 		if err != nil {
@@ -387,7 +387,7 @@ yarn.lock
 func BenchmarkFilter_Concurrent(b *testing.B) {
 	tempDir := createTempFilterTest(b, 1000, "medium")
 	defer os.RemoveAll(tempDir)
-	
+
 	var files []string
 	err := filepath.Walk(tempDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -405,18 +405,18 @@ func BenchmarkFilter_Concurrent(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	opts := Options{
 		Includes:        []string{".go", ".js", ".py"},
 		Excludes:        []string{"*.tmp", "*.log", "node_modules/"},
 		UseDefaultRules: true,
 		UseGitIgnore:    false,
 	}
-	
+
 	filter := New(opts)
-	
+
 	b.ResetTimer()
-	
+
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			for _, file := range files {
@@ -430,7 +430,7 @@ func BenchmarkFilter_Concurrent(b *testing.B) {
 func BenchmarkFilter_MemoryUsage(b *testing.B) {
 	tempDir := createTempFilterTest(b, 5000, "complex")
 	defer os.RemoveAll(tempDir)
-	
+
 	var files []string
 	err := filepath.Walk(tempDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -448,26 +448,26 @@ func BenchmarkFilter_MemoryUsage(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	opts := Options{
 		Includes: []string{".go", ".js", ".py", ".java", ".md", ".yaml"},
 		Excludes: []string{
-			"node_modules/", "vendor/", ".git/", "target/", 
+			"node_modules/", "vendor/", ".git/", "target/",
 			"*.tmp", "*.log", "*.test", "*.class",
 		},
 		UseDefaultRules: true,
 		UseGitIgnore:    true,
 	}
-	
+
 	filter := New(opts)
-	
+
 	// Measure memory usage
 	var m1, m2 runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&m1)
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		processedCount := 0
 		for _, file := range files {
@@ -476,9 +476,9 @@ func BenchmarkFilter_MemoryUsage(b *testing.B) {
 			}
 		}
 	}
-	
+
 	runtime.ReadMemStats(&m2)
-	
+
 	// Report memory metrics
 	b.ReportMetric(float64(m2.TotalAlloc-m1.TotalAlloc)/1024/1024, "MB_allocated")
 	b.ReportMetric(float64(len(files)), "files_processed")
@@ -511,11 +511,11 @@ func benchmarkRuleOrder(b *testing.B, opts Options, scenario string) {
 		"test/main_test.go", "src/app.js", "lib/util.py",
 		"build/output.tmp", "logs/error.log",
 	}
-	
+
 	filter := New(opts)
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		for _, path := range testPaths {
 			_ = filter.ShouldProcess(path)
@@ -531,15 +531,15 @@ func BenchmarkFilter_GetFileType(b *testing.B) {
 		"Dockerfile", "docker-compose.yml", "Makefile", "go.mod",
 		"index.html", "style.css", "app.ts", "component.jsx",
 	}
-	
+
 	opts := Options{
 		UseDefaultRules: true,
 		UseGitIgnore:    false,
 	}
 	filter := New(opts)
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		for _, file := range testFiles {
 			fileType := GetFileType(file, filter)
@@ -553,28 +553,28 @@ func BenchmarkFilter_RealisticGoProject(b *testing.B) {
 	projectFiles := []string{
 		"main.go", "go.mod", "go.sum", "README.md", ".gitignore",
 		"cmd/server/main.go", "cmd/client/main.go",
-		"internal/handler/user.go", "internal/handler/auth.go", 
+		"internal/handler/user.go", "internal/handler/auth.go",
 		"internal/service/user.go", "internal/repository/user.go",
 		"pkg/config/config.go", "pkg/logger/logger.go",
 		"test/user_test.go", "test/auth_test.go", "test/integration_test.go",
-		"config/app.yaml", "config/db.yaml", 
+		"config/app.yaml", "config/db.yaml",
 		"scripts/build.sh", "scripts/deploy.sh",
 		"docs/api.md", "docs/deployment.md",
 		"vendor/github.com/pkg1/file.go", "vendor/github.com/pkg2/file.go",
 		"build/main", "build/server", "tmp/test.log", "tmp/debug.tmp",
 	}
-	
+
 	opts := Options{
 		Includes:        []string{".go", ".md", ".yaml", ".sh"},
 		Excludes:        []string{"vendor/", "build/", "tmp/", "*.tmp", "*.log"},
 		UseDefaultRules: true,
 		UseGitIgnore:    false,
 	}
-	
+
 	filter := New(opts)
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		processedCount := 0
 		for _, file := range projectFiles {
@@ -582,7 +582,7 @@ func BenchmarkFilter_RealisticGoProject(b *testing.B) {
 				processedCount++
 			}
 		}
-		
+
 		if i == 0 {
 			b.ReportMetric(float64(processedCount), "files_processed")
 			b.ReportMetric(float64(len(projectFiles)), "total_files")

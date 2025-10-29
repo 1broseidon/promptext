@@ -15,12 +15,12 @@ import (
 // createTempCodebase creates a temporary directory with specified number of files
 func createTempCodebase(b *testing.B, numFiles int, avgFileSize int) string {
 	b.Helper()
-	
+
 	tempDir, err := os.MkdirTemp("", "promptext_bench")
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	// Create a realistic directory structure
 	dirs := []string{
 		"cmd/main",
@@ -35,32 +35,32 @@ func createTempCodebase(b *testing.B, numFiles int, avgFileSize int) string {
 		"docs",
 		"scripts",
 	}
-	
+
 	for _, dir := range dirs {
 		if err := os.MkdirAll(filepath.Join(tempDir, dir), 0755); err != nil {
 			b.Fatal(err)
 		}
 	}
-	
+
 	// Generate sample Go code content
 	sampleCode := generateSampleGoCode(avgFileSize)
 	sampleTest := generateSampleTestCode(avgFileSize / 2)
 	sampleConfig := generateSampleConfig(avgFileSize / 4)
-	
+
 	filesPerDir := numFiles / len(dirs)
 	remainder := numFiles % len(dirs)
-	
+
 	fileCount := 0
 	for i, dir := range dirs {
 		dirFiles := filesPerDir
 		if i < remainder {
 			dirFiles++
 		}
-		
+
 		for j := 0; j < dirFiles && fileCount < numFiles; j++ {
 			var content string
 			var ext string
-			
+
 			// Create different types of files based on directory
 			switch {
 			case strings.Contains(dir, "test"):
@@ -77,7 +77,7 @@ func createTempCodebase(b *testing.B, numFiles int, avgFileSize int) string {
 				content = sampleCode
 				ext = ".go"
 			}
-			
+
 			filename := filepath.Join(tempDir, dir, fmt.Sprintf("file_%d%s", j, ext))
 			if err := os.WriteFile(filename, []byte(content), 0644); err != nil {
 				b.Fatal(err)
@@ -85,7 +85,7 @@ func createTempCodebase(b *testing.B, numFiles int, avgFileSize int) string {
 			fileCount++
 		}
 	}
-	
+
 	// Create some binary files to test filtering
 	binaryFiles := []string{
 		"binary.exe",
@@ -93,20 +93,20 @@ func createTempCodebase(b *testing.B, numFiles int, avgFileSize int) string {
 		"archive.zip",
 		"font.ttf",
 	}
-	
+
 	for _, binFile := range binaryFiles {
 		binaryContent := make([]byte, 1024)
 		// Add some binary markers
 		binaryContent[0] = 0x00
 		binaryContent[1] = 0xFF
 		binaryContent[100] = 0x00
-		
+
 		binPath := filepath.Join(tempDir, binFile)
 		if err := os.WriteFile(binPath, binaryContent, 0644); err != nil {
 			b.Fatal(err)
 		}
 	}
-	
+
 	return tempDir
 }
 
@@ -181,17 +181,17 @@ func main() {
 	}
 }
 `
-	
+
 	// Pad or trim to approximate target size
 	if len(template) < size {
 		padding := strings.Repeat("// Additional comment line for size padding\n", (size-len(template))/50)
 		return template + padding
 	}
-	
+
 	if len(template) > size && size > 100 {
 		return template[:size-10] + "\n}\n"
 	}
-	
+
 	return template
 }
 
@@ -224,12 +224,12 @@ func BenchmarkServer_Start(b *testing.B) {
 	}
 }
 `
-	
+
 	if len(template) < size {
 		padding := strings.Repeat("// Test comment padding\n", (size-len(template))/25)
 		return template + padding
 	}
-	
+
 	return template
 }
 
@@ -258,12 +258,12 @@ features:
   enable_tracing: true
   cache_size: 1000
 `
-	
+
 	if len(template) < size {
 		padding := strings.Repeat("# Additional config comment\n", (size-len(template))/30)
 		return template + padding
 	}
-	
+
 	return template
 }
 
@@ -283,7 +283,7 @@ func BenchmarkProcessDirectory_10000Files(b *testing.B) {
 func benchmarkProcessDirectory(b *testing.B, numFiles, avgFileSize int) {
 	tempDir := createTempCodebase(b, numFiles, avgFileSize)
 	defer os.RemoveAll(tempDir)
-	
+
 	// Create realistic filter configuration
 	filterOpts := filter.Options{
 		Includes:        []string{".go", ".yaml", ".md"},
@@ -291,7 +291,7 @@ func benchmarkProcessDirectory(b *testing.B, numFiles, avgFileSize int) {
 		UseDefaultRules: true,
 		UseGitIgnore:    false,
 	}
-	
+
 	f := filter.New(filterOpts)
 	config := Config{
 		DirPath:    tempDir,
@@ -300,29 +300,29 @@ func benchmarkProcessDirectory(b *testing.B, numFiles, avgFileSize int) {
 		GitIgnore:  false,
 		Filter:     f,
 	}
-	
+
 	// Reset timer after setup
 	b.ResetTimer()
-	
+
 	// Track memory usage
 	var m1, m2 runtime.MemStats
-	
+
 	for i := 0; i < b.N; i++ {
 		runtime.GC()
 		runtime.ReadMemStats(&m1)
-		
+
 		result, err := ProcessDirectory(config, false)
 		if err != nil {
 			b.Fatal(err)
 		}
-		
+
 		runtime.ReadMemStats(&m2)
-		
+
 		// Verify some processing happened
 		if result.ProjectOutput == nil || len(result.ProjectOutput.Files) == 0 {
 			b.Fatal("No files processed")
 		}
-		
+
 		// Report memory usage for first iteration
 		if i == 0 {
 			b.ReportMetric(float64(m2.TotalAlloc-m1.TotalAlloc)/1024/1024, "MB/op")
@@ -345,7 +345,7 @@ func BenchmarkProcessDirectory_FewLargeFiles(b *testing.B) {
 func BenchmarkProcessFile_SingleFile(b *testing.B) {
 	tempDir := createTempCodebase(b, 1, 2000)
 	defer os.RemoveAll(tempDir)
-	
+
 	// Find the created file
 	var testFile string
 	err := filepath.WalkDir(tempDir, func(path string, d fs.DirEntry, err error) error {
@@ -361,20 +361,20 @@ func BenchmarkProcessFile_SingleFile(b *testing.B) {
 	if err != nil || testFile == "" {
 		b.Fatal("No test file found")
 	}
-	
+
 	filterOpts := filter.Options{
 		UseDefaultRules: true,
 		UseGitIgnore:    false,
 	}
 	f := filter.New(filterOpts)
-	
+
 	config := Config{
 		DirPath: tempDir,
 		Filter:  f,
 	}
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		fileInfo, err := processFile(testFile, config)
 		if err != nil {
@@ -390,9 +390,9 @@ func BenchmarkProcessFile_SingleFile(b *testing.B) {
 func BenchmarkWalkDir_DirectoryTraversal(b *testing.B) {
 	tempDir := createTempCodebase(b, 1000, 2000)
 	defer os.RemoveAll(tempDir)
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		fileCount := 0
 		err := filepath.WalkDir(tempDir, func(path string, d fs.DirEntry, err error) error {
@@ -417,26 +417,26 @@ func BenchmarkWalkDir_DirectoryTraversal(b *testing.B) {
 func BenchmarkProcessDirectory_MemoryProfile(b *testing.B) {
 	tempDir := createTempCodebase(b, 500, 2000)
 	defer os.RemoveAll(tempDir)
-	
+
 	filterOpts := filter.Options{
 		UseDefaultRules: true,
 		UseGitIgnore:    false,
 	}
 	f := filter.New(filterOpts)
-	
+
 	config := Config{
 		DirPath: tempDir,
 		Filter:  f,
 	}
-	
+
 	// Force garbage collection before test
 	runtime.GC()
-	
+
 	var m1, m2 runtime.MemStats
 	runtime.ReadMemStats(&m1)
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		result, err := ProcessDirectory(config, false)
 		if err != nil {
@@ -444,9 +444,9 @@ func BenchmarkProcessDirectory_MemoryProfile(b *testing.B) {
 		}
 		_ = result
 	}
-	
+
 	runtime.ReadMemStats(&m2)
-	
+
 	// Report detailed memory metrics
 	b.ReportMetric(float64(m2.TotalAlloc-m1.TotalAlloc)/1024/1024, "total_MB")
 	b.ReportMetric(float64(m2.Mallocs-m1.Mallocs), "malloc_ops")
@@ -459,27 +459,27 @@ func BenchmarkProcessDirectory_GoProject(b *testing.B) {
 	// Simulate a typical Go project structure
 	tempDir := createRealisticGoProject(b)
 	defer os.RemoveAll(tempDir)
-	
+
 	filterOpts := filter.Options{
 		Includes:        []string{".go", ".yaml", ".yml", ".md"},
 		UseDefaultRules: true,
 		UseGitIgnore:    true,
 	}
 	f := filter.New(filterOpts)
-	
+
 	config := Config{
 		DirPath: tempDir,
 		Filter:  f,
 	}
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		result, err := ProcessDirectory(config, false)
 		if err != nil {
 			b.Fatal(err)
 		}
-		
+
 		if i == 0 {
 			b.ReportMetric(float64(len(result.ProjectOutput.Files)), "files_processed")
 			b.ReportMetric(float64(result.TokenCount), "total_tokens")
@@ -489,12 +489,12 @@ func BenchmarkProcessDirectory_GoProject(b *testing.B) {
 
 func createRealisticGoProject(b *testing.B) string {
 	b.Helper()
-	
+
 	tempDir, err := os.MkdirTemp("", "go_project_bench")
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	// Create realistic Go project structure
 	structure := map[string]string{
 		"main.go":                     generateSampleGoCode(3000),
@@ -515,20 +515,20 @@ func createRealisticGoProject(b *testing.B) string {
 		"docs/api.md":                 "# API Documentation\n\n## Endpoints\n\n### Users\n",
 		"scripts/build.sh":            "#!/bin/bash\ngo build -o app ./cmd/server\n",
 	}
-	
+
 	for filePath, content := range structure {
 		fullPath := filepath.Join(tempDir, filePath)
 		dir := filepath.Dir(fullPath)
-		
+
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			b.Fatal(err)
 		}
-		
+
 		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
 			b.Fatal(err)
 		}
 	}
-	
+
 	return tempDir
 }
 
@@ -539,20 +539,20 @@ func BenchmarkProcessDirectory_SampleGoService(b *testing.B) {
 	if _, err := os.Stat(sampleDir); os.IsNotExist(err) {
 		b.Skip("Sample go-service not found")
 	}
-	
+
 	filterOpts := filter.Options{
 		UseDefaultRules: true,
 		UseGitIgnore:    true,
 	}
 	f := filter.New(filterOpts)
-	
+
 	config := Config{
 		DirPath: sampleDir,
 		Filter:  f,
 	}
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		result, err := ProcessDirectory(config, false)
 		if err != nil {

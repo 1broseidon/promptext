@@ -24,7 +24,7 @@ type FileConfig struct {
 // Follows XDG Base Directory Specification with fallbacks
 func getGlobalConfigPaths() []string {
 	var paths []string
-	
+
 	// XDG_CONFIG_HOME or ~/.config/promptext/config.yml
 	configHome := os.Getenv("XDG_CONFIG_HOME")
 	if configHome == "" {
@@ -35,19 +35,19 @@ func getGlobalConfigPaths() []string {
 	if configHome != "" {
 		paths = append(paths, filepath.Join(configHome, "promptext", "config.yml"))
 	}
-	
+
 	// ~/.promptext.yml (traditional dotfile)
 	if homeDir, err := os.UserHomeDir(); err == nil {
 		paths = append(paths, filepath.Join(homeDir, ".promptext.yml"))
 	}
-	
+
 	return paths
 }
 
 // LoadGlobalConfig attempts to load global configuration from standard locations
 func LoadGlobalConfig() (*FileConfig, error) {
 	configPaths := getGlobalConfigPaths()
-	
+
 	for _, configPath := range configPaths {
 		data, err := os.ReadFile(configPath)
 		if err != nil {
@@ -56,17 +56,17 @@ func LoadGlobalConfig() (*FileConfig, error) {
 			}
 			return nil, err
 		}
-		
+
 		log.Debug("Found and loaded global config from %s", configPath)
-		
+
 		var config FileConfig
 		if err := yaml.Unmarshal(data, &config); err != nil {
 			return nil, err
 		}
-		
+
 		return &config, nil
 	}
-	
+
 	log.Debug("No global config found in any of: %v", configPaths)
 	return &FileConfig{}, nil
 }
@@ -106,7 +106,7 @@ func MergeConfigs(globalConfig, projectConfig *FileConfig, flagExt, flagExclude 
 		GitIgnore:       globalConfig.GitIgnore,
 		UseDefaultRules: globalConfig.UseDefaultRules,
 	}
-	
+
 	// Override with project config where explicitly set
 	if len(projectConfig.Extensions) > 0 {
 		merged.Extensions = projectConfig.Extensions
@@ -130,10 +130,10 @@ func MergeConfigs(globalConfig, projectConfig *FileConfig, flagExt, flagExclude 
 	if projectConfig.UseDefaultRules != nil {
 		merged.UseDefaultRules = projectConfig.UseDefaultRules
 	}
-	
+
 	// Finally merge with CLI flags (highest precedence)
 	extensions, excludes, verbose, debug, useGitIgnore, useDefaultRules = merged.MergeWithFlags(flagExt, flagExclude, flagVerbose, flagDebug, flagGitIgnore, flagUseDefaultRules)
-	
+
 	return extensions, excludes, verbose, debug, useGitIgnore, useDefaultRules
 }
 

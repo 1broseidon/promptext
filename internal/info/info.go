@@ -198,29 +198,18 @@ func getGitInfo(root string) (*GitInfo, error) {
 	return info, nil
 }
 
-// analyzeProjectHealth checks for project health indicators
-func analyzeProjectHealth(root string) (*ProjectHealth, error) {
-	health := &ProjectHealth{}
+// Helper functions to reduce cyclomatic complexity
 
-	// Check for README
-	readmePatterns := []string{"README.md", "README.txt", "README", "Readme.md"}
-	for _, pattern := range readmePatterns {
+func checkFileExists(root string, patterns []string) bool {
+	for _, pattern := range patterns {
 		if _, err := os.Stat(filepath.Join(root, pattern)); err == nil {
-			health.HasReadme = true
-			break
+			return true
 		}
 	}
+	return false
+}
 
-	// Check for LICENSE
-	licensePatterns := []string{"LICENSE", "LICENSE.md", "LICENSE.txt", "License"}
-	for _, pattern := range licensePatterns {
-		if _, err := os.Stat(filepath.Join(root, pattern)); err == nil {
-			health.HasLicense = true
-			break
-		}
-	}
-
-	// Check for CI/CD configurations
+func checkCISystem(root string) (bool, string) {
 	ciConfigs := map[string][]string{
 		"GitHub Actions": {".github/workflows"},
 		"CircleCI":       {".circleci/config.yml"},
@@ -232,75 +221,90 @@ func analyzeProjectHealth(root string) (*ProjectHealth, error) {
 	for system, paths := range ciConfigs {
 		for _, path := range paths {
 			if _, err := os.Stat(filepath.Join(root, path)); err == nil {
-				health.HasCI = true
-				health.CISystem = system
-				break
+				return true, system
 			}
 		}
-		if health.HasCI {
-			break
-		}
 	}
+	return false, ""
+}
 
-	// Check for tests
+func isTestFile(fileName string) bool {
+	// Go
+	if strings.HasSuffix(fileName, "_test.go") {
+		return true
+	}
+	// JavaScript/TypeScript
+	if strings.HasSuffix(fileName, ".test.js") ||
+		strings.HasSuffix(fileName, ".spec.js") ||
+		strings.HasSuffix(fileName, ".test.ts") ||
+		strings.HasSuffix(fileName, ".spec.ts") {
+		return true
+	}
+	// Python
+	if strings.HasPrefix(fileName, "test_") ||
+		strings.HasSuffix(fileName, "_test.py") ||
+		strings.HasSuffix(fileName, "test.py") {
+		return true
+	}
+	// Java
+	if strings.HasSuffix(fileName, "Test.java") ||
+		strings.HasSuffix(fileName, "Tests.java") ||
+		strings.HasSuffix(fileName, "IT.java") {
+		return true
+	}
+	// Ruby
+	if strings.HasSuffix(fileName, "_spec.rb") {
+		return true
+	}
+	return false
+}
+
+func checkForTestFiles(root string) bool {
+	foundTests := false
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return nil
+		}
+
+		if isTestFile(d.Name()) {
+			foundTests = true
+			return filepath.SkipAll
+		}
+		return nil
+	})
+
+	if err != nil {
+		log.Debug("Error walking directory for test files: %v", err)
+	}
+	return foundTests
+}
+
+// analyzeProjectHealth checks for project health indicators
+func analyzeProjectHealth(root string) (*ProjectHealth, error) {
+	health := &ProjectHealth{}
+
+	// Check for README
+	readmePatterns := []string{"README.md", "README.txt", "README", "Readme.md"}
+	health.HasReadme = checkFileExists(root, readmePatterns)
+
+	// Check for LICENSE
+	licensePatterns := []string{"LICENSE", "LICENSE.md", "LICENSE.txt", "License"}
+	health.HasLicense = checkFileExists(root, licensePatterns)
+
+	// Check for CI/CD configurations
+	health.HasCI, health.CISystem = checkCISystem(root)
+
+	// Check for tests in common test directories
 	testDirs := []string{
 		"test", "tests", "Test", "Tests",
 		"__tests__", // React/Node
 		"spec",      // Ruby/Rails
 	}
-
-	// Check test directories
-	for _, dir := range testDirs {
-		if _, err := os.Stat(filepath.Join(root, dir)); err == nil {
-			health.HasTests = true
-			break
-		}
-	}
+	health.HasTests = checkFileExists(root, testDirs)
 
 	// If no test directory found, check for test files
 	if !health.HasTests {
-		err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-			if err != nil || d.IsDir() {
-				return nil
-			}
-
-			fileName := d.Name()
-			switch {
-			// Go
-			case strings.HasSuffix(fileName, "_test.go"):
-				health.HasTests = true
-				return filepath.SkipAll
-			// JavaScript/TypeScript
-			case strings.HasSuffix(fileName, ".test.js") ||
-				strings.HasSuffix(fileName, ".spec.js") ||
-				strings.HasSuffix(fileName, ".test.ts") ||
-				strings.HasSuffix(fileName, ".spec.ts"):
-				health.HasTests = true
-				return filepath.SkipAll
-			// Python
-			case strings.HasPrefix(fileName, "test_") ||
-				strings.HasSuffix(fileName, "_test.py") ||
-				strings.HasSuffix(fileName, "test.py"):
-				health.HasTests = true
-				return filepath.SkipAll
-			// Java
-			case strings.HasSuffix(fileName, "Test.java") ||
-				strings.HasSuffix(fileName, "Tests.java") ||
-				strings.HasSuffix(fileName, "IT.java"): // Integration tests
-				health.HasTests = true
-				return filepath.SkipAll
-			// Ruby
-			case strings.HasSuffix(fileName, "_spec.rb"):
-				health.HasTests = true
-				return filepath.SkipAll
-			}
-
-			return nil
-		})
-
-		if err != nil {
-			log.Debug("Error walking directory for test files: %v", err)
-		}
+		health.HasTests = checkForTestFiles(root)
 	}
 
 	return health, nil

@@ -8,7 +8,7 @@ import (
 
 func TestBinaryRule_ExtensionDetection(t *testing.T) {
 	rule := NewBinaryRule()
-	
+
 	testCases := []struct {
 		filename string
 		expected bool
@@ -21,7 +21,7 @@ func TestBinaryRule_ExtensionDetection(t *testing.T) {
 		{"document.pdf", true, "PDF document"},
 		{"library.so", true, "shared object"},
 		{"font.ttf", true, "TrueType font"},
-		
+
 		// Should not be detected as binary by extension
 		{"script.py", false, "Python script"},
 		{"config.json", false, "JSON config"},
@@ -30,7 +30,7 @@ func TestBinaryRule_ExtensionDetection(t *testing.T) {
 		{"style.css", false, "CSS file"},
 		{"data.txt", false, "text file"},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			// Create a temporary file with the test name
@@ -39,16 +39,16 @@ func TestBinaryRule_ExtensionDetection(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer os.RemoveAll(tmpDir)
-			
+
 			testFile := filepath.Join(tmpDir, tc.filename)
-			
+
 			// Create a small text file - if extension detection works,
 			// content won't matter for binary extensions
 			err = os.WriteFile(testFile, []byte("hello world"), 0644)
 			if err != nil {
 				t.Fatal(err)
 			}
-			
+
 			result := rule.Match(testFile)
 			if result != tc.expected {
 				t.Errorf("Expected %v for %s, got %v", tc.expected, tc.filename, result)
@@ -59,13 +59,13 @@ func TestBinaryRule_ExtensionDetection(t *testing.T) {
 
 func TestBinaryRule_SizeDetection(t *testing.T) {
 	rule := NewBinaryRule()
-	
+
 	tmpDir, err := os.MkdirTemp("", "binary_size_test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	
+
 	// Test large file detection (should be binary due to size)
 	largeFile := filepath.Join(tmpDir, "large.unknown")
 	largeData := make([]byte, 11*1024*1024) // 11MB
@@ -76,18 +76,18 @@ func TestBinaryRule_SizeDetection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	
+
 	if !rule.Match(largeFile) {
 		t.Error("Large file should be detected as binary")
 	}
-	
+
 	// Test empty file (should not be binary)
 	emptyFile := filepath.Join(tmpDir, "empty.unknown")
 	err = os.WriteFile(emptyFile, []byte{}, 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
-	
+
 	if rule.Match(emptyFile) {
 		t.Error("Empty file should not be detected as binary")
 	}
@@ -95,13 +95,13 @@ func TestBinaryRule_SizeDetection(t *testing.T) {
 
 func TestBinaryRule_ContentDetection(t *testing.T) {
 	rule := NewBinaryRule()
-	
+
 	tmpDir, err := os.MkdirTemp("", "binary_content_test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	
+
 	testCases := []struct {
 		name     string
 		content  []byte
@@ -121,8 +121,8 @@ func TestBinaryRule_ContentDetection(t *testing.T) {
 			desc:     "content with null bytes should be binary",
 		},
 		{
-			name:     "high_non_printable.unknown",
-			content:  func() []byte {
+			name: "high_non_printable.unknown",
+			content: func() []byte {
 				// Create content with high ratio of non-printable chars
 				data := make([]byte, 100)
 				for i := 0; i < 60; i++ { // 60% non-printable
@@ -137,12 +137,12 @@ func TestBinaryRule_ContentDetection(t *testing.T) {
 			desc:     "high ratio of non-printable chars should be binary",
 		},
 		{
-			name:     "low_non_printable.unknown",
+			name: "low_non_printable.unknown",
 			content: func() []byte {
 				// Create content with low ratio of non-printable chars
 				data := make([]byte, 100)
 				for i := 0; i < 20; i++ { // 20% non-printable
-					data[i] = byte(i + 128) // Non-ASCII  
+					data[i] = byte(i + 128) // Non-ASCII
 				}
 				for i := 20; i < 100; i++ {
 					data[i] = 'A' // Printable
@@ -153,7 +153,7 @@ func TestBinaryRule_ContentDetection(t *testing.T) {
 			desc:     "low ratio of non-printable chars should be text",
 		},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			testFile := filepath.Join(tmpDir, tc.name)
@@ -161,7 +161,7 @@ func TestBinaryRule_ContentDetection(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			
+
 			result := rule.Match(testFile)
 			if result != tc.expected {
 				t.Errorf("Expected %v for %s, got %v", tc.expected, tc.name, result)
@@ -177,14 +177,14 @@ func BenchmarkBinaryRule_ExtensionOnly(b *testing.B) {
 		b.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	
+
 	// Create test file with binary extension
 	testFile := filepath.Join(tmpDir, "test.jpg")
 	err = os.WriteFile(testFile, []byte("fake jpeg content"), 0644)
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		rule.Match(testFile)
@@ -198,7 +198,7 @@ func BenchmarkBinaryRule_ContentAnalysis(b *testing.B) {
 		b.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	
+
 	// Create test file without binary extension - forces content analysis
 	testFile := filepath.Join(tmpDir, "test.unknown")
 	content := make([]byte, 1024)
@@ -209,7 +209,7 @@ func BenchmarkBinaryRule_ContentAnalysis(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		rule.Match(testFile)
@@ -218,7 +218,7 @@ func BenchmarkBinaryRule_ContentAnalysis(b *testing.B) {
 
 func TestBinaryRule_ComprehensiveExtensions(t *testing.T) {
 	rule := NewBinaryRule()
-	
+
 	// Test comprehensive binary extensions
 	binaryFiles := []struct {
 		filename string
@@ -329,13 +329,13 @@ func TestBinaryRule_ComprehensiveExtensions(t *testing.T) {
 		{"optimized.pyo", "Python optimized"},
 		{"extension.pyd", "Python extension"},
 	}
-	
+
 	tmpDir, err := os.MkdirTemp("", "binary_comprehensive_test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	
+
 	for _, tc := range binaryFiles {
 		t.Run(tc.desc, func(t *testing.T) {
 			testFile := filepath.Join(tmpDir, tc.filename)
@@ -343,7 +343,7 @@ func TestBinaryRule_ComprehensiveExtensions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			
+
 			result := rule.Match(testFile)
 			if !result {
 				t.Errorf("File %s (%s) should be detected as binary", tc.filename, tc.desc)
@@ -354,7 +354,7 @@ func TestBinaryRule_ComprehensiveExtensions(t *testing.T) {
 
 func TestBinaryRule_TextFiles(t *testing.T) {
 	rule := NewBinaryRule()
-	
+
 	// Test files that should NOT be detected as binary
 	textFiles := []struct {
 		filename string
@@ -382,13 +382,13 @@ func TestBinaryRule_TextFiles(t *testing.T) {
 		{".gitignore", []byte("*.log\nnode_modules/\n.env"), "Git ignore"},
 		{"changelog.rst", []byte("Changelog\n=========\n\nVersion 1.0\n-----------"), "reStructuredText"},
 	}
-	
+
 	tmpDir, err := os.MkdirTemp("", "text_files_test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	
+
 	for _, tc := range textFiles {
 		t.Run(tc.desc, func(t *testing.T) {
 			testFile := filepath.Join(tmpDir, tc.filename)
@@ -396,7 +396,7 @@ func TestBinaryRule_TextFiles(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			
+
 			result := rule.Match(testFile)
 			if result {
 				t.Errorf("File %s (%s) should NOT be detected as binary", tc.filename, tc.desc)
@@ -412,7 +412,7 @@ func TestBinaryRule_EdgeCaseSizes(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	
+
 	testCases := []struct {
 		name     string
 		size     int
@@ -477,17 +477,17 @@ func TestBinaryRule_EdgeCaseSizes(t *testing.T) {
 			desc:     "small file with binary content should be binary",
 		},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			testFile := filepath.Join(tmpDir, tc.name)
 			content := tc.content(tc.size)
-			
+
 			err = os.WriteFile(testFile, content, 0644)
 			if err != nil {
 				t.Fatal(err)
 			}
-			
+
 			result := rule.Match(testFile)
 			if result != tc.expected {
 				t.Errorf("Expected %v for %s, got %v", tc.expected, tc.name, result)
@@ -503,7 +503,7 @@ func TestBinaryRule_ContentEdgeCases(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	
+
 	testCases := []struct {
 		name     string
 		content  []byte
@@ -535,8 +535,8 @@ func TestBinaryRule_ContentEdgeCases(t *testing.T) {
 			desc:     "multiple null bytes should make it binary",
 		},
 		{
-			name:     "high_ascii.unknown",
-			content:  func() []byte {
+			name: "high_ascii.unknown",
+			content: func() []byte {
 				data := make([]byte, 200)
 				for i := 0; i < 50; i++ {
 					data[i] = byte(200 + i%50) // High ASCII values
@@ -550,8 +550,8 @@ func TestBinaryRule_ContentEdgeCases(t *testing.T) {
 			desc:     "25% high ASCII should not be binary (below 30% threshold)",
 		},
 		{
-			name:     "very_high_non_printable.unknown",
-			content:  func() []byte {
+			name: "very_high_non_printable.unknown",
+			content: func() []byte {
 				data := make([]byte, 100)
 				for i := 0; i < 70; i++ {
 					data[i] = byte(200) // Non-printable
@@ -583,8 +583,8 @@ func TestBinaryRule_ContentEdgeCases(t *testing.T) {
 			desc:     "ZIP signature should be detected as binary",
 		},
 		{
-			name:     "just_under_threshold.unknown",
-			content:  func() []byte {
+			name: "just_under_threshold.unknown",
+			content: func() []byte {
 				data := make([]byte, 1000)
 				// 29% non-printable (just under 30% threshold)
 				for i := 0; i < 290; i++ {
@@ -599,8 +599,8 @@ func TestBinaryRule_ContentEdgeCases(t *testing.T) {
 			desc:     "29% non-printable still triggers binary detection",
 		},
 		{
-			name:     "just_over_threshold.unknown",
-			content:  func() []byte {
+			name: "just_over_threshold.unknown",
+			content: func() []byte {
 				data := make([]byte, 1000)
 				// 31% non-printable (just over 30% threshold)
 				for i := 0; i < 310; i++ {
@@ -615,7 +615,7 @@ func TestBinaryRule_ContentEdgeCases(t *testing.T) {
 			desc:     "just over 30% threshold should be binary",
 		},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			testFile := filepath.Join(tmpDir, tc.name)
@@ -623,7 +623,7 @@ func TestBinaryRule_ContentEdgeCases(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			
+
 			result := rule.Match(testFile)
 			if result != tc.expected {
 				t.Errorf("Expected %v for %s, got %v", tc.expected, tc.name, result)
@@ -634,20 +634,20 @@ func TestBinaryRule_ContentEdgeCases(t *testing.T) {
 
 func TestBinaryRule_FileSystemErrors(t *testing.T) {
 	rule := NewBinaryRule()
-	
+
 	// Test non-existent file
 	result := rule.Match("/path/that/does/not/exist")
 	if result {
 		t.Error("Non-existent file should not be detected as binary")
 	}
-	
+
 	// Test directory (will cause read error)
 	tmpDir, err := os.MkdirTemp("", "fs_errors_test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	
+
 	result = rule.Match(tmpDir)
 	if result {
 		t.Error("Directory should not be detected as binary")

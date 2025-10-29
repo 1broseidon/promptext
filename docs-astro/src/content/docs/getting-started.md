@@ -34,17 +34,22 @@ Download binaries from [GitHub Releases](https://github.com/1broseidon/promptext
 ### Simple Commands
 
 ```bash
-# Process current directory
+# Process current directory (TOON format to clipboard)
 promptext
+
+# Use alias for convenience
+prx
 
 # Process specific directory
 promptext -d /path/to/project
 
 # Show project overview only
-promptext -info
+promptext -i
 
-# Export to file
-promptext -o output.md
+# Export to file (format auto-detected from extension)
+promptext -o context.toon
+promptext -o context.md
+promptext -o project.xml
 ```
 
 ### Common Options
@@ -54,10 +59,13 @@ promptext -o output.md
 | `-d` | Directory to process |
 | `-e` | File extensions (`.go,.js`) |
 | `-x` | Exclude patterns |
-| `-f` | Format (`markdown`, `xml`) |
-| `-o` | Output file |
+| `-f` | Format (`toon`, `markdown`, `xml`) |
+| `-o` | Output file (auto-detects format) |
 | `-i` | Info mode only |
+| `-r` | Relevant keywords for prioritization |
+| `--max-tokens` | Token budget limit |
 | `-v` | Verbose output |
+| `-q` | Quiet mode for scripting |
 
 ### Examples
 
@@ -71,9 +79,74 @@ promptext -e .go,.js,.ts
 promptext -x "node_modules/,vendor/,test/"
 ```
 
-**Generate XML report:**
+**Generate reports:**
 ```bash
+# TOON format (default, token-optimized)
+promptext -o context.toon
+
+# Markdown format
+promptext -f markdown -o context.md
+
+# XML format for automation
 promptext -f xml -o report.xml
 ```
 
-Continue with [Configuration](configuration) to customize behavior.
+**Prioritize relevant files:**
+```bash
+# Focus on authentication code
+promptext -r "auth login OAuth"
+
+# Database-related files
+promptext -r "database SQL migration"
+```
+
+**Stay within token budgets:**
+```bash
+# Limit to 8000 tokens (Claude Haiku)
+promptext --max-tokens 8000
+
+# Combine with relevance for smart selection
+promptext -r "api routes" --max-tokens 5000
+```
+
+## Quick Workflows
+
+### For AI Queries
+
+```bash
+# Quick context (3k tokens)
+prx -r "auth" --max-tokens 3000
+
+# Standard context (8k tokens)
+prx -r "api database" --max-tokens 8000
+
+# Full codebase (within limits)
+prx --max-tokens 50000
+```
+
+### For Documentation
+
+```bash
+# Export project overview
+prx -i -o overview.md
+
+# Export full context in markdown
+prx -f markdown -o full-context.md
+```
+
+### For CI/CD
+
+```bash
+# Machine-readable XML
+prx -f xml -o build/context.xml
+
+# Quiet mode for scripting
+prx -q -o context.toon
+```
+
+## Next Steps
+
+- [Output Formats](output-formats) - TOON, Markdown, and XML formats
+- [Relevance Filtering](relevance-filtering) - Smart file prioritization
+- [Configuration](configuration) - Customize behavior
+- [File Filtering](file-filtering) - Advanced filtering rules

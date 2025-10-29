@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/1broseidon/promptext/internal/processor"
 	"github.com/spf13/pflag"
@@ -43,7 +45,7 @@ FILTERING OPTIONS:
                               Examples: vendor/,node_modules/  or  *.test.go,dist/
 
 OUTPUT OPTIONS:
-    -f, --format FORMAT       Output format: markdown, md, xml (default: markdown)
+    -f, --format FORMAT       Output format: toon, markdown, md, xml (default: toon for AI-optimized structure)
     -o, --output FILE         Write output to file instead of clipboard
     -n, --no-copy            Don't copy output to clipboard
     -i, --info               Show only project summary (no file contents)
@@ -52,6 +54,12 @@ OUTPUT OPTIONS:
 PROCESSING OPTIONS:
         --dry-run            Preview files that would be processed without reading content
     -q, --quiet              Suppress non-essential output for scripting
+
+RELEVANCE & TOKEN BUDGET:
+    -r, --relevant KEYWORDS  Keywords to prioritize files (comma or space separated)
+                             Uses multi-factor scoring: filename (10x), directory (5x), imports (3x), content (1x)
+        --max-tokens NUMBER  Maximum token budget for output (excludes lower-priority files when exceeded)
+                             Works best with --relevant to prioritize important files first
 
 DEBUG OPTIONS:
     -D, --debug              Enable debug logging and timing information
@@ -71,6 +79,9 @@ EXAMPLES:
     # Export specific file types to XML with debug info
     prx -e .js,.ts,.json -f xml -o project.xml -D
 
+    # Use TOON format for AI-optimized structure (better scannability)
+    prx -f toon -o project.toon
+
     # Process with custom exclusions and see output in terminal
     prx -x "vendor/,*.test.go,dist/" -v
 
@@ -86,6 +97,19 @@ EXAMPLES:
     # Quiet mode for use in scripts (minimal output)
     prx -q -f xml -o output.xml
 
+    # Auto-detect format from output file extension
+    prx -o context.toon                    # Automatically uses TOON format
+    prx -o context.md                      # Automatically uses markdown format
+
+    # Prioritize authentication-related files
+    prx --relevant "auth login OAuth"
+
+    # Limit output to 8000 tokens, prioritizing database files
+    prx --relevant "database" --max-tokens 8000
+
+    # Combined: relevant files with token budget
+    prx -r "api routes handlers" --max-tokens 5000 -o api-context.toon
+
 CONFIGURATION:
     Create a .promptext.yml file in your project root for persistent settings:
 
@@ -96,7 +120,7 @@ CONFIGURATION:
     excludes:
       - vendor/
       - node_modules/
-    format: markdown
+    format: toon
     verbose: false
 
     CLI flags override configuration file settings.
@@ -131,7 +155,7 @@ func main() {
 	exclude := pflag.StringP("exclude", "x", "", "Patterns to exclude (comma-separated, e.g., vendor/,*.test.go)")
 
 	// Output options
-	format := pflag.StringP("format", "f", "markdown", "Output format: markdown, md, or xml")
+	format := pflag.StringP("format", "f", "toon", "Output format: toon, markdown, md, or xml (default: toon)")
 	outFile := pflag.StringP("output", "o", "", "Write output to file instead of clipboard")
 	noCopy := pflag.BoolP("no-copy", "n", false, "Don't copy output to clipboard")
 	infoOnly := pflag.BoolP("info", "i", false, "Show only project summary without file contents")
@@ -140,6 +164,11 @@ func main() {
 	// Processing options
 	dryRun := pflag.Bool("dry-run", false, "Preview files that would be processed without reading content")
 	quiet := pflag.BoolP("quiet", "q", false, "Suppress non-essential output for scripting")
+
+	// Relevance and token budget options
+	relevant := pflag.StringP("relevant", "r", "", "Keywords to prioritize files (comma or space separated, multi-factor scoring)")
+	maxTokens := pflag.Int("max-tokens", 0, "Maximum token budget for output (excludes lower-priority files when exceeded)")
+	explainSelection := pflag.Bool("explain-selection", false, "Show detailed priority scoring breakdown for file selection")
 
 	// Debug options
 	debug := pflag.BoolP("debug", "D", false, "Enable debug logging and timing information")
@@ -162,7 +191,34 @@ func main() {
 		*dirPath = args[0]
 	}
 
-	if err := processor.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose, *format, *outFile, *debug, *gitignore, *useDefaultRules, *dryRun, *quiet); err != nil {
+	// Format auto-detection from output file extension
+	if *outFile != "" {
+		ext := strings.ToLower(filepath.Ext(*outFile))
+		detectedFormat := ""
+		switch ext {
+		case ".toon":
+			detectedFormat = "toon"
+		case ".md", ".markdown":
+			detectedFormat = "markdown"
+		case ".xml":
+			detectedFormat = "xml"
+		}
+
+		// Check for format conflict and warn
+		if detectedFormat != "" && *format != detectedFormat {
+			// User explicitly set format flag
+			formatFlag := pflag.Lookup("format")
+			if formatFlag.Changed {
+				// Warn about conflict
+				fmt.Fprintf(os.Stderr, "⚠️  Warning: format flag '%s' conflicts with output extension '%s' - using '%s' (flag takes precedence)\n", *format, ext, *format)
+			} else {
+				// Auto-detect format from extension since flag wasn't explicitly set
+				*format = detectedFormat
+			}
+		}
+	}
+
+	if err := processor.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose, *format, *outFile, *debug, *gitignore, *useDefaultRules, *dryRun, *quiet, *relevant, *maxTokens, *explainSelection); err != nil {
 		log.Fatal(err)
 	}
 }

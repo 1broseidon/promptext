@@ -35,7 +35,7 @@ func TestBaseRule_Action(t *testing.T) {
 			desc:   "rule with include action",
 		},
 		{
-			name:   "exclude action", 
+			name:   "exclude action",
 			action: types.Exclude,
 			desc:   "rule with exclude action",
 		},
@@ -49,7 +49,7 @@ func TestBaseRule_Action(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			rule := NewMockRule(tc.action, true)
-			
+
 			result := rule.Action()
 			assert.Equal(t, tc.action, result, tc.desc)
 		})
@@ -59,23 +59,23 @@ func TestBaseRule_Action(t *testing.T) {
 func TestRuleAction_Constants(t *testing.T) {
 	// Test that the constants are properly defined
 	assert.Equal(t, types.RuleAction(0), types.Include, "Include should be 0")
-	assert.Equal(t, types.RuleAction(1), types.Exclude, "Exclude should be 1") 
+	assert.Equal(t, types.RuleAction(1), types.Exclude, "Exclude should be 1")
 	assert.Equal(t, types.RuleAction(2), types.Skip, "Skip should be 2")
 }
 
 func TestRule_Interface(t *testing.T) {
 	// Test that our rules implement the Rule interface properly
 	var rule types.Rule
-	
+
 	// Test with different rule implementations
 	rule = NewPatternRule([]string{"*.test"}, types.Include)
 	assert.NotNil(t, rule.Match, "PatternRule should implement Match")
 	assert.NotNil(t, rule.Action, "PatternRule should implement Action")
-	
+
 	rule = NewExtensionRule([]string{".go"}, types.Exclude)
 	assert.NotNil(t, rule.Match, "ExtensionRule should implement Match")
 	assert.NotNil(t, rule.Action, "ExtensionRule should implement Action")
-	
+
 	rule = NewBinaryRule()
 	assert.NotNil(t, rule.Match, "BinaryRule should implement Match")
 	assert.NotNil(t, rule.Action, "BinaryRule should implement Action")
@@ -112,14 +112,14 @@ func TestMockRule_Implementation(t *testing.T) {
 			desc:        "mock rule that always matches with skip action",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rule := NewMockRule(tt.action, tt.matchResult)
-			
+
 			// Test Action method
 			assert.Equal(t, tt.action, rule.Action(), "Action should return correct value")
-			
+
 			// Test Match method
 			assert.Equal(t, tt.matchResult, rule.Match(tt.testPath), "Match should return configured result")
 		})
@@ -128,7 +128,7 @@ func TestMockRule_Implementation(t *testing.T) {
 
 func BenchmarkBaseRule_Action(b *testing.B) {
 	rule := NewMockRule(types.Include, true)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		rule.Action()

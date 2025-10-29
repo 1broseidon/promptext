@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -14,17 +15,21 @@ import (
 	"github.com/1broseidon/promptext/internal/format"
 	"github.com/1broseidon/promptext/internal/info"
 	"github.com/1broseidon/promptext/internal/log"
+	"github.com/1broseidon/promptext/internal/relevance"
 	"github.com/1broseidon/promptext/internal/token"
 	"github.com/atotto/clipboard"
 	"github.com/jedib0t/go-pretty/v6/text"
 )
 
 type Config struct {
-	DirPath    string
-	Extensions []string
-	Excludes   []string
-	GitIgnore  bool
-	Filter     *filter.Filter
+	DirPath           string
+	Extensions        []string
+	Excludes          []string
+	GitIgnore         bool
+	Filter            *filter.Filter
+	RelevanceKeywords string // Keywords for relevance filtering
+	MaxTokens         int    // Maximum token budget (0 = unlimited)
+	ExplainSelection  bool   // Show priority scoring breakdown
 }
 
 func ParseCommaSeparated(input string) []string {
@@ -34,13 +39,35 @@ func ParseCommaSeparated(input string) []string {
 	return strings.Split(input, ",")
 }
 
+// ExcludedFileInfo contains information about an excluded file
+type ExcludedFileInfo struct {
+	Path   string
+	Tokens int
+}
+
+// FilePriorityInfo contains information about a file's priority for explain-selection
+type FilePriorityInfo struct {
+	Path      string
+	Tokens    int
+	Score     float64
+	IsEntry   bool
+	IsTest    bool
+	IsConfig  bool
+	Depth     int
+	Included  bool
+}
+
 // ProcessResult contains both display and clipboard content
 type ProcessResult struct {
 	ProjectOutput    *format.ProjectOutput
 	DisplayContent   string
 	ClipboardContent string
-	TokenCount       int
+	TokenCount       int                 // Token count for included files
+	TotalTokens      int                 // Total tokens if all files were included
 	ProjectInfo      *info.ProjectInfo
+	ExcludedFiles    int                 // Number of files excluded due to token budget
+	ExcludedFileList []ExcludedFileInfo  // Details of excluded files
+	PriorityList     []FilePriorityInfo  // Priority breakdown for explain-selection
 }
 
 // DryRunResult contains dry-run preview information
@@ -244,7 +271,7 @@ func PreviewDirectory(config Config) (*DryRunResult, error) {
 	// Get project info for dry-run
 	if projectInfo, err := info.GetProjectInfo(config.DirPath, config.Filter); err == nil {
 		result.ProjectInfo = projectInfo
-		
+
 		// Add estimated tokens for metadata (rough approximation)
 		if projectInfo.DirectoryTree != nil {
 			directoryTreeString := projectInfo.DirectoryTree.ToMarkdown(0)
@@ -254,6 +281,195 @@ func PreviewDirectory(config Config) (*DryRunResult, error) {
 
 	log.Debug("Dry run complete: %d files, ~%d tokens", len(result.FilePaths), result.EstimatedTokens)
 	return result, nil
+}
+
+// processFileInWalk handles individual file processing during directory walk
+func processFileInWalk(path string, d fs.DirEntry, config Config, tokenCounter *token.TokenCounter, processedFiles *[]format.FileInfo, totalTokens *int, verbose bool) error {
+	if d.IsDir() {
+		// Get relative path for filtering
+		relPath, err := filepath.Rel(config.DirPath, path)
+		if err != nil {
+			return err
+		}
+		if config.Filter.IsExcluded(relPath) {
+			return filepath.SkipDir
+		}
+		return nil
+	}
+
+	// Get relative path for filtering
+	relPath, err := filepath.Rel(config.DirPath, path)
+	if err != nil {
+		return err
+	}
+
+	// Skip excluded files silently
+	if config.Filter.IsExcluded(relPath) {
+		return nil
+	}
+
+	// Process file
+	fileInfo, err := processFile(path, config)
+	if err != nil {
+		log.Debug("Error processing file %s: %v", path, err)
+		return nil // Continue processing other files
+	}
+
+	if fileInfo != nil {
+		*processedFiles = append(*processedFiles, *fileInfo)
+
+		// Count tokens and log immediately
+		fileTokens := tokenCounter.EstimateTokens(fileInfo.Content)
+		*totalTokens += fileTokens
+		log.Debug("Processing: %s (%d tokens)", relPath, fileTokens)
+
+		if verbose && !log.IsDebugEnabled() {
+			fmt.Printf("\n### File: %s\n```\n%s\n```\n", path, fileInfo.Content)
+		}
+	}
+
+	return nil
+}
+
+// filterDirectoryTree removes files from the tree that aren't in the included set
+func filterDirectoryTree(node *format.DirectoryNode, includedFiles map[string]bool, currentPath string) *format.DirectoryNode {
+	if node == nil {
+		return nil
+	}
+
+	// Create a filtered node
+	filtered := &format.DirectoryNode{
+		Name:     node.Name,
+		Type:     node.Type,
+		Children: []*format.DirectoryNode{},
+	}
+
+	// Process children
+	for _, child := range node.Children {
+		childPath := currentPath
+		if childPath != "" {
+			childPath = filepath.Join(childPath, child.Name)
+		} else {
+			childPath = child.Name
+		}
+
+		if child.Type == "file" {
+			// Include file only if it's in the included set
+			if includedFiles[childPath] {
+				filtered.Children = append(filtered.Children, child)
+			}
+		} else if child.Type == "dir" {
+			// Recursively filter subdirectory
+			filteredChild := filterDirectoryTree(child, includedFiles, childPath)
+			// Only include directory if it has children after filtering
+			if filteredChild != nil && len(filteredChild.Children) > 0 {
+				filtered.Children = append(filtered.Children, filteredChild)
+			}
+		}
+	}
+
+	return filtered
+}
+
+// filePriority calculates priority score for sorting files
+// Higher scores should be processed first
+type filePriority struct {
+	file     format.FileInfo
+	score    float64
+	isEntry  bool
+	isTest   bool
+	isConfig bool
+	depth    int
+}
+
+// prioritizeFiles sorts files by priority based on relevance and file characteristics
+func prioritizeFiles(files []format.FileInfo, scorer *relevance.Scorer, entryPoints map[string]bool) []format.FileInfo {
+	if len(files) == 0 {
+		return files
+	}
+
+	// Build priority list
+	priorities := make([]filePriority, len(files))
+	for i, file := range files {
+		// Calculate path depth
+		depth := strings.Count(file.Path, string(filepath.Separator))
+
+		// Check file characteristics
+		isEntry := entryPoints[file.Path]
+		isTest := strings.Contains(file.Path, "test") || strings.HasSuffix(file.Path, "_test.go")
+		isConfig := strings.Contains(strings.ToLower(filepath.Base(file.Path)), "config") ||
+		            strings.HasSuffix(file.Path, ".yml") || strings.HasSuffix(file.Path, ".yaml") ||
+		            strings.HasSuffix(file.Path, ".json") || strings.HasSuffix(file.Path, ".toml")
+
+		// Calculate relevance score
+		relevanceScore := scorer.ScoreFile(file.Path, file.Content)
+
+		priorities[i] = filePriority{
+			file:     file,
+			score:    relevanceScore,
+			isEntry:  isEntry,
+			isTest:   isTest,
+			isConfig: isConfig,
+			depth:    depth,
+		}
+	}
+
+	// Sort by priority (higher first)
+	sort.Slice(priorities, func(i, j int) bool {
+		pi, pj := priorities[i], priorities[j]
+
+		// 1. Entry points with high relevance come first
+		if pi.isEntry != pj.isEntry {
+			return pi.isEntry
+		}
+
+		// 2. High relevance scores (above threshold)
+		threshold := relevance.GetRelevanceThreshold()
+		piHighRelevance := pi.score >= threshold
+		pjHighRelevance := pj.score >= threshold
+		if piHighRelevance != pjHighRelevance {
+			return piHighRelevance
+		}
+
+		// 3. Within same relevance tier, prefer shallower files
+		if piHighRelevance && pjHighRelevance {
+			if pi.depth != pj.depth {
+				return pi.depth < pj.depth
+			}
+			// If same depth, higher score wins
+			if pi.score != pj.score {
+				return pi.score > pj.score
+			}
+		}
+
+		// 4. Config files before other non-relevant files
+		if !piHighRelevance && !pjHighRelevance {
+			if pi.isConfig != pj.isConfig {
+				return pi.isConfig
+			}
+		}
+
+		// 5. Tests come last
+		if pi.isTest != pj.isTest {
+			return !pi.isTest
+		}
+
+		// 6. Finally, prefer shallower paths
+		if pi.depth != pj.depth {
+			return pi.depth < pj.depth
+		}
+
+		// 7. Tie-breaker: alphabetical
+		return pi.file.Path < pj.file.Path
+	})
+
+	// Extract sorted files
+	sorted := make([]format.FileInfo, len(priorities))
+	for i, p := range priorities {
+		sorted[i] = p.file
+	}
+
+	return sorted
 }
 
 func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
@@ -275,48 +491,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		if err != nil {
 			return err
 		}
-
-		// Get relative path for filtering
-		relPath, err := filepath.Rel(config.DirPath, path)
-		if err != nil {
-			return err
-		}
-
-		// For directories
-		if d.IsDir() {
-			if config.Filter.IsExcluded(relPath) {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		// Skip excluded files silently
-		if config.Filter.IsExcluded(relPath) {
-			return nil
-		}
-
-		// Process file
-		fileInfo, err := processFile(path, config)
-		if err != nil {
-			log.Debug("Error processing file %s: %v", path, err)
-			return nil // Continue processing other files
-		}
-
-		if fileInfo != nil {
-			processedFiles = append(processedFiles, *fileInfo)
-
-			// Count tokens and log immediately
-			fileTokens := tokenCounter.EstimateTokens(fileInfo.Content)
-			totalTokens += fileTokens
-			log.Debug("Processing: %s (%d tokens)", relPath, fileTokens)
-
-			if verbose && !log.IsDebugEnabled() {
-				fmt.Printf("\n### File: %s\n```\n%s\n```\n",
-					path, fileInfo.Content)
-			}
-		}
-
-		return nil
+		return processFileInWalk(path, d, config, tokenCounter, &processedFiles, &totalTokens, verbose)
 	})
 
 	if err != nil {
@@ -324,10 +499,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	}
 	log.EndTimer("Processing Files")
 
-	// Store processed files
-	projectOutput.Files = processedFiles
-
-	// Get project info using processed files
+	// Get project info early for entry point detection
 	log.StartTimer("Project Analysis")
 	projectInfo, err := info.GetProjectInfo(config.DirPath, config.Filter)
 	if err != nil {
@@ -335,8 +507,118 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 	}
 	log.EndTimer("Project Analysis")
 
-	// Populate project information
+	// Apply relevance scoring and prioritization if keywords provided
+	var excludedFileCount int
+	var excludedFileList []ExcludedFileInfo
+	scorer := relevance.NewScorer(config.RelevanceKeywords)
+	if scorer.HasKeywords() || config.MaxTokens > 0 {
+		log.Debug("=== Applying Relevance & Token Budget ===")
+
+		// Build entry points map (detect common entry point patterns)
+		entryPoints := make(map[string]bool)
+		for _, file := range processedFiles {
+			basename := filepath.Base(file.Path)
+			// Detect common entry point file names
+			if basename == "main.go" || basename == "index.js" || basename == "index.ts" ||
+			   basename == "app.js" || basename == "app.ts" || basename == "main.py" ||
+			   basename == "__init__.py" || basename == "index.html" {
+				entryPoints[file.Path] = true
+			}
+		}
+
+		// Prioritize files
+		processedFiles = prioritizeFiles(processedFiles, scorer, entryPoints)
+		log.Debug("Files sorted by priority")
+
+		// Apply token budget if specified
+		if config.MaxTokens > 0 {
+			// Calculate overhead tokens (tree, git, metadata)
+			overheadTokens := 0
+			formatter, _ := format.GetFormatter("markdown")
+			if formatter != nil {
+				// Temporarily populate projectOutput for overhead calculation
+				tempOutput := &format.ProjectOutput{}
+				populateProjectInfo(tempOutput, projectInfo)
+
+				if treeOut, err := formatter.Format(&format.ProjectOutput{DirectoryTree: tempOutput.DirectoryTree}); err == nil {
+					overheadTokens += tokenCounter.EstimateTokens(treeOut)
+				}
+				if gitOut, err := formatter.Format(&format.ProjectOutput{GitInfo: tempOutput.GitInfo}); err == nil {
+					overheadTokens += tokenCounter.EstimateTokens(gitOut)
+				}
+				if metaOut, err := formatter.Format(&format.ProjectOutput{Metadata: tempOutput.Metadata}); err == nil {
+					overheadTokens += tokenCounter.EstimateTokens(metaOut)
+				}
+			}
+
+			availableTokens := config.MaxTokens - overheadTokens
+			log.Debug("Token budget: %d (available for files: %d)", config.MaxTokens, availableTokens)
+
+			// Include files until budget is reached
+			var filteredFiles []format.FileInfo
+			cumulativeTokens := 0
+
+			for _, file := range processedFiles {
+				fileTokens := tokenCounter.EstimateTokens(file.Content)
+				if cumulativeTokens+fileTokens <= availableTokens {
+					filteredFiles = append(filteredFiles, file)
+					cumulativeTokens += fileTokens
+					log.Debug("Including: %s (%d tokens, cumulative: %d)", file.Path, fileTokens, cumulativeTokens)
+				} else {
+					excludedFileCount++
+					excludedFileList = append(excludedFileList, ExcludedFileInfo{
+						Path:   file.Path,
+						Tokens: fileTokens,
+					})
+					log.Debug("Excluding: %s (%d tokens would exceed budget)", file.Path, fileTokens)
+				}
+			}
+
+			processedFiles = filteredFiles
+			log.Debug("Included %d files, excluded %d files due to token budget", len(processedFiles), excludedFileCount)
+		}
+	}
+
+	// Store processed files
+	projectOutput.Files = processedFiles
+
+	// Calculate file statistics
+	totalLines := 0
+	packages := make(map[string]bool)
+
+	for _, file := range processedFiles {
+		totalLines += strings.Count(file.Content, "\n") + 1
+
+		// Extract package directory for Go projects
+		dir := filepath.Dir(file.Path)
+		if dir != "." && dir != "" {
+			packages[dir] = true
+		}
+	}
+
+	projectOutput.FileStats = &format.FileStatistics{
+		TotalFiles:   len(processedFiles),
+		TotalLines:   totalLines,
+		PackageCount: len(packages),
+	}
+
+	// Populate project information (projectInfo already retrieved earlier)
 	populateProjectInfo(projectOutput, projectInfo)
+
+	// Filter directory tree if files were excluded due to token budget or relevance
+	if excludedFileCount > 0 || scorer.HasKeywords() {
+		// Build set of included file paths
+		includedFiles := make(map[string]bool)
+		for _, file := range processedFiles {
+			includedFiles[file.Path] = true
+		}
+
+		// Filter the directory tree to only show included files
+		if projectOutput.DirectoryTree != nil {
+			projectOutput.DirectoryTree = filterDirectoryTree(projectOutput.DirectoryTree, includedFiles, "")
+		}
+		log.Debug("Filtered directory tree to show only %d included files", len(processedFiles))
+	}
 
 	// Get formatter for output
 	formatter, err := format.GetFormatter("markdown") // Default to markdown for token counting
@@ -388,12 +670,21 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		displayContent = formattedOutput
 	}
 
+	// Calculate total tokens (included + excluded)
+	totalProjectTokens := totalTokens
+	for _, excluded := range excludedFileList {
+		totalProjectTokens += excluded.Tokens
+	}
+
 	return &ProcessResult{
 		ProjectOutput:    projectOutput,
 		DisplayContent:   displayContent,
 		ClipboardContent: formattedOutput,
 		TokenCount:       totalTokens,
+		TotalTokens:      totalProjectTokens,
 		ProjectInfo:      projectInfo,
+		ExcludedFiles:    excludedFileCount,
+		ExcludedFileList: excludedFileList,
 	}, nil
 }
 
@@ -420,12 +711,42 @@ func buildProjectHeader(config Config, result *ProcessResult, infoOnly bool) str
 
 	// Basic file and token count (always shown)
 	fileCount := len(result.ProjectOutput.Files)
-	content.WriteString(fmt.Sprintf("\n   Files: %d", fileCount))
-	if result.TokenCount > 0 {
-		content.WriteString(fmt.Sprintf(" • Tokens: ~%d", result.TokenCount))
+	totalFileCount := fileCount + result.ExcludedFiles
+
+	if result.ExcludedFiles > 0 {
+		// Show "included / total" format when files were excluded
+		content.WriteString(fmt.Sprintf("\n   Included: %d/%d files • ~%s tokens",
+			fileCount, totalFileCount, formatTokenCount(result.TokenCount)))
+		if result.TotalTokens > result.TokenCount {
+			content.WriteString(fmt.Sprintf("\n   Full project: %d files • ~%s tokens",
+				totalFileCount, formatTokenCount(result.TotalTokens)))
+		}
+	} else {
+		// Normal display when no files were excluded
+		content.WriteString(fmt.Sprintf("\n   Files: %d", fileCount))
+		if result.TokenCount > 0 {
+			content.WriteString(fmt.Sprintf(" • Tokens: ~%s", formatTokenCount(result.TokenCount)))
+		}
 	}
 
 	return content.String()
+}
+
+// formatTokenCount formats token count with comma separators for readability
+func formatTokenCount(tokens int) string {
+	if tokens < 1000 {
+		return fmt.Sprintf("%d", tokens)
+	}
+	// Add comma separators for thousands
+	str := fmt.Sprintf("%d", tokens)
+	var result strings.Builder
+	for i, c := range str {
+		if i > 0 && (len(str)-i)%3 == 0 {
+			result.WriteRune(',')
+		}
+		result.WriteRune(c)
+	}
+	return result.String()
 }
 
 // analyzeFileStatistics collects file type and size statistics
@@ -685,14 +1006,149 @@ func FormatDryRunOutput(result *DryRunResult, config Config) string {
 	return formatBoxedOutput(content.String())
 }
 
+// Helper functions to reduce cyclomatic complexity
+
+func setupLogging(debug, quiet bool) {
+	if debug {
+		log.Enable()
+		log.SetColorEnabled(true)
+	}
+	if quiet {
+		log.SetQuiet(true)
+	}
+}
+
+func loadConfigurations(absPath string) (*config.FileConfig, *config.FileConfig) {
+	// Load global configuration
+	globalConfig, err := config.LoadGlobalConfig()
+	if err != nil {
+		log.Info("Warning: Failed to load global config: %v", err)
+		globalConfig = &config.FileConfig{}
+	}
+
+	// Load project config file from the specified directory
+	projectConfig, err := config.LoadConfig(absPath)
+	if err != nil {
+		log.Info("Warning: Failed to load .promptext.yml from %s: %v", absPath, err)
+		projectConfig = &config.FileConfig{}
+	}
+
+	return globalConfig, projectConfig
+}
+
+func handleDryRun(procConfig Config, outputFormat, outFile string, quiet bool) error {
+	dryRunResult, err := PreviewDirectory(procConfig)
+	if err != nil {
+		return fmt.Errorf("error during dry-run preview: %v", err)
+	}
+
+	// Update config summary with additional info
+	dryRunResult.ConfigSummary.Format = outputFormat
+	dryRunResult.ConfigSummary.OutputFile = outFile
+
+	// Display dry-run results
+	preview := FormatDryRunOutput(dryRunResult, procConfig)
+	if quiet {
+		fmt.Printf("files=%d tokens=%d\n", len(dryRunResult.FilePaths), dryRunResult.EstimatedTokens)
+	} else {
+		fmt.Printf("\033[32m%s\033[0m\n", preview)
+	}
+	return nil
+}
+
+func handleInfoOnly(procConfig Config, result *ProcessResult, infoOnly, quiet bool) (string, error) {
+	info, err := GetMetadataSummary(procConfig, result, infoOnly)
+	if err != nil {
+		return "", fmt.Errorf("error getting project info: %v", err)
+	}
+
+	if infoOnly {
+		if quiet {
+			fileCount := len(result.ProjectOutput.Files)
+			fmt.Printf("files=%d tokens=%d\n", fileCount, result.TokenCount)
+		} else {
+			fmt.Printf("\033[32m%s\033[0m\n", info)
+		}
+	}
+	return info, nil
+}
+
+func handleOutput(formattedOutput, outputFormat, outFile, info string, result *ProcessResult, noCopy, quiet bool) error {
+	// Build exclusion message if files were excluded
+	exclusionMsg := ""
+	if result.ExcludedFiles > 0 {
+		if quiet {
+			exclusionMsg = fmt.Sprintf(" excluded=%d", result.ExcludedFiles)
+		} else {
+			// Build detailed exclusion summary
+			var summary strings.Builder
+			summary.WriteString(fmt.Sprintf("\n⚠️  Excluded %d files due to token budget:\n", result.ExcludedFiles))
+
+			// Show first 5 excluded files with token counts
+			displayCount := 5
+			if len(result.ExcludedFileList) < displayCount {
+				displayCount = len(result.ExcludedFileList)
+			}
+
+			totalExcludedTokens := 0
+			for i := 0; i < displayCount; i++ {
+				excluded := result.ExcludedFileList[i]
+				summary.WriteString(fmt.Sprintf("    • %s (~%d tokens)\n", excluded.Path, excluded.Tokens))
+				totalExcludedTokens += excluded.Tokens
+			}
+
+			// Add summary for remaining files
+			if len(result.ExcludedFileList) > displayCount {
+				remaining := len(result.ExcludedFileList) - displayCount
+				remainingTokens := 0
+				for i := displayCount; i < len(result.ExcludedFileList); i++ {
+					remainingTokens += result.ExcludedFileList[i].Tokens
+				}
+				totalExcludedTokens += remainingTokens
+				summary.WriteString(fmt.Sprintf("    ... and %d more files (~%d tokens)\n", remaining, remainingTokens))
+			}
+
+			summary.WriteString(fmt.Sprintf("    Total excluded: ~%d tokens", totalExcludedTokens))
+			exclusionMsg = summary.String()
+		}
+	}
+
+	if outFile != "" {
+		if err := os.WriteFile(outFile, []byte(formattedOutput), 0644); err != nil {
+			return fmt.Errorf("error writing to output file: %w", err)
+		}
+		if quiet {
+			fmt.Printf("written=%s format=%s files=%d tokens=%d%s\n", outFile, outputFormat, len(result.ProjectOutput.Files), result.TokenCount, exclusionMsg)
+		} else {
+			fmt.Printf("\033[32m%s\n✓ code context written to %s (%s format)%s\033[0m\n", info, outFile, outputFormat, exclusionMsg)
+		}
+	} else if !noCopy {
+		if err := clipboard.WriteAll(formattedOutput); err != nil {
+			if !quiet {
+				log.Info("Warning: Failed to copy to clipboard: %v", err)
+			}
+			if quiet {
+				return fmt.Errorf("clipboard copy failed")
+			}
+		} else {
+			if quiet {
+				fmt.Printf("clipboard=ok format=%s files=%d tokens=%d%s\n", outputFormat, len(result.ProjectOutput.Files), result.TokenCount, exclusionMsg)
+			} else {
+				fmt.Printf("\033[32m%s\n✓ code context copied to clipboard (%s format)%s\033[0m\n", info, outputFormat, exclusionMsg)
+			}
+		}
+	}
+	return nil
+}
+
 // Run executes the promptext tool with the given configuration
-func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string, debug bool, gitignore bool, useDefaultRules bool, dryRun bool, quiet bool) error {
+func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string, debug bool, gitignore bool, useDefaultRules bool, dryRun bool, quiet bool, relevanceKeywords string, maxTokens int, explainSelection bool) error {
 	// Enable debug logging if flag is set
 	if debug {
 		log.Enable()
 		log.SetColorEnabled(true)
 	}
-	
+
 	// Set quiet mode
 	if quiet {
 		log.SetQuiet(true)
@@ -716,19 +1172,8 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		return fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
-	// Load global configuration
-	globalConfig, err := config.LoadGlobalConfig()
-	if err != nil {
-		log.Info("Warning: Failed to load global config: %v", err)
-		globalConfig = &config.FileConfig{}
-	}
-
-	// Load project config file from the specified directory
-	projectConfig, err := config.LoadConfig(absPath)
-	if err != nil {
-		log.Info("Warning: Failed to load .promptext.yml from %s: %v", absPath, err)
-		projectConfig = &config.FileConfig{}
-	}
+	// Load configurations
+	globalConfig, projectConfig := loadConfigurations(absPath)
 
 	// Merge global, project, and flag configurations with proper precedence
 	extensions, excludes, verboseFlag, _, useGitIgnore, useDefaultRules := config.MergeConfigs(globalConfig, projectConfig, extension, exclude, verbose, debug, &gitignore, &useDefaultRules)
@@ -750,34 +1195,18 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 
 	// Create processor configuration with filter
 	procConfig := Config{
-		DirPath:    absPath,
-		Extensions: extensions,
-		Excludes:   excludes,
-		GitIgnore:  useGitIgnore,
-		Filter:     f,
+		DirPath:           absPath,
+		Extensions:        extensions,
+		Excludes:          excludes,
+		GitIgnore:         useGitIgnore,
+		Filter:            f,
+		RelevanceKeywords: relevanceKeywords,
+		MaxTokens:         maxTokens,
 	}
 
 	// Handle dry-run mode
 	if dryRun {
-		dryRunResult, err := PreviewDirectory(procConfig)
-		if err != nil {
-			return fmt.Errorf("error during dry-run preview: %v", err)
-		}
-
-		// Update config summary with additional info
-		dryRunResult.ConfigSummary.Format = outputFormat
-		dryRunResult.ConfigSummary.OutputFile = outFile
-
-		// Display dry-run results
-		preview := FormatDryRunOutput(dryRunResult, procConfig)
-		if quiet {
-			// In quiet mode, output minimal dry-run info
-			fmt.Printf("files=%d tokens=%d\n", len(dryRunResult.FilePaths), dryRunResult.EstimatedTokens)
-		} else {
-			fmt.Printf("\033[32m%s\033[0m\n", preview)
-		}
-		
-		return nil
+		return handleDryRun(procConfig, outputFormat, outFile, quiet)
 	}
 
 	// Process directory once and reuse results
@@ -786,21 +1215,12 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		return fmt.Errorf("error processing directory: %v", err)
 	}
 
-	// Get metadata summary using the already processed result
-	info, err := GetMetadataSummary(procConfig, result, infoOnly)
+	// Handle info-only mode
+	info, err := handleInfoOnly(procConfig, result, infoOnly, quiet)
 	if err != nil {
-		return fmt.Errorf("error getting project info: %v", err)
+		return err
 	}
-
-	// If info-only flag is set, just display the summary and return
 	if infoOnly {
-		if quiet {
-			// In quiet mode, output minimal info
-			fileCount := len(result.ProjectOutput.Files)
-			fmt.Printf("files=%d tokens=%d\n", fileCount, result.TokenCount)
-		} else {
-			fmt.Printf("\033[32m%s\033[0m\n", info)
-		}
 		return nil
 	}
 
@@ -810,37 +1230,6 @@ func Run(dirPath string, extension string, exclude string, noCopy bool, infoOnly
 		return fmt.Errorf("error formatting output: %w", err)
 	}
 
-	// Handle output based on flags
-	if outFile != "" {
-		if err := os.WriteFile(outFile, []byte(formattedOutput), 0644); err != nil {
-			return fmt.Errorf("error writing to output file: %w", err)
-		}
-		if quiet {
-			// In quiet mode, output minimal success info
-			fmt.Printf("written=%s format=%s files=%d tokens=%d\n", outFile, outputFormat, len(result.ProjectOutput.Files), result.TokenCount)
-		} else {
-			fmt.Printf("\033[32m%s\n✓ code context written to %s (%s format)\033[0m\n",
-				info, outFile, outputFormat)
-		}
-	} else if !noCopy {
-		if err := clipboard.WriteAll(formattedOutput); err != nil {
-			if !quiet {
-				log.Info("Warning: Failed to copy to clipboard: %v", err)
-			}
-			// In quiet mode, exit with error code for clipboard failure
-			if quiet {
-				return fmt.Errorf("clipboard copy failed")
-			}
-		} else {
-			if quiet {
-				// In quiet mode, output minimal success info
-				fmt.Printf("clipboard=ok format=%s files=%d tokens=%d\n", outputFormat, len(result.ProjectOutput.Files), result.TokenCount)
-			} else {
-				fmt.Printf("\033[32m%s\n✓ code context copied to clipboard (%s format)\033[0m\n",
-					info, outputFormat)
-			}
-		}
-	}
-
-	return nil
+	// Handle output
+	return handleOutput(formattedOutput, outputFormat, outFile, info, result, noCopy, quiet)
 }

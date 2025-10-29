@@ -9,6 +9,7 @@ import (
 
 type MarkdownFormatter struct{}
 type XMLFormatter struct{}
+type TOONFormatter struct{}
 
 func (m *MarkdownFormatter) formatOverview(sb *strings.Builder, overview *ProjectOverview) {
 	if overview == nil {
@@ -290,4 +291,207 @@ func (x *XMLFormatter) Format(project *ProjectOutput) (string, error) {
 
 	b.WriteString("</project>")
 	return b.String(), nil
+}
+
+// TOONFormatter formats project data in TOON format for optimal token efficiency
+func (t *TOONFormatter) Format(project *ProjectOutput) (string, error) {
+	// Build a structured map for TOON encoding
+	data := make(map[string]interface{})
+
+	// Project metadata
+	if project.Metadata != nil {
+		metadata := make(map[string]interface{})
+		metadata["language"] = project.Metadata.Language
+		if project.Metadata.Version != "" {
+			metadata["version"] = project.Metadata.Version
+		}
+		if len(project.Metadata.Dependencies) > 0 {
+			metadata["dependencies"] = project.Metadata.Dependencies
+		}
+
+		// Add project size stats for instant intuition
+		if project.FileStats != nil {
+			metadata["total_files"] = project.FileStats.TotalFiles
+			metadata["total_lines"] = project.FileStats.TotalLines
+		}
+
+		data["metadata"] = metadata
+	}
+
+	// Git information
+	if project.GitInfo != nil {
+		gitInfo := make(map[string]interface{})
+		gitInfo["branch"] = project.GitInfo.Branch
+		gitInfo["commit"] = project.GitInfo.CommitHash
+		if project.GitInfo.CommitMessage != "" {
+			gitInfo["message"] = project.GitInfo.CommitMessage
+		}
+		data["git"] = gitInfo
+	}
+
+	// File statistics
+	if project.FileStats != nil {
+		stats := make(map[string]interface{})
+		stats["totalFiles"] = project.FileStats.TotalFiles
+		stats["totalLines"] = project.FileStats.TotalLines
+		stats["packages"] = project.FileStats.PackageCount
+
+		if len(project.FileStats.FilesByType) > 0 {
+			// Convert map to tabular array for token efficiency
+			var fileTypes []map[string]interface{}
+			for ext, count := range project.FileStats.FilesByType {
+				fileTypes = append(fileTypes, map[string]interface{}{
+					"type":  ext,
+					"count": count,
+				})
+			}
+			stats["fileTypes"] = fileTypes
+		}
+
+		data["stats"] = stats
+	}
+
+	// Directory tree (convert to compact map representation)
+	if project.DirectoryTree != nil {
+		structure := t.treeToDirectoryMap(project.DirectoryTree)
+		if len(structure) > 0 {
+			data["structure"] = structure
+		}
+	}
+
+	// Analysis sections
+	if project.Analysis != nil {
+		analysis := make(map[string]interface{})
+		if len(project.Analysis.EntryPoints) > 0 {
+			analysis["entryPoints"] = t.mapToList(project.Analysis.EntryPoints)
+		}
+		if len(project.Analysis.ConfigFiles) > 0 {
+			analysis["configFiles"] = t.mapToList(project.Analysis.ConfigFiles)
+		}
+		if len(project.Analysis.CoreFiles) > 0 {
+			analysis["coreFiles"] = t.mapToList(project.Analysis.CoreFiles)
+		}
+		if len(project.Analysis.TestFiles) > 0 {
+			analysis["testFiles"] = t.mapToList(project.Analysis.TestFiles)
+		}
+		if len(project.Analysis.Documentation) > 0 {
+			analysis["documentation"] = t.mapToList(project.Analysis.Documentation)
+		}
+		if len(analysis) > 0 {
+			data["analysis"] = analysis
+		}
+	}
+
+	// Dependencies
+	if project.Dependencies != nil {
+		deps := make(map[string]interface{})
+		if len(project.Dependencies.Packages) > 0 {
+			deps["packages"] = project.Dependencies.Packages
+		}
+		if len(project.Dependencies.CoreFiles) > 0 {
+			deps["coreFiles"] = project.Dependencies.CoreFiles
+		}
+		if len(deps) > 0 {
+			data["dependencies"] = deps
+		}
+	}
+
+	// Files - use tabular format for metadata only
+	if len(project.Files) > 0 {
+		// Create tabular array with file metadata
+		var fileMetadata []map[string]interface{}
+		for _, file := range project.Files {
+			lineCount := strings.Count(file.Content, "\n") + 1
+			ext := strings.TrimPrefix(filepath.Ext(file.Path), ".")
+			if ext == "" {
+				ext = "txt"
+			}
+
+			fileMetadata = append(fileMetadata, map[string]interface{}{
+				"path":  file.Path,
+				"ext":   ext,
+				"lines": lineCount,
+			})
+		}
+		data["files"] = fileMetadata
+
+		// Create content section as nested objects with multiline strings
+		// This is more token-efficient than tabular format for large code blocks
+		contents := make(map[string]interface{})
+		for _, file := range project.Files {
+			// Use a sanitized version of the path as the key
+			key := strings.ReplaceAll(file.Path, "/", "_")
+			key = strings.ReplaceAll(key, ".", "_")
+			contents[key] = file.Content
+		}
+		data["code"] = contents
+	}
+
+	// Use TOON encoder
+	encoder := NewTOONEncoder()
+	result, err := encoder.Encode(data)
+	if err != nil {
+		return "", fmt.Errorf("TOON encoding error: %w", err)
+	}
+
+	return result, nil
+}
+
+// Helper function to convert directory tree to map structure
+// Returns map[directory_path][]filenames for compact representation
+func (t *TOONFormatter) treeToDirectoryMap(node *DirectoryNode) map[string]interface{} {
+	if node == nil {
+		return nil
+	}
+
+	structure := make(map[string]interface{})
+	t.buildDirectoryMap(node, "", structure)
+	return structure
+}
+
+// Recursive helper to build directory map
+func (t *TOONFormatter) buildDirectoryMap(node *DirectoryNode, currentPath string, structure map[string]interface{}) {
+	if node == nil {
+		return
+	}
+
+	// Collect files and subdirectories at this level
+	var files []string
+	var subdirs []*DirectoryNode
+
+	for _, child := range node.Children {
+		if child.Type == "file" {
+			files = append(files, child.Name)
+		} else if child.Type == "dir" {
+			subdirs = append(subdirs, child)
+		}
+	}
+
+	// Add files for this directory if any
+	if len(files) > 0 {
+		structure[currentPath] = files
+	}
+
+	// Recursively process subdirectories
+	for _, subdir := range subdirs {
+		newPath := currentPath
+		if newPath == "" {
+			newPath = subdir.Name
+		} else {
+			newPath = currentPath + "/" + subdir.Name
+		}
+		t.buildDirectoryMap(subdir, newPath, structure)
+	}
+}
+
+// Helper to convert map[string]string to list of maps for tabular format
+func (t *TOONFormatter) mapToList(m map[string]string) []map[string]interface{} {
+	var result []map[string]interface{}
+	for k, v := range m {
+		result = append(result, map[string]interface{}{
+			"path": k,
+			"desc": v,
+		})
+	}
+	return result
 }

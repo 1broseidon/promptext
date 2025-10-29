@@ -10,7 +10,7 @@ import (
 // generateTextContent creates text content of specified size and type
 func generateTextContent(size int, contentType string) string {
 	var pattern string
-	
+
 	switch contentType {
 	case "code":
 		pattern = `package main
@@ -192,12 +192,12 @@ database:
 	default:
 		pattern = "Default text content for benchmarking token counting performance. "
 	}
-	
+
 	// Repeat pattern to reach desired size
 	if len(pattern) >= size {
 		return pattern[:size]
 	}
-	
+
 	repeats := size/len(pattern) + 1
 	result := strings.Repeat(pattern, repeats)
 	return result[:size]
@@ -223,26 +223,26 @@ func BenchmarkTokenCounter_HugeText(b *testing.B) {
 func benchmarkTokenCounting(b *testing.B, size int, contentType string) {
 	content := generateTextContent(size, contentType)
 	tokenCounter := NewTokenCounter()
-	
+
 	if tokenCounter.encoding == nil {
 		b.Skip("tiktoken encoding not available")
 	}
-	
+
 	// Track memory usage
 	var m1, m2 runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&m1)
-	
+
 	b.ResetTimer()
-	
+
 	var totalTokens int
 	for i := 0; i < b.N; i++ {
 		tokens := tokenCounter.EstimateTokens(content)
 		totalTokens = tokens // Prevent optimization
 	}
-	
+
 	runtime.ReadMemStats(&m2)
-	
+
 	// Report metrics
 	b.ReportMetric(float64(totalTokens), "tokens_counted")
 	b.ReportMetric(float64(len(content))/1024, "content_kb")
@@ -275,18 +275,18 @@ func benchmarkContentType(b *testing.B, contentType string) {
 	const size = 10 * 1024 // 10KB for each content type
 	content := generateTextContent(size, contentType)
 	tokenCounter := NewTokenCounter()
-	
+
 	if tokenCounter.encoding == nil {
 		b.Skip("tiktoken encoding not available")
 	}
-	
+
 	b.ResetTimer()
-	
+
 	var totalTokens int
 	for i := 0; i < b.N; i++ {
 		totalTokens = tokenCounter.EstimateTokens(content)
 	}
-	
+
 	b.ReportMetric(float64(totalTokens), "tokens_counted")
 	b.ReportMetric(float64(totalTokens)/float64(len(content))*1000, "tokens_per_1k_chars")
 }
@@ -295,19 +295,19 @@ func benchmarkContentType(b *testing.B, contentType string) {
 func BenchmarkTokenCounter_ManySmallTexts(b *testing.B) {
 	const numTexts = 1000
 	const textSize = 500 // 500 bytes each
-	
+
 	texts := make([]string, numTexts)
 	for i := 0; i < numTexts; i++ {
 		texts[i] = generateTextContent(textSize, "code")
 	}
-	
+
 	tokenCounter := NewTokenCounter()
 	if tokenCounter.encoding == nil {
 		b.Skip("tiktoken encoding not available")
 	}
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		totalTokens := 0
 		for _, text := range texts {
@@ -317,26 +317,26 @@ func BenchmarkTokenCounter_ManySmallTexts(b *testing.B) {
 			b.Fatal("No tokens counted")
 		}
 	}
-	
+
 	b.ReportMetric(float64(numTexts), "texts_processed")
 }
 
 func BenchmarkTokenCounter_FewLargeTexts(b *testing.B) {
 	const numTexts = 10
 	const textSize = 50 * 1024 // 50KB each
-	
+
 	texts := make([]string, numTexts)
 	for i := 0; i < numTexts; i++ {
 		texts[i] = generateTextContent(textSize, "code")
 	}
-	
+
 	tokenCounter := NewTokenCounter()
 	if tokenCounter.encoding == nil {
 		b.Skip("tiktoken encoding not available")
 	}
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		totalTokens := 0
 		for _, text := range texts {
@@ -346,14 +346,14 @@ func BenchmarkTokenCounter_FewLargeTexts(b *testing.B) {
 			b.Fatal("No tokens counted")
 		}
 	}
-	
+
 	b.ReportMetric(float64(numTexts), "texts_processed")
 }
 
 // Benchmark token counter initialization
 func BenchmarkTokenCounter_Initialization(b *testing.B) {
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		tc := NewTokenCounter()
 		if tc == nil {
@@ -366,13 +366,13 @@ func BenchmarkTokenCounter_Initialization(b *testing.B) {
 func BenchmarkTokenCounter_Concurrent(b *testing.B) {
 	content := generateTextContent(10*1024, "mixed")
 	tokenCounter := NewTokenCounter()
-	
+
 	if tokenCounter.encoding == nil {
 		b.Skip("tiktoken encoding not available")
 	}
-	
+
 	b.ResetTimer()
-	
+
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			tokens := tokenCounter.EstimateTokens(content)
@@ -389,7 +389,7 @@ func BenchmarkTokenCounter_EdgeCases(b *testing.B) {
 	if tokenCounter.encoding == nil {
 		b.Skip("tiktoken encoding not available")
 	}
-	
+
 	testCases := []struct {
 		name    string
 		content string
@@ -402,9 +402,9 @@ func BenchmarkTokenCounter_EdgeCases(b *testing.B) {
 		{"numbers", "1234567890 42 3.14159 -123.45"},
 		{"mixed_newlines", "line1\nline2\r\nline3\rline4"},
 	}
-	
+
 	b.ResetTimer()
-	
+
 	for _, tc := range testCases {
 		b.Run(tc.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
@@ -432,21 +432,21 @@ func BenchmarkTokenCounter_RealisticCodebase(b *testing.B) {
 		{"api.md", generateTextContent(6000, "markdown"), 6000},
 		{"package.json", generateTextContent(800, "json"), 800},
 	}
-	
+
 	tokenCounter := NewTokenCounter()
 	if tokenCounter.encoding == nil {
 		b.Skip("tiktoken encoding not available")
 	}
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		totalTokens := 0
 		for _, file := range files {
 			tokens := tokenCounter.EstimateTokens(file.content)
 			totalTokens += tokens
 		}
-		
+
 		if i == 0 {
 			b.ReportMetric(float64(totalTokens), "total_tokens")
 			b.ReportMetric(float64(len(files)), "files_processed")
@@ -456,30 +456,30 @@ func BenchmarkTokenCounter_RealisticCodebase(b *testing.B) {
 
 // Benchmark token counting with memory profiling
 func BenchmarkTokenCounter_MemoryProfile(b *testing.B) {
-	sizes := []int{1024, 10*1024, 100*1024, 1024*1024} // 1KB to 1MB
+	sizes := []int{1024, 10 * 1024, 100 * 1024, 1024 * 1024} // 1KB to 1MB
 	tokenCounter := NewTokenCounter()
-	
+
 	if tokenCounter.encoding == nil {
 		b.Skip("tiktoken encoding not available")
 	}
-	
+
 	for _, size := range sizes {
 		content := generateTextContent(size, "mixed")
-		
+
 		b.Run(fmt.Sprintf("size_%dKB", size/1024), func(b *testing.B) {
 			var m1, m2 runtime.MemStats
 			runtime.GC()
 			runtime.ReadMemStats(&m1)
-			
+
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				tokens := tokenCounter.EstimateTokens(content)
 				_ = tokens
 			}
-			
+
 			runtime.ReadMemStats(&m2)
-			
+
 			// Report memory metrics
 			b.ReportMetric(float64(m2.TotalAlloc-m1.TotalAlloc)/1024, "KB_allocated")
 			b.ReportMetric(float64(m2.Mallocs-m1.Mallocs), "malloc_count")
@@ -491,25 +491,25 @@ func BenchmarkTokenCounter_MemoryProfile(b *testing.B) {
 func BenchmarkTokenCounter_VsCharCount(b *testing.B) {
 	content := generateTextContent(50*1024, "mixed") // 50KB mixed content
 	tokenCounter := NewTokenCounter()
-	
+
 	if tokenCounter.encoding == nil {
 		b.Skip("tiktoken encoding not available")
 	}
-	
+
 	b.Run("TokenCount", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			tokens := tokenCounter.EstimateTokens(content)
 			_ = tokens
 		}
 	})
-	
+
 	b.Run("CharCount", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			chars := len(content)
 			_ = chars
 		}
 	})
-	
+
 	b.Run("RuneCount", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			runes := len([]rune(content))

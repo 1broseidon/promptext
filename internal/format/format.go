@@ -11,6 +11,7 @@ type OutputFormat string
 const (
 	FormatMarkdown OutputFormat = "markdown"
 	FormatXML      OutputFormat = "xml"
+	FormatTOON     OutputFormat = "toon"
 )
 
 // DirectoryNode represents a node in the directory tree
@@ -118,7 +119,9 @@ func GetFormatter(format string) (Formatter, error) {
 		return &MarkdownFormatter{}, nil
 	case FormatXML:
 		return &XMLFormatter{}, nil
+	case FormatTOON:
+		return &TOONFormatter{}, nil
 	default:
-		return nil, fmt.Errorf("unsupported format: %s (supported: markdown, xml)", format)
+		return nil, fmt.Errorf("unsupported format: %s (supported: markdown, xml, toon)", format)
 	}
 }

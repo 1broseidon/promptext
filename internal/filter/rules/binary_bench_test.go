@@ -11,12 +11,12 @@ import (
 // createTempBinaryFiles creates various types of test files for benchmarking
 func createTempBinaryFiles(b *testing.B, numFiles int) string {
 	b.Helper()
-	
+
 	tempDir, err := os.MkdirTemp("", "binary_bench")
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	// Create different types of files for comprehensive testing
 	fileTypes := []struct {
 		ext     string
@@ -28,10 +28,10 @@ func createTempBinaryFiles(b *testing.B, numFiles int) string {
 		{".txt", false, func() []byte { return []byte("This is a plain text file with some content.") }},
 		{".md", false, func() []byte { return []byte("# Markdown File\n\nThis is **bold** text.") }},
 		{".yaml", false, func() []byte { return []byte("key: value\nlist:\n  - item1\n  - item2") }},
-		{".exe", true, func() []byte { 
+		{".exe", true, func() []byte {
 			content := make([]byte, 1024)
-			content[0] = 0x4D  // 'M'
-			content[1] = 0x5A  // 'Z' - PE header
+			content[0] = 0x4D   // 'M'
+			content[1] = 0x5A   // 'Z' - PE header
 			content[100] = 0x00 // null byte
 			return content
 		}},
@@ -46,8 +46,8 @@ func createTempBinaryFiles(b *testing.B, numFiles int) string {
 		}},
 		{".zip", true, func() []byte {
 			content := make([]byte, 256)
-			content[0] = 0x50  // 'P' - ZIP signature
-			content[1] = 0x4B  // 'K'
+			content[0] = 0x50 // 'P' - ZIP signature
+			content[1] = 0x4B // 'K'
 			content[2] = 0x03
 			content[3] = 0x04
 			content[25] = 0x00 // null byte
@@ -69,48 +69,48 @@ func createTempBinaryFiles(b *testing.B, numFiles int) string {
 			return content
 		}},
 	}
-	
+
 	filesPerType := numFiles / len(fileTypes)
 	remainder := numFiles % len(fileTypes)
-	
+
 	fileCount := 0
 	for i, fileType := range fileTypes {
 		typeFiles := filesPerType
 		if i < remainder {
 			typeFiles++
 		}
-		
+
 		for j := 0; j < typeFiles && fileCount < numFiles; j++ {
 			filename := filepath.Join(tempDir, fmt.Sprintf("file_%d_%d%s", i, j, fileType.ext))
 			content := fileType.content()
-			
+
 			if err := os.WriteFile(filename, content, 0644); err != nil {
 				b.Fatal(err)
 			}
 			fileCount++
 		}
 	}
-	
+
 	return tempDir
 }
 
 // createLargeFiles creates files of different sizes for size-based testing
 func createLargeFiles(b *testing.B) string {
 	b.Helper()
-	
+
 	tempDir, err := os.MkdirTemp("", "large_files_bench")
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	// Create files of different sizes
 	sizes := []struct {
 		name string
 		size int64
 		ext  string
 	}{
-		{"small.txt", 1024, ".txt"},                    // 1KB text
-		{"medium.log", 100 * 1024, ".log"},            // 100KB text  
+		{"small.txt", 1024, ".txt"},                   // 1KB text
+		{"medium.log", 100 * 1024, ".log"},            // 100KB text
 		{"large.json", 1024 * 1024, ".json"},          // 1MB text
 		{"huge_text.sql", 15 * 1024 * 1024, ".sql"},   // 15MB text (larger than threshold)
 		{"small_binary.exe", 512, ".exe"},             // Small binary
@@ -118,16 +118,16 @@ func createLargeFiles(b *testing.B) string {
 		{"large_binary.so", 5 * 1024 * 1024, ".so"},   // Large binary
 		{"huge_binary.bin", 50 * 1024 * 1024, ".bin"}, // Huge binary
 	}
-	
+
 	for _, file := range sizes {
 		path := filepath.Join(tempDir, file.name)
-		
+
 		var content []byte
 		if filepath.Ext(file.name) == ".txt" || filepath.Ext(file.name) == ".log" ||
-		   filepath.Ext(file.name) == ".json" || filepath.Ext(file.name) == ".sql" {
+			filepath.Ext(file.name) == ".json" || filepath.Ext(file.name) == ".sql" {
 			// Text content - repeating pattern
 			pattern := "This is sample text content for benchmarking binary detection performance. "
-			needed := int(file.size) / len(pattern) + 1
+			needed := int(file.size)/len(pattern) + 1
 			textContent := ""
 			for i := 0; i < needed; i++ {
 				textContent += pattern
@@ -155,12 +155,12 @@ func createLargeFiles(b *testing.B) string {
 				content[i] = 0x00
 			}
 		}
-		
+
 		if err := os.WriteFile(path, content, 0644); err != nil {
 			b.Fatal(err)
 		}
 	}
-	
+
 	return tempDir
 }
 
@@ -180,7 +180,7 @@ func BenchmarkBinaryRule_Match_10000Files(b *testing.B) {
 func benchmarkBinaryDetection(b *testing.B, numFiles int) {
 	tempDir := createTempBinaryFiles(b, numFiles)
 	defer os.RemoveAll(tempDir)
-	
+
 	// Collect all file paths
 	var files []string
 	err := filepath.Walk(tempDir, func(path string, info os.FileInfo, err error) error {
@@ -195,11 +195,11 @@ func benchmarkBinaryDetection(b *testing.B, numFiles int) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	rule := NewBinaryRule()
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		detectedBinary := 0
 		for _, file := range files {
@@ -212,7 +212,7 @@ func benchmarkBinaryDetection(b *testing.B, numFiles int) {
 			b.Fatal("No binary files detected")
 		}
 	}
-	
+
 	// Report files processed per operation
 	b.ReportMetric(float64(len(files)), "files_per_op")
 }
@@ -221,7 +221,7 @@ func benchmarkBinaryDetection(b *testing.B, numFiles int) {
 func BenchmarkBinaryRule_ExtensionCheck(b *testing.B) {
 	tempDir := createTempBinaryFiles(b, 1000)
 	defer os.RemoveAll(tempDir)
-	
+
 	var files []string
 	err := filepath.Walk(tempDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -235,9 +235,9 @@ func BenchmarkBinaryRule_ExtensionCheck(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		detectedBinary := 0
 		for _, file := range files {
@@ -253,7 +253,7 @@ func BenchmarkBinaryRule_ExtensionCheck(b *testing.B) {
 func BenchmarkBinaryRule_ContentCheck(b *testing.B) {
 	tempDir := createTempBinaryFiles(b, 100)
 	defer os.RemoveAll(tempDir)
-	
+
 	// Get only files that don't have binary extensions (to force content analysis)
 	var textFiles []string
 	err := filepath.Walk(tempDir, func(path string, info os.FileInfo, err error) error {
@@ -271,11 +271,11 @@ func BenchmarkBinaryRule_ContentCheck(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	rule := &BinaryRule{}
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		for _, file := range textFiles {
 			_ = rule.isBinaryContent(file)
@@ -287,7 +287,7 @@ func BenchmarkBinaryRule_ContentCheck(b *testing.B) {
 func BenchmarkBinaryRule_LargeFiles(b *testing.B) {
 	tempDir := createLargeFiles(b)
 	defer os.RemoveAll(tempDir)
-	
+
 	var files []string
 	err := filepath.Walk(tempDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -301,22 +301,22 @@ func BenchmarkBinaryRule_LargeFiles(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	rule := NewBinaryRule()
-	
+
 	// Track memory usage
 	var m1, m2 runtime.MemStats
 	runtime.GC()
 	runtime.ReadMemStats(&m1)
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		for _, file := range files {
 			_ = rule.Match(file)
 		}
 	}
-	
+
 	runtime.ReadMemStats(&m2)
 	b.ReportMetric(float64(m2.TotalAlloc-m1.TotalAlloc)/1024/1024, "MB_allocated")
 }
@@ -341,7 +341,7 @@ func benchmarkContentBufferSize(b *testing.B, bufferSize int) {
 		b.Fatal(err)
 	}
 	defer os.RemoveAll(tempDir)
-	
+
 	// Create a file that will require content analysis
 	testFile := filepath.Join(tempDir, "test.unknown")
 	content := make([]byte, 4096) // 4KB file
@@ -352,16 +352,16 @@ func benchmarkContentBufferSize(b *testing.B, bufferSize int) {
 			content[i] = byte(i % 128) // Various ASCII values
 		}
 	}
-	
+
 	if err := os.WriteFile(testFile, content, 0644); err != nil {
 		b.Fatal(err)
 	}
-	
+
 	// Custom rule with different buffer size
 	rule := &BinaryRule{}
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		_ = rule.isBinaryContent(testFile)
 	}
@@ -374,7 +374,7 @@ func BenchmarkBinaryRule_EmptyFiles(b *testing.B) {
 		b.Fatal(err)
 	}
 	defer os.RemoveAll(tempDir)
-	
+
 	// Create multiple empty files
 	var files []string
 	for i := 0; i < 100; i++ {
@@ -384,11 +384,11 @@ func BenchmarkBinaryRule_EmptyFiles(b *testing.B) {
 		}
 		files = append(files, filename)
 	}
-	
+
 	rule := NewBinaryRule()
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		for _, file := range files {
 			_ = rule.Match(file)
@@ -400,7 +400,7 @@ func BenchmarkBinaryRule_EmptyFiles(b *testing.B) {
 func BenchmarkBinaryRule_Concurrent(b *testing.B) {
 	tempDir := createTempBinaryFiles(b, 1000)
 	defer os.RemoveAll(tempDir)
-	
+
 	var files []string
 	err := filepath.Walk(tempDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -414,11 +414,11 @@ func BenchmarkBinaryRule_Concurrent(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	rule := NewBinaryRule()
-	
+
 	b.ResetTimer()
-	
+
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			for _, file := range files {
@@ -432,7 +432,7 @@ func BenchmarkBinaryRule_Concurrent(b *testing.B) {
 func BenchmarkBinaryRule_OptimizedVsNaive(b *testing.B) {
 	tempDir := createTempBinaryFiles(b, 500)
 	defer os.RemoveAll(tempDir)
-	
+
 	var files []string
 	err := filepath.Walk(tempDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -446,9 +446,9 @@ func BenchmarkBinaryRule_OptimizedVsNaive(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	
+
 	optimizedRule := NewBinaryRule()
-	
+
 	// Naive implementation - always reads content
 	naiveBinaryCheck := func(path string) bool {
 		file, err := os.Open(path)
@@ -456,13 +456,13 @@ func BenchmarkBinaryRule_OptimizedVsNaive(b *testing.B) {
 			return false
 		}
 		defer file.Close()
-		
+
 		buf := make([]byte, 1024)
 		n, err := file.Read(buf)
 		if err != nil {
 			return false
 		}
-		
+
 		// Check for null bytes
 		for i := 0; i < n; i++ {
 			if buf[i] == 0 {
@@ -471,7 +471,7 @@ func BenchmarkBinaryRule_OptimizedVsNaive(b *testing.B) {
 		}
 		return false
 	}
-	
+
 	b.Run("Optimized", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			for _, file := range files {
@@ -479,7 +479,7 @@ func BenchmarkBinaryRule_OptimizedVsNaive(b *testing.B) {
 			}
 		}
 	})
-	
+
 	b.Run("Naive", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			for _, file := range files {

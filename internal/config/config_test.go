@@ -156,7 +156,7 @@ func TestMergeConfigs(t *testing.T) {
 			wantUseDefaultRules: true,
 		},
 		{
-			name:         "project config overrides global",
+			name: "project config overrides global",
 			globalConfig: &FileConfig{
 				Extensions:      []string{".go"},
 				Excludes:        []string{"vendor"},
@@ -183,10 +183,10 @@ func TestMergeConfigs(t *testing.T) {
 		{
 			name: "CLI flags override everything",
 			globalConfig: &FileConfig{
-				Extensions:      []string{".go"},
-				Excludes:        []string{"vendor"},
-				Verbose:         boolPtr(false),
-				Debug:           boolPtr(false),
+				Extensions: []string{".go"},
+				Excludes:   []string{"vendor"},
+				Verbose:    boolPtr(false),
+				Debug:      boolPtr(false),
 			},
 			projectConfig: &FileConfig{
 				Extensions: []string{".js"},
@@ -217,7 +217,7 @@ func TestMergeConfigs(t *testing.T) {
 			projectConfig: &FileConfig{
 				Verbose: boolPtr(true), // Only override verbose
 			},
-			wantExtensions:      []string{".go", ".js"}, // From global
+			wantExtensions:      []string{".go", ".js"},    // From global
 			wantExcludes:        []string{"vendor", "tmp"}, // From global
 			wantVerbose:         true,                      // From project
 			wantDebug:           false,                     // From global
@@ -263,7 +263,7 @@ func TestMergeConfigs(t *testing.T) {
 func TestGetGlobalConfigPaths(t *testing.T) {
 	// Save original env vars
 	originalXDGConfigHome := os.Getenv("XDG_CONFIG_HOME")
-	
+
 	defer func() {
 		// Restore original env vars
 		if originalXDGConfigHome == "" {
@@ -272,33 +272,33 @@ func TestGetGlobalConfigPaths(t *testing.T) {
 			os.Setenv("XDG_CONFIG_HOME", originalXDGConfigHome)
 		}
 	}()
-	
+
 	t.Run("with XDG_CONFIG_HOME set", func(t *testing.T) {
 		testConfigHome := "/tmp/test-config"
 		os.Setenv("XDG_CONFIG_HOME", testConfigHome)
-		
+
 		paths := getGlobalConfigPaths()
-		
+
 		expectedXDGPath := filepath.Join(testConfigHome, "promptext", "config.yml")
 		if len(paths) < 1 || paths[0] != expectedXDGPath {
 			t.Errorf("First path should be XDG config path %s, got %v", expectedXDGPath, paths)
 		}
-		
+
 		// Should also include home dotfile as fallback
 		if len(paths) < 2 {
 			t.Errorf("Should have at least 2 paths, got %d", len(paths))
 		}
 	})
-	
+
 	t.Run("without XDG_CONFIG_HOME set", func(t *testing.T) {
 		os.Unsetenv("XDG_CONFIG_HOME")
-		
+
 		paths := getGlobalConfigPaths()
-		
+
 		if len(paths) < 1 {
 			t.Errorf("Should have at least 1 path, got %d", len(paths))
 		}
-		
+
 		// Should include both ~/.config/promptext/config.yml and ~/.promptext.yml
 		if len(paths) >= 2 {
 			// Second path should be the dotfile in home directory

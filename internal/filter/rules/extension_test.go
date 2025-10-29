@@ -62,10 +62,10 @@ func TestNewExtensionRule(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rule := NewExtensionRule(tt.extensions, tt.action)
-			
+
 			require.NotNil(t, rule)
 			assert.Equal(t, tt.action, rule.Action())
-			
+
 			// Verify rule type
 			extRule, ok := rule.(*ExtensionRule)
 			require.True(t, ok, "Expected ExtensionRule type")
@@ -218,7 +218,7 @@ func TestExtensionRule_Match_EmptyAndSpecialExtensions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rule := NewExtensionRule(tt.extensions, types.Include)
-			
+
 			for _, tc := range tt.testCases {
 				t.Run(tc.desc, func(t *testing.T) {
 					result := rule.Match(tc.path)
@@ -308,11 +308,11 @@ func TestExtensionRule_Action(t *testing.T) {
 
 func TestExtensionRule_DotHandling(t *testing.T) {
 	tests := []struct {
-		name       string
-		input      []string
-		testPath   string
-		expected   bool
-		desc       string
+		name     string
+		input    []string
+		testPath string
+		expected bool
+		desc     string
 	}{
 		{
 			name:     "dot added automatically",
@@ -359,12 +359,12 @@ func TestExtensionRule_PathNormalization(t *testing.T) {
 		{"unix path", "src/main.go", true, "unix path separator"},
 		{"windows path", "src\\main.go", true, "windows path separator"},
 		{"mixed separators", "src/utils\\helper.go", true, "mixed path separators"},
-		
+
 		// Complex paths
 		{"relative path", "./src/main.go", true, "relative path with dot slash"},
 		{"parent path", "../utils/helper.go", true, "parent directory reference"},
 		{"absolute path", "/home/user/project/main.go", true, "absolute path"},
-		
+
 		// URLs or network paths (should still work for extension)
 		{"url-like", "http://example.com/script.js", true, "url-like path"},
 		{"network path", "\\\\server\\share\\file.go", true, "network path"},
@@ -381,7 +381,7 @@ func TestExtensionRule_PathNormalization(t *testing.T) {
 func BenchmarkExtensionRule_SingleExtension(b *testing.B) {
 	rule := NewExtensionRule([]string{".go"}, types.Include)
 	path := "src/main.go"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		rule.Match(path)
@@ -391,7 +391,7 @@ func BenchmarkExtensionRule_SingleExtension(b *testing.B) {
 func BenchmarkExtensionRule_MultipleExtensions(b *testing.B) {
 	rule := NewExtensionRule([]string{".go", ".js", ".py", ".ts", ".java", ".cpp", ".c", ".h"}, types.Include)
 	path := "src/component.ts"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		rule.Match(path)
@@ -401,7 +401,7 @@ func BenchmarkExtensionRule_MultipleExtensions(b *testing.B) {
 func BenchmarkExtensionRule_NoExtension(b *testing.B) {
 	rule := NewExtensionRule([]string{".go", ".js", ".py"}, types.Include)
 	path := "Makefile"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		rule.Match(path)
@@ -411,7 +411,7 @@ func BenchmarkExtensionRule_NoExtension(b *testing.B) {
 func BenchmarkExtensionRule_NoMatch(b *testing.B) {
 	rule := NewExtensionRule([]string{".go", ".js", ".py"}, types.Include)
 	path := "config.json"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		rule.Match(path)

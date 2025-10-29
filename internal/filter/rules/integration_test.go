@@ -16,7 +16,7 @@ func TestRuleCombinations_MultiplePatterns(t *testing.T) {
 		NewPatternRule([]string{"*.go", "*.js"}, types.Include),
 		NewPatternRule([]string{"test_*", "*_test.go"}, types.Exclude),
 	}
-	
+
 	testCases := []struct {
 		name     string
 		path     string
@@ -74,13 +74,13 @@ func TestRuleCombinations_MultiplePatterns(t *testing.T) {
 			desc: "files not matching any rule",
 		},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			for i, rule := range rules {
 				result := rule.Match(tc.path)
 				expected := tc.expected[rule]
-				assert.Equal(t, expected, result, 
+				assert.Equal(t, expected, result,
 					"Rule %d (%T) for path %s - %s", i, rule, tc.path, tc.desc)
 			}
 		})
@@ -94,13 +94,13 @@ func TestRuleCombinations_DefaultsWithCustom(t *testing.T) {
 		NewExtensionRule([]string{".go", ".js", ".py"}, types.Include),
 		NewPatternRule([]string{"src/", "lib/"}, types.Include),
 	}
-	
+
 	allRules := append(defaultRules, customRules...)
-	
+
 	testCases := []struct {
-		name     string
-		path     string
-		desc     string
+		name string
+		path string
+		desc string
 	}{
 		{"node_modules go", "node_modules/pkg/main.go", "go file in node_modules"},
 		{"src go file", "src/main.go", "go file in src directory"},
@@ -111,7 +111,7 @@ func TestRuleCombinations_DefaultsWithCustom(t *testing.T) {
 		{"binary in src", "src/app.exe", "binary file in src"},
 		{"image in lib", "lib/icon.png", "image file in lib"},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			for i, rule := range allRules {
@@ -130,55 +130,55 @@ func TestDirectoryTraversal_ComplexStructure(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	
+
 	// Create complex directory structure
 	structure := map[string][]byte{
-		"README.md":                               []byte("# Project"),
-		"main.go":                                []byte("package main"),
-		"src/utils/helper.go":                    []byte("package utils"),
-		"src/utils/helper_test.go":               []byte("package utils"),
-		"node_modules/package/index.js":          []byte("module.exports = {}"),
-		"node_modules/package/lib/util.go":       []byte("package lib"),
-		".git/config":                            []byte("[core]"),
-		".git/hooks/pre-commit":                  []byte("#!/bin/sh"),
-		"build/dist/app.js":                      []byte("console.log('app')"),
-		"build/dist/app.css":                     []byte("body {}"),
-		"vendor/github.com/pkg/errors.go":       []byte("package errors"),
-		"logs/app.log":                           []byte("ERROR: test"),
-		"logs/access.log":                        []byte("GET /"),
-		"temp/cache.tmp":                         []byte("cache data"),
-		".idea/workspace.xml":                    []byte("<workspace>"),
-		".vscode/settings.json":                  []byte("{}"),
-		"images/logo.png":                        []byte("PNG fake content"),
-		"docs/api.md":                            []byte("# API"),
-		"tests/unit/parser_test.go":              []byte("package tests"),
-		"scripts/build.sh":                       []byte("#!/bin/bash"),
-		"config/app.yaml":                        []byte("port: 8080"),
-		"data/users.json":                        []byte("[]"),
-		".DS_Store":                              []byte("DS_Store content"),
-		"images/.DS_Store":                       []byte("DS_Store content"),
-		"nested/very/deep/structure/file.txt":    []byte("deep file"),
-		"nested/very/deep/.hidden/secret.key":    []byte("secret"),
-		"symlink_target.txt":                     []byte("target content"),
-		"a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p.txt":  []byte("very deep"),
+		"README.md":                           []byte("# Project"),
+		"main.go":                             []byte("package main"),
+		"src/utils/helper.go":                 []byte("package utils"),
+		"src/utils/helper_test.go":            []byte("package utils"),
+		"node_modules/package/index.js":       []byte("module.exports = {}"),
+		"node_modules/package/lib/util.go":    []byte("package lib"),
+		".git/config":                         []byte("[core]"),
+		".git/hooks/pre-commit":               []byte("#!/bin/sh"),
+		"build/dist/app.js":                   []byte("console.log('app')"),
+		"build/dist/app.css":                  []byte("body {}"),
+		"vendor/github.com/pkg/errors.go":     []byte("package errors"),
+		"logs/app.log":                        []byte("ERROR: test"),
+		"logs/access.log":                     []byte("GET /"),
+		"temp/cache.tmp":                      []byte("cache data"),
+		".idea/workspace.xml":                 []byte("<workspace>"),
+		".vscode/settings.json":               []byte("{}"),
+		"images/logo.png":                     []byte("PNG fake content"),
+		"docs/api.md":                         []byte("# API"),
+		"tests/unit/parser_test.go":           []byte("package tests"),
+		"scripts/build.sh":                    []byte("#!/bin/bash"),
+		"config/app.yaml":                     []byte("port: 8080"),
+		"data/users.json":                     []byte("[]"),
+		".DS_Store":                           []byte("DS_Store content"),
+		"images/.DS_Store":                    []byte("DS_Store content"),
+		"nested/very/deep/structure/file.txt": []byte("deep file"),
+		"nested/very/deep/.hidden/secret.key": []byte("secret"),
+		"symlink_target.txt":                  []byte("target content"),
+		"a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p.txt": []byte("very deep"),
 	}
-	
+
 	// Create files and directories
 	for relativePath, content := range structure {
 		fullPath := filepath.Join(tmpDir, relativePath)
 		dir := filepath.Dir(fullPath)
-		
+
 		err = os.MkdirAll(dir, 0755)
 		if err != nil {
 			t.Fatal(err)
 		}
-		
+
 		err = os.WriteFile(fullPath, content, 0644)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
-	
+
 	// Create a symlink (if supported)
 	symlinkPath := filepath.Join(tmpDir, "symlink.txt")
 	targetPath := filepath.Join(tmpDir, "symlink_target.txt")
@@ -186,10 +186,10 @@ func TestDirectoryTraversal_ComplexStructure(t *testing.T) {
 	if err != nil {
 		t.Logf("Symlink creation failed (may not be supported): %v", err)
 	}
-	
+
 	// Test with default exclude rules
 	defaultRules := DefaultExcludes()
-	
+
 	testCases := []struct {
 		name     string
 		path     string
@@ -221,18 +221,18 @@ func TestDirectoryTraversal_ComplexStructure(t *testing.T) {
 		{"very deep", "a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p.txt", false, "very deep files should not be excluded"},
 		{"symlink", "symlink.txt", false, "symlinks should not be excluded"},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			fullPath := filepath.Join(tmpDir, tc.path)
-			
+
 			// Test that file exists (skip if symlink creation failed)
 			if tc.path == "symlink.txt" {
 				if _, err := os.Lstat(fullPath); os.IsNotExist(err) {
 					t.Skip("Symlink not supported on this system")
 				}
 			}
-			
+
 			excluded := false
 			for _, rule := range defaultRules {
 				if rule.Match(tc.path) && rule.Action() == types.Exclude {
@@ -240,7 +240,7 @@ func TestDirectoryTraversal_ComplexStructure(t *testing.T) {
 					break
 				}
 			}
-			
+
 			assert.Equal(t, tc.expected, excluded, "Path: %s - %s", tc.path, tc.desc)
 		})
 	}
@@ -251,33 +251,33 @@ func TestDirectoryTraversal_PathNormalization(t *testing.T) {
 		NewPatternRule([]string{"build/", "dist/"}, types.Exclude),
 		NewExtensionRule([]string{".js", ".css"}, types.Include),
 	}
-	
+
 	testCases := []struct {
-		name     string
-		path     string
-		desc     string
+		name string
+		path string
+		desc string
 	}{
 		// Unix paths
 		{"unix build", "build/app.js", "unix path with build"},
 		{"unix dist", "dist/main.css", "unix path with dist"},
 		{"unix nested", "src/build/utils.js", "unix nested build"},
-		
+
 		// Windows-style paths (should be normalized)
 		{"windows build", "build\\app.js", "windows path with build"},
 		{"windows dist", "dist\\main.css", "windows path with dist"},
 		{"windows nested", "src\\build\\utils.js", "windows nested build"},
-		
+
 		// Mixed separators
 		{"mixed 1", "build/subdir\\file.js", "mixed separators"},
 		{"mixed 2", "src\\build/utils.js", "mixed separators reverse"},
-		
+
 		// Complex paths
 		{"relative", "./build/app.js", "relative path"},
 		{"parent", "../build/app.js", "parent directory"},
 		{"double slash", "build//app.js", "double slash"},
 		{"trailing slash", "build/", "trailing slash"},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			for i, rule := range rules {
@@ -291,11 +291,11 @@ func TestDirectoryTraversal_PathNormalization(t *testing.T) {
 func TestRuleActions_PriorityHandling(t *testing.T) {
 	// Test how different rule actions might be prioritized
 	testCases := []struct {
-		name      string
-		rules     []types.Rule
-		testPath  string
-		expected  []bool // Expected match results for each rule
-		desc      string
+		name     string
+		rules    []types.Rule
+		testPath string
+		expected []bool // Expected match results for each rule
+		desc     string
 	}{
 		{
 			name: "include vs exclude conflict",
@@ -340,15 +340,15 @@ func TestRuleActions_PriorityHandling(t *testing.T) {
 			desc:     "file clearly matches one rule type",
 		},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			require.Equal(t, len(tc.rules), len(tc.expected), "Test case setup error")
-			
+
 			for i, rule := range tc.rules {
 				result := rule.Match(tc.testPath)
 				expected := tc.expected[i]
-				assert.Equal(t, expected, result, 
+				assert.Equal(t, expected, result,
 					"Rule %d (%T, %v): %s - %s", i, rule, rule.Action(), tc.testPath, tc.desc)
 			}
 		})
@@ -364,7 +364,7 @@ func TestRulePerformance_ComplexScenarios(t *testing.T) {
 		NewPatternRule([]string{"*_test.*", "test_*", "*.spec.*"}, types.Exclude),
 	}
 	allRules := append(defaultRules, customRules...)
-	
+
 	// Test paths that might be encountered in real projects
 	testPaths := []string{
 		"src/main.go",
@@ -398,7 +398,7 @@ func TestRulePerformance_ComplexScenarios(t *testing.T) {
 		"tailwind.config.js",
 		"vite.config.ts",
 	}
-	
+
 	// This is more of a smoke test to ensure rules work with realistic paths
 	for _, path := range testPaths {
 		t.Run("path_"+path, func(t *testing.T) {
@@ -420,7 +420,7 @@ func BenchmarkRuleCombinations_Realistic(b *testing.B) {
 		NewExtensionRule([]string{".go", ".js", ".py"}, types.Include),
 		NewPatternRule([]string{"src/", "lib/"}, types.Include),
 	)
-	
+
 	testPaths := []string{
 		"src/main.go",
 		"node_modules/pkg/index.js",
@@ -431,7 +431,7 @@ func BenchmarkRuleCombinations_Realistic(b *testing.B) {
 		".git/config",
 		"vendor/errors.go",
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, path := range testPaths {
@@ -444,7 +444,7 @@ func BenchmarkRuleCombinations_Realistic(b *testing.B) {
 
 func BenchmarkDirectoryTraversal_Deep(b *testing.B) {
 	rule := NewPatternRule([]string{"node_modules/", "vendor/", "build/"}, types.Exclude)
-	
+
 	deepPaths := []string{
 		"node_modules/a/b/c/d/e/f/g/h/i/j/index.js",
 		"vendor/github.com/user/repo/pkg/lib/util.go",
@@ -452,7 +452,7 @@ func BenchmarkDirectoryTraversal_Deep(b *testing.B) {
 		"src/very/deep/nested/structure/component.js",
 		"lib/external/third/party/library/source.py",
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, path := range deepPaths {

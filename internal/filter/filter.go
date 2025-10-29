@@ -183,6 +183,100 @@ type FileTypeInfo struct {
 	Size         int64  // File size in bytes
 }
 
+// Helper functions to reduce cyclomatic complexity
+
+func isTestFile(path, base string) bool {
+	return strings.Contains(path, "_test.go") || 
+		strings.Contains(path, "test_") ||
+		strings.HasPrefix(path, "test_") || 
+		strings.HasSuffix(base, ".test.js") ||
+		strings.HasSuffix(base, ".spec.js") || 
+		strings.HasSuffix(base, "_test.py")
+}
+
+func isEntryPoint(base string) bool {
+	entryPoints := map[string]bool{
+		"main.go":   true,
+		"index.js":  true,
+		"app.py":    true,
+		"index.ts":  true,
+		"app.js":    true,
+		"server.js": true,
+	}
+	return entryPoints[base]
+}
+
+func getConfigType(ext string) (string, string) {
+	configTypes := map[string]string{
+		".yml":    "yaml",
+		".yaml":   "yaml",
+		".json":   "json",
+		".toml":   "toml",
+		".ini":    "ini",
+		".conf":   "ini",
+		".config": "ini",
+	}
+	if configType, ok := configTypes[ext]; ok {
+		return "config", "config:" + configType
+	}
+	return "", ""
+}
+
+func getDocType(ext string) (string, string) {
+	docTypes := map[string]string{
+		".md":   "markdown",
+		".txt":  "text",
+		".rst":  "rst",
+		".adoc": "asciidoc",
+	}
+	if docType, ok := docTypes[ext]; ok {
+		return "doc", "doc:" + docType
+	}
+	return "", ""
+}
+
+func getSourceType(ext string) (string, string) {
+	sourceTypes := map[string]string{
+		".go":   "go",
+		".js":   "javascript",
+		".ts":   "typescript",
+		".jsx":  "react",
+		".tsx":  "react",
+		".py":   "python",
+		".java": "java",
+		".rb":   "ruby",
+		".php":  "php",
+		".rs":   "rust",
+	}
+	if sourceType, ok := sourceTypes[ext]; ok {
+		return "source", "source:" + sourceType
+	}
+	return "", ""
+}
+
+func getDependencyType(base string) (string, string) {
+	depTypes := map[string]string{
+		"package.json":      "node",
+		"package-lock.json": "node",
+		"yarn.lock":         "node",
+		"go.mod":            "go",
+		"go.sum":            "go",
+		"requirements.txt":  "python",
+		"Pipfile":           "python",
+		"pyproject.toml":    "python",
+		"Gemfile":           "ruby",
+		"Gemfile.lock":      "ruby",
+		"composer.json":     "php",
+		"composer.lock":     "php",
+		"Cargo.toml":        "rust",
+		"Cargo.lock":        "rust",
+	}
+	if depType, ok := depTypes[base]; ok {
+		return "dependency", "dep:" + depType
+	}
+	return "", ""
+}
+
 // GetFileType determines detailed type information for a file
 func GetFileType(path string, f *Filter) FileTypeInfo {
 	info := FileTypeInfo{}
@@ -201,9 +295,7 @@ func GetFileType(path string, f *Filter) FileTypeInfo {
 	ext := filepath.Ext(path)
 
 	// Check for test files
-	if strings.Contains(path, "_test.go") || strings.Contains(path, "test_") ||
-		strings.HasPrefix(path, "test_") || strings.HasSuffix(base, ".test.js") ||
-		strings.HasSuffix(base, ".spec.js") || strings.HasSuffix(base, "_test.py") {
+	if isTestFile(path, base) {
 		info.IsTest = true
 		info.Type = "test"
 		info.Category = "test:" + strings.TrimPrefix(ext, ".")
@@ -211,8 +303,7 @@ func GetFileType(path string, f *Filter) FileTypeInfo {
 	}
 
 	// Check for entry points
-	if base == "main.go" || base == "index.js" || base == "app.py" ||
-		base == "index.ts" || base == "app.js" || base == "server.js" {
+	if isEntryPoint(base) {
 		info.IsEntryPoint = true
 		info.Type = "source"
 		info.Category = "entry:" + strings.TrimPrefix(ext, ".")
@@ -220,98 +311,39 @@ func GetFileType(path string, f *Filter) FileTypeInfo {
 	}
 
 	// Check for config files
-	switch ext {
-	case ".yml", ".yaml":
-		info.Type = "config"
-		info.Category = "config:yaml"
-	case ".json":
-		info.Type = "config"
-		info.Category = "config:json"
-	case ".toml":
-		info.Type = "config"
-		info.Category = "config:toml"
-	case ".ini", ".conf", ".config":
-		info.Type = "config"
-		info.Category = "config:ini"
+	if fileType, category := getConfigType(ext); fileType != "" {
+		info.Type = fileType
+		info.Category = category
+		return info
 	}
 
 	// Check for documentation
-	switch ext {
-	case ".md":
-		info.Type = "doc"
-		info.Category = "doc:markdown"
-	case ".txt":
-		info.Type = "doc"
-		info.Category = "doc:text"
-	case ".rst":
-		info.Type = "doc"
-		info.Category = "doc:rst"
-	case ".adoc":
-		info.Type = "doc"
-		info.Category = "doc:asciidoc"
+	if fileType, category := getDocType(ext); fileType != "" {
+		info.Type = fileType
+		info.Category = category
+		return info
 	}
 
 	// Check for source code files
-	switch ext {
-	case ".go":
-		info.Type = "source"
-		info.Category = "source:go"
-	case ".js":
-		info.Type = "source"
-		info.Category = "source:javascript"
-	case ".ts":
-		info.Type = "source"
-		info.Category = "source:typescript"
-	case ".jsx", ".tsx":
-		info.Type = "source"
-		info.Category = "source:react"
-	case ".py":
-		info.Type = "source"
-		info.Category = "source:python"
-	case ".java":
-		info.Type = "source"
-		info.Category = "source:java"
-	case ".rb":
-		info.Type = "source"
-		info.Category = "source:ruby"
-	case ".php":
-		info.Type = "source"
-		info.Category = "source:php"
-	case ".rs":
-		info.Type = "source"
-		info.Category = "source:rust"
+	if fileType, category := getSourceType(ext); fileType != "" {
+		info.Type = fileType
+		info.Category = category
+		return info
 	}
 
 	// Check for build and dependency files
-	switch base {
-	case "package.json", "package-lock.json", "yarn.lock":
-		info.Type = "dependency"
-		info.Category = "dep:node"
-	case "go.mod", "go.sum":
-		info.Type = "dependency"
-		info.Category = "dep:go"
-	case "requirements.txt", "Pipfile", "pyproject.toml":
-		info.Type = "dependency"
-		info.Category = "dep:python"
-	case "Gemfile", "Gemfile.lock":
-		info.Type = "dependency"
-		info.Category = "dep:ruby"
-	case "composer.json", "composer.lock":
-		info.Type = "dependency"
-		info.Category = "dep:php"
-	case "Cargo.toml", "Cargo.lock":
-		info.Type = "dependency"
-		info.Category = "dep:rust"
+	if fileType, category := getDependencyType(base); fileType != "" {
+		info.Type = fileType
+		info.Category = category
+		return info
 	}
 
 	// If no specific type was set but we have an extension, mark as source
-	if info.Type == "" && ext != "" {
+	if ext != "" {
 		info.Type = "source"
 		info.Category = "source:other"
-	}
-
-	// If still no type, mark as unknown
-	if info.Type == "" {
+	} else {
+		// If still no type, mark as unknown
 		info.Type = "unknown"
 		info.Category = "unknown"
 	}
