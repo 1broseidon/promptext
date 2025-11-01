@@ -1037,16 +1037,6 @@ func FormatDryRunOutput(result *DryRunResult, config Config) string {
 
 // Helper functions to reduce cyclomatic complexity
 
-func setupLogging(debug, quiet bool) {
-	if debug {
-		log.Enable()
-		log.SetColorEnabled(true)
-	}
-	if quiet {
-		log.SetQuiet(true)
-	}
-}
-
 func loadConfigurations(absPath string) (*config.FileConfig, *config.FileConfig) {
 	// Load global configuration
 	globalConfig, err := config.LoadGlobalConfig()

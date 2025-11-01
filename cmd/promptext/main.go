@@ -208,7 +208,7 @@ func main() {
 		case ".ptx":
 			detectedFormat = "ptx"
 		case ".toon":
-			detectedFormat = "toon"  // Maps to PTX for backward compatibility
+			detectedFormat = "toon" // Maps to PTX for backward compatibility
 		case ".md", ".markdown":
 			detectedFormat = "markdown"
 		case ".xml":
