@@ -1,121 +1,125 @@
 # promptext
 
-Smart code context extractor for AI assistants
+Code context for AI assistants. No bullshit.
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/1broseidon/promptext?prx=v0.2.6)](https://goreportcard.com/report/github.com/1broseidon/promptext)
+[![Go Report Card](https://goreportcard.com/badge/github.com/1broseidon/promptext)](https://goreportcard.com/report/github.com/1broseidon/promptext)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://img.shields.io/github/release/1broseidon/promptext.svg)](https://github.com/1broseidon/promptext/releases/latest)
-[![Documentation](https://img.shields.io/badge/docs-docusaurus-blue)](https://1broseidon.github.io/promptext/)
+[![Documentation](https://img.shields.io/badge/docs-astro-blue)](https://1broseidon.github.io/promptext/)
 
-promptext is a code context extraction tool designed for AI assistant interactions. It analyzes codebases, filters relevant files, estimates token usage using tiktoken (GPT-3.5/4 compatible), and provides formatted output suitable for AI prompts.
+Send your codebase to Claude/GPT without the ceremony. Filters noise, counts tokens, fits your budget.
 
-## Key Features
+## Why this exists
 
-- **TOON Format Output** - Default token-optimized format (30-60% smaller than JSON/Markdown), inspired by [johannschopplich/toon](https://github.com/johannschopplich/toon)
-- **Smart Relevance Filtering** - Multi-factor scoring prioritizes files by keywords (filename, directory, imports, content)
-- **Token Budget Management** - Limit output to specific token count, automatically excluding lower-priority files
-- **Format Auto-Detection** - Automatically detects output format from file extension (.toon, .md, .xml)
-- **Smart File Filtering** - .gitignore support and intelligent defaults
-- **Accurate Token Counting** - Using tiktoken (GPT-3.5/4 compatible)
-- **Comprehensive Project Analysis** - Entry points, configs, core files, tests, docs
-- **Multiple Output Formats** - TOON (default), Markdown, XML
-- **Flexible Configuration** - CLI flags or configuration files
-- **Project Metadata Extraction** - Language, version, dependencies
-- **Git Repository Information** - Branch, commit, message
-- **Performance Monitoring** - Debug logging and timing analysis
+You're talking to an AI about your code. You need context. Copy-pasting files is tedious. Dumping everything hits token limits. Manually filtering is a waste of time.
+
+promptext does what you'd do manually, but faster: finds relevant files, respects your budget, formats for AI consumption.
+
+## What it does
+
+- **Smaller payloads** - PTX format (25-30% less tokens than JSON) - TOON-inspired hybrid targeting code analysis
+- **Stay under budget** - Set max tokens, get the most relevant files that fit
+- **Find what matters** - Score files by keywords in paths, imports, content
+- **Respect .gitignore** - Plus sane defaults (no node_modules, no lock files, no binaries)
+- **Accurate counts** - tiktoken (cl100k_base), same as GPT-3.5/4/Claude
+- **Multiple formats** - PTX (default), TOON-strict, Markdown, XML (auto-detect from extension)
+
+> **Format note**: PTX combines TOON v1.3 metadata efficiency with readable multiline code blocks. Perfect for code analysis where you need both token savings and debuggable output. Need maximum compression? Use `toon-strict` mode.
+
+Format inspiration: [johannschopplich/toon](https://github.com/johannschopplich/toon)
 
 ## Install
 
-Linux/macOS:
-
+**Linux/macOS:**
 ```bash
 curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
 ```
 
-Windows (PowerShell):
-
+**Windows:**
 ```powershell
 irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
 ```
 
-Go install:
-
+**Go:**
 ```bash
 go install github.com/1broseidon/promptext/cmd/promptext@latest
 ```
 
-See our [documentation](https://1broseidon.github.io/promptext/) for more installation options.
+More options in the [docs](https://1broseidon.github.io/promptext/).
 
-## Basic Usage
+## Usage
 
 ```bash
-# Process current directory (TOON format copied to clipboard)
+# Current directory → clipboard (PTX format)
 prx
 
-# Process specific directory with positional argument
+# Specific path
 prx /path/to/project
 
-# Process specific file types
+# File types
 prx -e .go,.js,.ts
 
-# Show project summary only
+# Just the summary
 prx -i
 
-# Auto-detect format from file extension
-prx -o context.toon     # TOON format
-prx -o context.md       # Markdown format
-prx -o project.xml      # XML format
+# Format from extension
+prx -o context.ptx      # PTX (default - readable code)
+prx -o context.toon     # PTX (backward compatibility)
+prx -o context.md       # Markdown
+prx -o project.xml      # XML
 
-# Explicit format specification
-prx -f markdown -o context.md
+# Or specify explicitly
+prx -f ptx -o context.txt        # PTX hybrid (TOON-based, multiline code)
+prx -f toon-strict -o small.txt  # TOON v1.3 strict (maximum compression)
+prx -f markdown -o context.md    # Human-readable
+prx -f xml -o project.xml        # Machine-parseable
 
-# Process with custom exclusions and view output in terminal
+# Exclude patterns
 prx -x "test/,vendor/" --verbose
 
-# Dry run to preview files without processing
+# Preview without processing
 prx --dry-run -e .go
 
-# Quiet mode for scripting
-prx -q -o output.md
+# Quiet (for scripts)
+prx -q -o output.ptx
 ```
 
-## Advanced Features
+## Power moves
 
-### Relevance Filtering
+### Relevance filtering
 
-Prioritize files matching specific keywords using multi-factor scoring:
+Weight files by keyword matches:
 
 ```bash
-# Prioritize authentication-related files
+# Auth code
 prx --relevant "auth login OAuth"
-prx -r "database SQL postgres"
 
-# Multi-factor scoring weights:
-# - Filename matches: 10x
-# - Directory matches: 5x
-# - Import matches: 3x
-# - Content matches: 1x
+# Database stuff
+prx -r "database SQL postgres"
 ```
 
-### Token Budget Management
+Scoring:
+- Filename: 10×
+- Directory: 5×
+- Imports: 3×
+- Content: 1×
 
-Limit output to stay within token limits for AI models:
+### Token budgets
+
+Stay under model context limits:
 
 ```bash
-# Limit to 8000 tokens (fits Claude Haiku context)
+# Claude Haiku budget
 prx --max-tokens 8000
 
-# Combine with relevance to prioritize important files
+# Combined with relevance
 prx -r "api routes handlers" --max-tokens 5000
 
-# Cost-optimized queries
-prx --max-tokens 3000 -o quick-context.toon
+# Cost-optimized
+prx --max-tokens 3000 -o quick-context.ptx
 ```
 
-When the budget is exceeded, promptext:
-- Shows which files were included vs excluded
-- Displays token breakdown for excluded files
-- Filters directory tree to show only included files
+Exceeded budget? You'll see what got included, what got cut, and why:
 
 ```
 ╭───────────────────────────────────────────────╮
@@ -131,17 +135,36 @@ When the budget is exceeded, promptext:
     Total excluded: ~9,297 tokens
 ```
 
+## Format options
+
+Pick your trade-off:
+
+| Format | Token Savings | Code Readability | Use When |
+|--------|--------------|------------------|----------|
+| **PTX** (default) | 25-30% | ⭐⭐⭐⭐⭐ | Code analysis, debugging, pair programming |
+| **TOON-strict** | 30-60% | ⭐⭐ | Token-limited models, cost optimization |
+| **Markdown** | 0% | ⭐⭐⭐⭐⭐ | Human reading, documentation |
+| **XML** | -20% | ⭐⭐⭐ | Tool integration, CI/CD |
+
+```bash
+# PTX: Readable code, good compression (default)
+prx
+
+# TOON-strict: Maximum compression, escaped strings
+prx -f toon-strict
+
+# Markdown: Human-friendly, no compression
+prx -f markdown
+
+# XML: Machine processing
+prx -f xml
+```
+
 ## Configuration
 
-Configuration is loaded with the following precedence (highest to lowest):
-1. CLI flags
-2. Project configuration (`.promptext.yml` in project root)
-3. Global configuration (`~/.config/promptext/config.yml`)
+Precedence: CLI flags → project config → global config
 
-### Project Configuration
-
-Create `.promptext.yml` in your project root:
-
+**Project** (`.promptext.yml`):
 ```yaml
 extensions:
   - .go
@@ -151,14 +174,11 @@ excludes:
   - vendor/
   - node_modules/
   - "*.test.go"
-format: toon        # Options: toon, markdown, xml
+format: ptx        # Options: ptx, toon-strict, markdown, xml
 verbose: false
 ```
 
-### Global Configuration
-
-Create `~/.config/promptext/config.yml` for system-wide defaults:
-
+**Global** (`~/.config/promptext/config.yml`):
 ```yaml
 extensions:
   - .go
@@ -167,23 +187,21 @@ extensions:
 excludes:
   - vendor/
   - __pycache__/
-format: toon
+format: ptx
 ```
 
-## Documentation
+## Docs
 
-Visit our [documentation site](https://1broseidon.github.io/promptext/) for comprehensive guides on:
+[Full documentation](https://1broseidon.github.io/promptext/) covers:
 
-- Getting Started Guide
-- Configuration Options
-- File Filtering Rules
-- **Relevance Filtering** - Smart file prioritization
-- **Token Budget Management** - Optimize for AI model context windows
-- Token Analysis & Counting
-- Project Analysis Features
-- Output Format Specifications (TOON, Markdown, XML)
-- Performance Tips
+- Getting started
+- Configuration
+- Filtering rules
+- Relevance scoring
+- Token budgets
+- Output formats (PTX, TOON-strict, Markdown, XML)
+- Performance tips
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT

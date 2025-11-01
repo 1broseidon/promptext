@@ -1,0 +1,19 @@
+code[3]{content,path}:
+  "server:\\n  port: 8080\\n  host: localhost\\n",config.yaml
+  "module example.com/go-service\\n\\ngo 1.22.0\\n",go.mod
+  "package main\\n\\nimport (\\n\\t\\\"fmt\\\"\\n\\t\\\"net/http\\\"\\n)\\n\\nfunc main() {\\n\\thttp.HandleFunc(\\\"/\\\", func(w http.ResponseWriter, r *http.Request) {\\n\\t\\tfmt.Fprintf(w, \\\"Hello from Go!\\\")\\n\\t})\\n\\thttp.ListenAndServe(\\\":8080\\\", nil)\\n}\\n",main.go
+files[3]{ext,lines,path}:
+  yaml,4,config.yaml
+  mod,4,go.mod
+  go,14,main.go
+metadata:
+  language: Go
+  total_files: 3
+  total_lines: 22
+  version: 1.22.0
+stats:
+  packages: 0
+  totalFiles: 3
+  totalLines: 22
+structure:
+  [3]: config.yaml,go.mod,main.go

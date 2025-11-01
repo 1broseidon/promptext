@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project>
+  <fileStats>
+    <totalFiles>3</totalFiles>
+    <totalLines>22</totalLines>
+    <packageCount>0</packageCount>
+  </fileStats>
   <directoryTree>
     <node name="go-service" type="dir">
       <node name="config.yaml" type="file"/>
@@ -24,15 +29,15 @@ go 1.22.0
       <content><![CDATA[package main
 
 import (
-    "fmt"
-    "net/http"
+	"fmt"
+	"net/http"
 )
 
 func main() {
-    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintf(w, "Hello from Go!")
-    })
-    http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hello from Go!")
+	})
+	http.ListenAndServe(":8080", nil)
 }
 ]]></content>
     </file>

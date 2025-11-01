@@ -9,7 +9,8 @@ import (
 
 type MarkdownFormatter struct{}
 type XMLFormatter struct{}
-type TOONFormatter struct{}
+type PTXFormatter struct{}       // PTX v1.0 - TOON-based with multiline code
+type TOONStrictFormatter struct{} // TOON v1.3 strict compliance
 
 func (m *MarkdownFormatter) formatOverview(sb *strings.Builder, overview *ProjectOverview) {
 	if overview == nil {
@@ -293,8 +294,8 @@ func (x *XMLFormatter) Format(project *ProjectOutput) (string, error) {
 	return b.String(), nil
 }
 
-// TOONFormatter formats project data in TOON format for optimal token efficiency
-func (t *TOONFormatter) Format(project *ProjectOutput) (string, error) {
+// PTXFormatter formats project data in PTX v1.0 format (TOON-based with multiline code)
+func (t *PTXFormatter) Format(project *ProjectOutput) (string, error) {
 	// Build a structured map for TOON encoding
 	data := make(map[string]interface{})
 
@@ -439,7 +440,7 @@ func (t *TOONFormatter) Format(project *ProjectOutput) (string, error) {
 
 // Helper function to convert directory tree to map structure
 // Returns map[directory_path][]filenames for compact representation
-func (t *TOONFormatter) treeToDirectoryMap(node *DirectoryNode) map[string]interface{} {
+func (t *PTXFormatter) treeToDirectoryMap(node *DirectoryNode) map[string]interface{} {
 	if node == nil {
 		return nil
 	}
@@ -450,7 +451,7 @@ func (t *TOONFormatter) treeToDirectoryMap(node *DirectoryNode) map[string]inter
 }
 
 // Recursive helper to build directory map
-func (t *TOONFormatter) buildDirectoryMap(node *DirectoryNode, currentPath string, structure map[string]interface{}) {
+func (t *PTXFormatter) buildDirectoryMap(node *DirectoryNode, currentPath string, structure map[string]interface{}) {
 	if node == nil {
 		return
 	}
@@ -485,7 +486,7 @@ func (t *TOONFormatter) buildDirectoryMap(node *DirectoryNode, currentPath strin
 }
 
 // Helper to convert map[string]string to list of maps for tabular format
-func (t *TOONFormatter) mapToList(m map[string]string) []map[string]interface{} {
+func (t *PTXFormatter) mapToList(m map[string]string) []map[string]interface{} {
 	var result []map[string]interface{}
 	for k, v := range m {
 		result = append(result, map[string]interface{}{
@@ -494,4 +495,129 @@ func (t *TOONFormatter) mapToList(m map[string]string) []map[string]interface{} 
 		})
 	}
 	return result
+}
+
+// TOONStrictFormatter implements TOON v1.3 strict compliance
+// This formatter follows the official TOON specification exactly,
+// using escaped strings for code content instead of multiline blocks.
+func (t *TOONStrictFormatter) Format(project *ProjectOutput) (string, error) {
+	// For now, we'll implement a simplified version that converts
+	// code to escaped strings. In production, we'd use gotoon library.
+
+	// Build structured data similar to PTX but with escaped strings
+	data := make(map[string]interface{})
+
+	// Project metadata (same as PTX)
+	if project.Metadata != nil {
+		metadata := make(map[string]interface{})
+		metadata["language"] = project.Metadata.Language
+		if project.Metadata.Version != "" {
+			metadata["version"] = project.Metadata.Version
+		}
+		if len(project.Metadata.Dependencies) > 0 {
+			metadata["dependencies"] = project.Metadata.Dependencies
+		}
+
+		// Add project size stats
+		if project.FileStats != nil {
+			metadata["total_files"] = project.FileStats.TotalFiles
+			metadata["total_lines"] = project.FileStats.TotalLines
+		}
+
+		data["metadata"] = metadata
+	}
+
+	// Git information (same as PTX)
+	if project.GitInfo != nil {
+		gitInfo := make(map[string]interface{})
+		gitInfo["branch"] = project.GitInfo.Branch
+		gitInfo["commit"] = project.GitInfo.CommitHash
+		if project.GitInfo.CommitMessage != "" {
+			// Escape newlines in commit message for TOON v1.3
+			gitInfo["message"] = escapeForTOON(project.GitInfo.CommitMessage)
+		}
+		data["git"] = gitInfo
+	}
+
+	// File statistics (same as PTX)
+	if project.FileStats != nil {
+		stats := make(map[string]interface{})
+		stats["totalFiles"] = project.FileStats.TotalFiles
+		stats["totalLines"] = project.FileStats.TotalLines
+		stats["packages"] = project.FileStats.PackageCount
+
+		if len(project.FileStats.FilesByType) > 0 {
+			var fileTypes []map[string]interface{}
+			for ext, count := range project.FileStats.FilesByType {
+				fileTypes = append(fileTypes, map[string]interface{}{
+					"type":  ext,
+					"count": count,
+				})
+			}
+			stats["fileTypes"] = fileTypes
+		}
+
+		data["stats"] = stats
+	}
+
+	// Directory tree (same as PTX)
+	if project.DirectoryTree != nil {
+		ptxFormatter := &PTXFormatter{}
+		structure := ptxFormatter.treeToDirectoryMap(project.DirectoryTree)
+		if len(structure) > 0 {
+			data["structure"] = structure
+		}
+	}
+
+	// Files - create tabular arrays for TOON v1.3 compliance
+	if len(project.Files) > 0 {
+		// File metadata array (tabular format)
+		var fileMetadata []map[string]interface{}
+		// Code content array (tabular format with escaped strings)
+		var codeContent []map[string]interface{}
+
+		for _, file := range project.Files {
+			lineCount := strings.Count(file.Content, "\n") + 1
+			ext := strings.TrimPrefix(filepath.Ext(file.Path), ".")
+			if ext == "" {
+				ext = "txt"
+			}
+
+			// Add to file metadata (tabular)
+			fileMetadata = append(fileMetadata, map[string]interface{}{
+				"path":  file.Path,
+				"ext":   ext,
+				"lines": lineCount,
+			})
+
+			// Add to code content (tabular with escaped content)
+			codeContent = append(codeContent, map[string]interface{}{
+				"path":    file.Path,
+				"content": escapeForTOON(file.Content),
+			})
+		}
+
+		data["files"] = fileMetadata
+		data["code"] = codeContent
+	}
+
+	// Use custom TOON encoder (we'd use gotoon in production)
+	encoder := NewTOONEncoder()
+	result, err := encoder.Encode(data)
+	if err != nil {
+		return "", fmt.Errorf("TOON v1.3 encoding error: %w", err)
+	}
+
+	return result, nil
+}
+
+// escapeForTOON escapes a string according to TOON v1.3 specification
+func escapeForTOON(s string) string {
+	// TOON v1.3 requires escaping: \, ", \n, \r, \t
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, "\"", "\\\"")
+	s = strings.ReplaceAll(s, "\n", "\\n")
+	s = strings.ReplaceAll(s, "\r", "\\r")
+	s = strings.ReplaceAll(s, "\t", "\\t")
+	return s
 }

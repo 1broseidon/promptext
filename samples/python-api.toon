@@ -1,0 +1,23 @@
+code[5]{content,path}:
+  "from flask import Flask\\n\\napp = Flask(__name__)\\n\\n@app.route('/')\\ndef hello():\\n    return {'message': 'Hello World'}\\n\\nif __name__ == '__main__':\\n    app.run(debug=True)\\n",main.py
+  "[tool.poetry]\\nname = \\\"python-api\\\"\\nversion = \\\"0.1.0\\\"\\ndescription = \\\"\\\"\\nauthors = [\\\"Your Name <you@example.com>\\\"]\\nreadme = \\\"README.md\\\"\\n\\n[tool.poetry.dependencies]\\npython = \\\"^3.12\\\"\\n\\n\\n[build-system]\\nrequires = [\\\"poetry-core\\\"]\\nbuild-backend = \\\"poetry.core.masonry.api\\\"\\n",pyproject.toml
+  "Flask==2.0.1\\npython-dotenv==0.19.0\\npytest==7.0.1\\n",requirements.txt
+  "from setuptools import setup\\n\\nsetup(\\n    name='python-api-sample',\\n    version='1.0.0',\\n    description='Sample Python API',\\n    packages=[''],\\n)\\n",setup.py
+  "def test_hello():\\n    assert True\\n",test_main.py
+files[5]{ext,lines,path}:
+  py,11,main.py
+  toml,15,pyproject.toml
+  txt,4,requirements.txt
+  py,9,setup.py
+  py,3,test_main.py
+metadata:
+  language: Python
+  total_files: 5
+  total_lines: 42
+  version: "3.12"
+stats:
+  packages: 0
+  totalFiles: 5
+  totalLines: 42
+structure:
+  [5]: main.py,pyproject.toml,requirements.txt,setup.py,test_main.py

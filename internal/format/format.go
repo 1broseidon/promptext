@@ -9,9 +9,12 @@ import (
 type OutputFormat string
 
 const (
-	FormatMarkdown OutputFormat = "markdown"
-	FormatXML      OutputFormat = "xml"
-	FormatTOON     OutputFormat = "toon"
+	FormatMarkdown   OutputFormat = "markdown"
+	FormatXML        OutputFormat = "xml"
+	FormatPTX        OutputFormat = "ptx"         // PTX v1.0 (TOON-based with multiline code)
+	FormatTOON       OutputFormat = "toon"        // Alias for PTX (backward compatibility)
+	FormatTOONStrict OutputFormat = "toon-strict" // TOON v1.3 strict compliance
+	FormatTOONV13    OutputFormat = "toon-v1.3"   // Alias for toon-strict
 )
 
 // DirectoryNode represents a node in the directory tree
@@ -114,14 +117,18 @@ type Formatter interface {
 
 // Get appropriate formatter based on format string
 func GetFormatter(format string) (Formatter, error) {
-	switch OutputFormat(format) {
-	case FormatMarkdown:
+	// Handle format strings that map to formatters
+	switch format {
+	case "markdown", "md":
 		return &MarkdownFormatter{}, nil
-	case FormatXML:
+	case "xml":
 		return &XMLFormatter{}, nil
-	case FormatTOON:
-		return &TOONFormatter{}, nil
+	case "ptx", "toon":
+		// Both ptx and toon map to PTXFormatter (toon for backward compatibility)
+		return &PTXFormatter{}, nil
+	case "toon-strict", "toon-v1.3":
+		return &TOONStrictFormatter{}, nil
 	default:
-		return nil, fmt.Errorf("unsupported format: %s (supported: markdown, xml, toon)", format)
+		return nil, fmt.Errorf("unsupported format: %s (supported: markdown, xml, ptx, toon, toon-strict)", format)
 	}
 }

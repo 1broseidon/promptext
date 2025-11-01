@@ -521,6 +521,37 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		processedFiles = prioritizeFiles(processedFiles, scorer, entryPoints)
 		log.Debug("Files sorted by priority")
 
+		// Filter files by relevance if keywords provided
+		if scorer.HasKeywords() {
+			originalCount := len(processedFiles)
+			var relevantFiles []format.FileInfo
+
+			for _, file := range processedFiles {
+				score := scorer.ScoreFile(file.Path, file.Content)
+				if score > 0 {
+					relevantFiles = append(relevantFiles, file)
+					log.Debug("Including (relevant): %s (score: %.1f)", file.Path, score)
+				} else {
+					excludedFileCount++
+					fileTokens := tokenCounter.EstimateTokens(file.Content)
+					excludedFileList = append(excludedFileList, ExcludedFileInfo{
+						Path:   file.Path,
+						Tokens: fileTokens,
+					})
+					log.Debug("Excluding (not relevant): %s (score: 0)", file.Path)
+				}
+			}
+
+			processedFiles = relevantFiles
+			log.Debug("Relevance filtering: included %d/%d files with keyword matches", len(processedFiles), originalCount)
+
+			// Recalculate totalTokens after relevance filtering
+			totalTokens = 0
+			for _, file := range processedFiles {
+				totalTokens += tokenCounter.EstimateTokens(file.Content)
+			}
+		}
+
 		// Apply token budget if specified
 		if config.MaxTokens > 0 {
 			// Calculate overhead tokens (tree, git, metadata)

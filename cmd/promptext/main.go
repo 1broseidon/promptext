@@ -45,7 +45,11 @@ FILTERING OPTIONS:
                               Examples: vendor/,node_modules/  or  *.test.go,dist/
 
 OUTPUT OPTIONS:
-    -f, --format FORMAT       Output format: toon, markdown, md, xml (default: toon for AI-optimized structure)
+    -f, --format FORMAT       Output format (default: ptx)
+                              • ptx, toon: PTX v1.0 format (TOON-based with multiline code) [default]
+                              • toon-strict: TOON v1.3 strict compliance (escaped strings)
+                              • markdown, md: Human-readable markdown
+                              • xml: Machine-parseable XML
     -o, --output FILE         Write output to file instead of clipboard
     -n, --no-copy            Don't copy output to clipboard
     -i, --info               Show only project summary (no file contents)
@@ -56,10 +60,11 @@ PROCESSING OPTIONS:
     -q, --quiet              Suppress non-essential output for scripting
 
 RELEVANCE & TOKEN BUDGET:
-    -r, --relevant KEYWORDS  Keywords to prioritize files (comma or space separated)
-                             Uses multi-factor scoring: filename (10x), directory (5x), imports (3x), content (1x)
+    -r, --relevant KEYWORDS  Filter and prioritize files by keyword relevance (comma or space separated)
+                             Automatically excludes files with no keyword matches
+                             Scoring weights: filename (10x), directory (5x), imports (3x), content (1x)
         --max-tokens NUMBER  Maximum token budget for output (excludes lower-priority files when exceeded)
-                             Works best with --relevant to prioritize important files first
+                             Combines with --relevant to include highest-scoring files within budget
 
 DEBUG OPTIONS:
     -D, --debug              Enable debug logging and timing information
@@ -79,8 +84,11 @@ EXAMPLES:
     # Export specific file types to XML with debug info
     prx -e .js,.ts,.json -f xml -o project.xml -D
 
-    # Use TOON format for AI-optimized structure (better scannability)
-    prx -f toon -o project.toon
+    # Use PTX format for AI-optimized structure with readable code
+    prx -f ptx -o project.ptx
+
+    # Use strict TOON v1.3 for maximum token compression
+    prx -f toon-strict -o project.toon
 
     # Process with custom exclusions and see output in terminal
     prx -x "vendor/,*.test.go,dist/" -v
@@ -98,16 +106,17 @@ EXAMPLES:
     prx -q -f xml -o output.xml
 
     # Auto-detect format from output file extension
-    prx -o context.toon                    # Automatically uses TOON format
+    prx -o context.ptx                     # Automatically uses PTX format
+    prx -o context.toon                    # Automatically uses PTX format (backward compat)
     prx -o context.md                      # Automatically uses markdown format
 
-    # Prioritize authentication-related files
+    # Filter to only authentication-related files
     prx --relevant "auth login OAuth"
 
-    # Limit output to 8000 tokens, prioritizing database files
+    # Filter to database files, limit to 8000 tokens
     prx --relevant "database" --max-tokens 8000
 
-    # Combined: relevant files with token budget
+    # Filter to API files, limit to top 5000 tokens worth
     prx -r "api routes handlers" --max-tokens 5000 -o api-context.toon
 
 CONFIGURATION:
@@ -155,7 +164,7 @@ func main() {
 	exclude := pflag.StringP("exclude", "x", "", "Patterns to exclude (comma-separated, e.g., vendor/,*.test.go)")
 
 	// Output options
-	format := pflag.StringP("format", "f", "toon", "Output format: toon, markdown, md, or xml (default: toon)")
+	format := pflag.StringP("format", "f", "ptx", "Output format: ptx, toon, toon-strict, markdown, md, or xml (default: ptx)")
 	outFile := pflag.StringP("output", "o", "", "Write output to file instead of clipboard")
 	noCopy := pflag.BoolP("no-copy", "n", false, "Don't copy output to clipboard")
 	infoOnly := pflag.BoolP("info", "i", false, "Show only project summary without file contents")
@@ -196,8 +205,10 @@ func main() {
 		ext := strings.ToLower(filepath.Ext(*outFile))
 		detectedFormat := ""
 		switch ext {
+		case ".ptx":
+			detectedFormat = "ptx"
 		case ".toon":
-			detectedFormat = "toon"
+			detectedFormat = "toon"  // Maps to PTX for backward compatibility
 		case ".md", ".markdown":
 			detectedFormat = "markdown"
 		case ".xml":

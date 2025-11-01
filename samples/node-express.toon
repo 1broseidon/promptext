@@ -1,0 +1,18 @@
+code[2]{content,path}:
+  "const express = require('express');\\nconst app = express();\\n\\napp.get('/', (req, res) => {\\n  res.json({ message: 'Hello from Express!' });\\n});\\n\\napp.listen(3000, () => {\\n  console.log('Server running on port 3000');\\n});\\n",index.js
+  "{\\n  \\\"name\\\": \\\"express-sample\\\",\\n  \\\"version\\\": \\\"1.0.0\\\",\\n  \\\"description\\\": \\\"Sample Express API\\\",\\n  \\\"main\\\": \\\"index.js\\\",\\n  \\\"engines\\\": {\\n    \\\"node\\\": \\\"^18\\\"\\n  },\\n  \\\"dependencies\\\": {\\n    \\\"express\\\": \\\"^4.18.2\\\"\\n  },\\n  \\\"devDependencies\\\": {\\n    \\\"jest\\\": \\\"^29.0.0\\\"\\n  }\\n}\\n",package.json
+files[2]{ext,lines,path}:
+  js,11,index.js
+  json,16,package.json
+metadata:
+  dependencies[2]: express,jest
+  language: JavaScript/Node.js
+  total_files: 2
+  total_lines: 27
+  version: requires Node ^18
+stats:
+  packages: 0
+  totalFiles: 2
+  totalLines: 27
+structure:
+  [2]: index.js,package.json

@@ -1,0 +1,45 @@
+code:
+  index_js: |
+    const express = require('express');
+    const app = express();
+
+    app.get('/', (req, res) => {
+      res.json({ message: 'Hello from Express!' });
+    });
+
+    app.listen(3000, () => {
+      console.log('Server running on port 3000');
+    });
+
+  package_json: |
+    {
+      "name": "express-sample",
+      "version": "1.0.0",
+      "description": "Sample Express API",
+      "main": "index.js",
+      "engines": {
+        "node": "^18"
+      },
+      "dependencies": {
+        "express": "^4.18.2"
+      },
+      "devDependencies": {
+        "jest": "^29.0.0"
+      }
+    }
+
+files[2]{ext,lines,path}:
+  js,11,index.js
+  json,16,package.json
+metadata:
+  dependencies[2]: express,jest
+  language: JavaScript/Node.js
+  total_files: 2
+  total_lines: 27
+  version: requires Node ^18
+stats:
+  packages: 0
+  totalFiles: 2
+  totalLines: 27
+structure:
+  [2]: index.js,package.json

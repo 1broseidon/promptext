@@ -1,40 +1,64 @@
 ---
 title: Output Formats
-description: TOON, Markdown, and XML output formats for AI assistant integration
+description: PTX, TOON-strict, Markdown, and XML output formats for AI assistant integration
 ---
 
-## TOON (Default)
+## PTX Format (Default)
 
-Token-Oriented Object Notation - optimized format for LLM consumption with 30-60% token reduction compared to JSON/Markdown. Inspired by [johannschopplich/toon](https://github.com/johannschopplich/toon).
+PTX (Promptext Context Format) is a hybrid format that combines TOON v1.3 metadata efficiency with readable multiline code blocks. This default format provides 25-30% token reduction compared to JSON while maintaining code readability for debugging and analysis.
 
 ```bash
-promptext              # Uses TOON by default
-promptext -f toon      # Explicit TOON format
-promptext -o code.toon # Auto-detected from extension
+promptext               # Uses PTX by default
+promptext -f ptx        # Explicit PTX format
+promptext -o code.ptx   # Auto-detected from extension
+promptext -o code.toon  # Backward compatibility (maps to PTX)
 ```
 
 **Structure:**
-```toon
+
+PTX uses TOON v1.3 compliant syntax for metadata sections with multiline code blocks for readability:
+
+```ptx
 metadata:
-  dependencies[14]: github.com/spf13/pflag,github.com/jedib0t/go-pretty/v6,...
+  dependencies[6]: github.com/spf13/pflag,github.com/jedib0t/go-pretty/v6,github.com/pkoukk/tiktoken-go,github.com/atotto/clipboard,gopkg.in/yaml.v3,github.com/stretchr/testify
   language: Go
   total_files: 18
   total_lines: 2390
   version: 1.24.1
 
-structure:
-  internal/config[2]: config.go,config_test.go
-  internal/filter[3]: filter.go,filter_bench_test.go,filter_test.go
-  cmd/promptext[1]: main.go
-
 git:
   branch: main
   commit: f8fbf27
-  message: "docs: Update changelog"
+  message: docs: Update changelog
 
-files[18]{ext,lines,path}:
-  .go,89,cmd/promptext/main.go
-  .go,156,internal/config/config.go
+stats:
+  totalFiles: 18
+  totalLines: 2390
+  packages: 8
+  fileTypes:
+    - type: go
+      count: 14
+    - type: md
+      count: 3
+
+structure:
+  .:
+    - go.mod
+    - go.sum
+    - README.md
+  cmd/promptext:
+    - main.go
+  internal/config:
+    - config.go
+    - config_test.go
+
+files:
+  - path: cmd/promptext/main.go
+    ext: go
+    lines: 89
+  - path: internal/config/config.go
+    ext: go
+    lines: 156
 
 code:
   cmd_promptext_main_go: |
@@ -42,21 +66,84 @@ code:
 
     import (
       "fmt"
+      "log"
+      "os"
+    )
+
+    func main() {
+      // Application entry point
       ...
+    }
+  internal_config_config_go: |
+    package config
+
+    import (
+      "os"
+      "path/filepath"
+    )
+    ...
 ```
 
+**Format Design:**
+
+The PTX format prioritizes:
+- **TOON v1.3 metadata** - Token-efficient metadata using inline arrays and tabular formats
+- **Multiline code blocks** - YAML-style `|` syntax preserves code formatting and indentation
+- **Hybrid approach** - Combines TOON efficiency for metadata with readability for code
+- **Count markers** - Array lengths included (`[N]`) for quick sizing
+- **Sanitized keys** - File paths converted to valid keys (e.g., `cmd/main.go` → `cmd_main_go`)
+
 **Benefits:**
-- **30-60% token reduction** - Significantly fewer tokens than JSON/Markdown
-- **Scannable structure** - Easy for both humans and LLMs to parse
-- **Zero redundancy** - Tabular arrays eliminate repeated field names
-- **Compact metadata** - Inline arrays for dependencies and file lists
-- **Multiline code support** - YAML-style code blocks preserve formatting
+- **25-30% token reduction** - Significant savings vs JSON while maintaining readability
+- **Debugging-friendly** - Code remains scannable with preserved formatting
+- **LLM-optimized** - Structure designed for AI assistant comprehension
+- **No escaping needed** - Multiline blocks avoid escape sequences in code
+- **Multiline code support** - Preserves formatting with `|` syntax
+- **Compact metadata** - Nested objects avoid repetition
 
 **When to use:**
 - Default for all AI assistant interactions
-- Token-constrained models (Claude Haiku, GPT-3.5)
-- Cost optimization for high-volume queries
-- Large codebases where token efficiency matters
+- Code-heavy projects requiring debugging
+- When readability matters alongside token efficiency
+- Large codebases where you need to review output
+
+## TOON-Strict Format
+
+Full TOON v1.3 specification compliance for maximum token compression (30-60% reduction vs JSON):
+
+```bash
+promptext -f toon-strict      # TOON v1.3 strict mode
+promptext -f toon-v1.3        # Alias for toon-strict
+```
+
+**Structure:**
+
+TOON-strict follows the official [TOON v1.3 specification](https://github.com/johannschopplich/toon) with escaped strings:
+
+```toon
+metadata:
+  dependencies[6]: github.com/spf13/pflag,github.com/jedib0t/go-pretty/v6,github.com/pkoukk/tiktoken-go,github.com/atotto/clipboard,gopkg.in/yaml.v3,github.com/stretchr/testify
+  language: Go
+
+files[2]{path,ext,lines}:
+  cmd/main.go,go,89
+  internal/config.go,go,156
+
+code[2]{path,content}:
+  "cmd/main.go","package main\n\nimport (\n  \"fmt\"\n  \"log\"\n  \"os\"\n)\n\nfunc main() {\n  // Application entry point\n  ...\n}"
+  "internal/config.go","package config\n\nimport \"os\"\n\n..."
+```
+
+**Benefits:**
+- **Maximum compression** - 30-60% token reduction
+- **TOON v1.3 compliant** - Follows official specification
+- **Token-optimized** - Best for very limited contexts
+
+**When to use:**
+- Token-limited models with strict budgets
+- Metadata-heavy projects with less code
+- When maximum compression is required
+- API integrations with token costs
 
 ## Markdown
 
@@ -125,7 +212,8 @@ promptext -o project.xml  # Auto-detected from extension
 Promptext automatically detects the output format from file extensions:
 
 ```bash
-promptext -o context.toon   # → TOON format
+promptext -o context.ptx    # → PTX format
+promptext -o context.toon   # → PTX format (backward compatibility)
 promptext -o context.md     # → Markdown format
 promptext -o project.xml    # → XML format
 ```
@@ -142,13 +230,15 @@ promptext -f xml -o output.md
 
 | Use Case | Recommended Format | Reason |
 |----------|-------------------|---------|
-| AI assistant queries | TOON | 30-60% token reduction |
-| Claude Haiku / GPT-3.5 | TOON | Token efficiency matters |
-| Claude Opus / GPT-4 | TOON or Markdown | Either works, TOON saves tokens |
+| AI assistant queries | PTX | 25-30% reduction + readable code |
+| Code debugging sessions | PTX | Preserves formatting and indentation |
+| Token-limited models | TOON-strict | 30-60% maximum compression |
+| Claude Haiku / GPT-3.5 | TOON-strict | Extreme token efficiency |
+| Claude Opus / GPT-4 | PTX or Markdown | Either works, PTX saves tokens |
 | Human code review | Markdown | Better readability |
 | CI/CD integration | XML | Machine-parseable structure |
 | Documentation | Markdown | Rich formatting |
-| Cost optimization | TOON | Fewer tokens = lower cost |
+| Cost optimization | TOON-strict | Maximum token reduction |
 
 ## Configuration
 

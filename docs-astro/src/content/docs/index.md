@@ -9,13 +9,15 @@ Smart code context extraction for AI assistants. Process codebases efficiently w
 
 ## Features
 
-- **TOON Format** — Token-optimized output (30-60% smaller than JSON/Markdown), inspired by [johannschopplich/toon](https://github.com/johannschopplich/toon)
+- **Multi-Layered Lock File Detection** — Automatically excludes package lock files (99% signature-based, 95% ecosystem-aware, 85% heuristic) — saves 50K-100K+ tokens per project
+- **PTX Format** — Default hybrid format combining TOON v1.3 metadata efficiency with readable multiline code blocks (25-30% smaller than JSON)
+- **TOON-Strict Mode** — Full TOON v1.3 compliance for maximum compression (30-60% smaller than JSON), based on [johannschopplich/toon](https://github.com/johannschopplich/toon)
 - **Relevance Filtering** — Multi-factor scoring prioritizes files by keywords
 - **Token Budget Management** — Limit output to stay within AI model context windows
-- **Smart Filtering** — .gitignore integration with intelligent defaults
-- **Token Analysis** — Accurate GPT-compatible counting with tiktoken
-- **Project Detection** — Language and framework identification
-- **Multiple Formats** — TOON (default), Markdown, and XML with auto-detection
+- **Smart Filtering** — .gitignore integration, intelligent defaults, and generated file detection
+- **Token Analysis** — Accurate counting using tiktoken `cl100k_base` encoding (GPT-4/GPT-3.5-turbo) with intelligent fallback
+- **Project Detection** — Language and framework identification with ecosystem-aware filtering
+- **Multiple Formats** — PTX (default), TOON-strict, Markdown, and XML with auto-detection
 - **Performance Focused** — Optimized for large codebases
 
 ## Quick Start
@@ -24,7 +26,7 @@ Smart code context extraction for AI assistants. Process codebases efficiently w
 # Install
 go install github.com/1broseidon/promptext/cmd/promptext@latest
 
-# Extract current directory (TOON format to clipboard)
+# Extract current directory (PTX format to clipboard)
 promptext
 
 # Or use the convenient alias
@@ -34,7 +36,8 @@ prx
 prx -r "auth login" --max-tokens 8000
 
 # Auto-detect format from extension
-prx -o context.toon
+prx -o context.ptx    # PTX format (default, readable code)
+prx -o context.toon   # PTX format (backward compatibility)
 ```
 
 ## Example Output

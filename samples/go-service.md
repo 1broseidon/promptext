@@ -1,17 +1,10 @@
-## Quick Reference
+Language: Go
+Version: 1.22.0
+Project Structure:
+└── config.yaml
+└── go.mod
+└── main.go
 
-### Entry Points
-- main.go: Project entry point
-
-### Configuration Files
-- config.yaml: Configuration file
-
-## Project Structure
-```
-  └── config.yaml
-  └── go.mod
-  └── main.go
-```
 
 ## Source Files
 
@@ -36,21 +29,15 @@ go 1.22.0
 package main
 
 import (
-    "fmt"
-    "net/http"
+	"fmt"
+	"net/http"
 )
 
 func main() {
-    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintf(w, "Hello from Go!")
-    })
-    http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hello from Go!")
+	})
+	http.ListenAndServe(":8080", nil)
 }
 
 ```
-
-**References:**
-External:
-- `.` references `(`
-- `.` references `Go!")`
-

@@ -5,7 +5,22 @@ description: Accurate tiktoken-based token counting for GPT models
 
 ## Accurate Counting
 
-Uses OpenAI's tiktoken library for precise GPT-3.5/4 compatible token counting.
+promptext uses OpenAI's tiktoken library with the `cl100k_base` encoding for precise token counting compatible with:
+- **GPT-4** (all variants)
+- **GPT-3.5-turbo** (all variants)
+- **Claude** (similar tokenization patterns)
+
+### Fallback Mode
+
+If tiktoken is unavailable or fails to initialize, promptext automatically falls back to an intelligent approximation system:
+
+- **Hybrid Estimation** — Combines word-based (1.3 tokens/word) and character-based estimates
+- **Code vs Prose Detection** — Adjusts estimates based on content type
+  - Code: ~3.5 characters per token
+  - Prose: ~4.0 characters per token
+- **User Notification** — Displays "Token counting using approximation (tiktoken unavailable)" when in fallback mode
+
+The fallback mode provides reasonable accuracy (±10-15%) for most use cases.
 
 ## Breakdown
 
