@@ -694,13 +694,19 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		return nil, fmt.Errorf("error formatting output: %w", err)
 	}
 
+	// Count tokens in the ACTUAL formatted output (includes format overhead)
+	actualOutputTokens := tokenCounter.EstimateTokens(formattedOutput)
+	formatOverhead := actualOutputTokens - totalTokens
+	log.Debug("Formatted output tokens: %d (source: %d, format overhead: %d, +%.1f%%)",
+		actualOutputTokens, totalTokens, formatOverhead, float64(formatOverhead)/float64(totalTokens)*100)
+
 	var displayContent string
 	if verbose {
 		displayContent = formattedOutput
 	}
 
-	// Calculate total tokens (included + excluded)
-	totalProjectTokens := totalTokens
+	// Calculate total tokens (included + excluded) using actual output tokens
+	totalProjectTokens := actualOutputTokens
 	for _, excluded := range excludedFileList {
 		totalProjectTokens += excluded.Tokens
 	}
@@ -709,7 +715,7 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 		ProjectOutput:    projectOutput,
 		DisplayContent:   displayContent,
 		ClipboardContent: formattedOutput,
-		TokenCount:       totalTokens,
+		TokenCount:       actualOutputTokens,
 		TotalTokens:      totalProjectTokens,
 		ProjectInfo:      projectInfo,
 		ExcludedFiles:    excludedFileCount,
