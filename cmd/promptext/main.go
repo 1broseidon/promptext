@@ -47,7 +47,8 @@ FILTERING OPTIONS:
 
 OUTPUT OPTIONS:
     -f, --format FORMAT       Output format (default: ptx)
-                              • ptx, toon: PTX v1.0 format (TOON-based with multiline code) [default]
+                              • ptx, toon: PTX v2.0 format with enhanced manifest (TOON-based) [default]
+                              • jsonl: Machine-friendly JSONL (one JSON object per line)
                               • toon-strict: TOON v1.3 strict compliance (escaped strings)
                               • markdown, md: Human-readable markdown
                               • xml: Machine-parseable XML
@@ -89,8 +90,11 @@ EXAMPLES:
     # Export specific file types to XML with debug info
     prx -e .js,.ts,.json -f xml -o project.xml -D
 
-    # Use PTX format for AI-optimized structure with readable code
+    # Use PTX v2.0 format for AI-optimized structure with enhanced manifest
     prx -f ptx -o project.ptx
+
+    # Use JSONL for machine-friendly processing and pipelines
+    prx -f jsonl -o project.jsonl
 
     # Use strict TOON v1.3 for maximum token compression
     prx -f toon-strict -o project.toon
@@ -177,7 +181,7 @@ func main() {
 	exclude := pflag.StringP("exclude", "x", "", "Patterns to exclude (comma-separated, e.g., vendor/,*.test.go)")
 
 	// Output options
-	format := pflag.StringP("format", "f", "ptx", "Output format: ptx, toon, toon-strict, markdown, md, or xml (default: ptx)")
+	format := pflag.StringP("format", "f", "ptx", "Output format: ptx, toon, jsonl, toon-strict, markdown, md, or xml (default: ptx)")
 	outFile := pflag.StringP("output", "o", "", "Write output to file instead of clipboard")
 	noCopy := pflag.BoolP("no-copy", "n", false, "Don't copy output to clipboard")
 	infoOnly := pflag.BoolP("info", "i", false, "Show only project summary without file contents")

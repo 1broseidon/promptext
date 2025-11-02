@@ -4,13 +4,15 @@ import (
 	"encoding/xml"
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
 type MarkdownFormatter struct{}
 type XMLFormatter struct{}
-type PTXFormatter struct{}        // PTX v1.0 - TOON-based with multiline code
+type PTXFormatter struct{}        // PTX v2.0 - TOON-based with multiline code and enhanced manifest
 type TOONStrictFormatter struct{} // TOON v1.3 strict compliance
+type JSONLFormatter struct{}      // JSONL - Machine-friendly sidecar format (one JSON object per line)
 
 func (m *MarkdownFormatter) formatSourceFiles(sb *strings.Builder, files []FileInfo) {
 	if len(files) == 0 {
@@ -206,12 +208,17 @@ func (x *XMLFormatter) Format(project *ProjectOutput) (string, error) {
 	return b.String(), nil
 }
 
-// PTXFormatter formats project data in PTX v1.0 format (TOON-based with multiline code)
+// PTXFormatter formats project data in PTX v2.0 format (TOON-based with multiline code and enhanced manifest)
 func (t *PTXFormatter) Format(project *ProjectOutput) (string, error) {
 	// Build a structured map for TOON encoding
 	data := make(map[string]interface{})
 
-	// Project metadata
+	// PTX schema version and manifest
+	promptext := make(map[string]interface{})
+	promptext["schema"] = "ptx/v2.0"
+	data["promptext"] = promptext
+
+	// Project metadata with enhanced fields
 	if project.Metadata != nil {
 		metadata := make(map[string]interface{})
 		metadata["language"] = project.Metadata.Language
@@ -240,6 +247,29 @@ func (t *PTXFormatter) Format(project *ProjectOutput) (string, error) {
 			gitInfo["message"] = project.GitInfo.CommitMessage
 		}
 		data["git"] = gitInfo
+	}
+
+	// Budget information (token estimation and truncation tracking)
+	if project.Budget != nil {
+		budget := make(map[string]interface{})
+		budget["max_tokens"] = project.Budget.MaxTokens
+		budget["est_tokens"] = project.Budget.EstimatedTokens
+		if project.Budget.FileTruncations > 0 {
+			budget["file_truncations"] = project.Budget.FileTruncations
+		}
+		data["budget"] = budget
+	}
+
+	// Filter configuration used to generate this output
+	if project.FilterConfig != nil {
+		filters := make(map[string]interface{})
+		if len(project.FilterConfig.Includes) > 0 {
+			filters["includes"] = project.FilterConfig.Includes
+		}
+		if len(project.FilterConfig.Excludes) > 0 {
+			filters["excludes"] = project.FilterConfig.Excludes
+		}
+		data["filters"] = filters
 	}
 
 	// File statistics
@@ -309,22 +339,43 @@ func (t *PTXFormatter) Format(project *ProjectOutput) (string, error) {
 		}
 	}
 
-	// Files - use tabular format for metadata only
+	// Files - enhanced manifest with per-file metadata including token counts and truncation info
 	if len(project.Files) > 0 {
-		// Create tabular array with file metadata
+		// Sort files by path for deterministic output (PTX v2.0 requirement)
+		sortedFiles := make([]FileInfo, len(project.Files))
+		copy(sortedFiles, project.Files)
+		sort.Slice(sortedFiles, func(i, j int) bool {
+			return sortedFiles[i].Path < sortedFiles[j].Path
+		})
+
+		// Create tabular array with comprehensive file metadata
 		var fileMetadata []map[string]interface{}
-		for _, file := range project.Files {
+		for _, file := range sortedFiles {
 			lineCount := strings.Count(file.Content, "\n") + 1
 			ext := strings.TrimPrefix(filepath.Ext(file.Path), ".")
 			if ext == "" {
 				ext = "txt"
 			}
 
-			fileMetadata = append(fileMetadata, map[string]interface{}{
+			fileEntry := map[string]interface{}{
 				"path":  file.Path,
-				"ext":   ext,
 				"lines": lineCount,
-			})
+			}
+
+			// Add token count if available
+			if file.Tokens > 0 {
+				fileEntry["tokens"] = file.Tokens
+			}
+
+			// Add truncation info if file was truncated
+			if file.Truncation != nil {
+				truncInfo := make(map[string]interface{})
+				truncInfo["mode"] = file.Truncation.Mode
+				truncInfo["original_tokens"] = file.Truncation.OriginalTokens
+				fileEntry["truncation"] = truncInfo
+			}
+
+			fileMetadata = append(fileMetadata, fileEntry)
 		}
 		data["files"] = fileMetadata
 
@@ -332,7 +383,7 @@ func (t *PTXFormatter) Format(project *ProjectOutput) (string, error) {
 		// File paths will be quoted by TOON encoder (e.g., "internal/config.go")
 		// This provides zero ambiguity while maintaining token efficiency
 		contents := make(map[string]interface{})
-		for _, file := range project.Files {
+		for _, file := range sortedFiles {
 			// Use literal file path as key (PTX v2.0)
 			// TOON encoder will automatically quote paths with special chars
 			contents[file.Path] = file.Content
@@ -532,4 +583,117 @@ func escapeForTOON(s string) string {
 	s = strings.ReplaceAll(s, "\r", "\\r")
 	s = strings.ReplaceAll(s, "\t", "\\t")
 	return s
+}
+
+// JSONLFormatter implements machine-friendly JSONL output (one JSON object per line)
+// This format is ideal for programmatic processing, streaming, and pipeline integration
+func (j *JSONLFormatter) Format(project *ProjectOutput) (string, error) {
+	var sb strings.Builder
+	encoder := NewTOONEncoder() // We'll use JSON encoding from TOON encoder
+
+	// Line 1: Metadata header
+	metadataLine := make(map[string]interface{})
+	metadataLine["type"] = "metadata"
+	if project.Metadata != nil {
+		metadataLine["language"] = project.Metadata.Language
+		if project.Metadata.Version != "" {
+			metadataLine["version"] = project.Metadata.Version
+		}
+		if len(project.Metadata.Dependencies) > 0 {
+			metadataLine["dependencies"] = project.Metadata.Dependencies
+		}
+		if project.FileStats != nil {
+			metadataLine["total_files"] = project.FileStats.TotalFiles
+			metadataLine["total_lines"] = project.FileStats.TotalLines
+		}
+	}
+	if metadataJSON, err := encoder.encodeToJSON(metadataLine); err == nil {
+		sb.WriteString(metadataJSON)
+		sb.WriteString("\n")
+	}
+
+	// Line 2: Git info
+	if project.GitInfo != nil {
+		gitLine := map[string]interface{}{
+			"type":   "git",
+			"branch": project.GitInfo.Branch,
+			"commit": project.GitInfo.CommitHash,
+		}
+		if project.GitInfo.CommitMessage != "" {
+			gitLine["message"] = project.GitInfo.CommitMessage
+		}
+		if gitJSON, err := encoder.encodeToJSON(gitLine); err == nil {
+			sb.WriteString(gitJSON)
+			sb.WriteString("\n")
+		}
+	}
+
+	// Line 3: Budget info (if present)
+	if project.Budget != nil {
+		budgetLine := map[string]interface{}{
+			"type":       "budget",
+			"max_tokens": project.Budget.MaxTokens,
+			"est_tokens": project.Budget.EstimatedTokens,
+		}
+		if project.Budget.FileTruncations > 0 {
+			budgetLine["file_truncations"] = project.Budget.FileTruncations
+		}
+		if budgetJSON, err := encoder.encodeToJSON(budgetLine); err == nil {
+			sb.WriteString(budgetJSON)
+			sb.WriteString("\n")
+		}
+	}
+
+	// Line 4: Filter config (if present)
+	if project.FilterConfig != nil {
+		filterLine := map[string]interface{}{
+			"type": "filters",
+		}
+		if len(project.FilterConfig.Includes) > 0 {
+			filterLine["includes"] = project.FilterConfig.Includes
+		}
+		if len(project.FilterConfig.Excludes) > 0 {
+			filterLine["excludes"] = project.FilterConfig.Excludes
+		}
+		if filterJSON, err := encoder.encodeToJSON(filterLine); err == nil {
+			sb.WriteString(filterJSON)
+			sb.WriteString("\n")
+		}
+	}
+
+	// Sort files by path for deterministic output
+	sortedFiles := make([]FileInfo, len(project.Files))
+	copy(sortedFiles, project.Files)
+	sort.Slice(sortedFiles, func(i, j int) bool {
+		return sortedFiles[i].Path < sortedFiles[j].Path
+	})
+
+	// Lines N: One line per file with metadata and content
+	for _, file := range sortedFiles {
+		lineCount := strings.Count(file.Content, "\n") + 1
+		fileLine := map[string]interface{}{
+			"type":    "file",
+			"path":    file.Path,
+			"lines":   lineCount,
+			"content": file.Content,
+		}
+
+		if file.Tokens > 0 {
+			fileLine["tokens"] = file.Tokens
+		}
+
+		if file.Truncation != nil {
+			fileLine["truncation"] = map[string]interface{}{
+				"mode":            file.Truncation.Mode,
+				"original_tokens": file.Truncation.OriginalTokens,
+			}
+		}
+
+		if fileJSON, err := encoder.encodeToJSON(fileLine); err == nil {
+			sb.WriteString(fileJSON)
+			sb.WriteString("\n")
+		}
+	}
+
+	return sb.String(), nil
 }

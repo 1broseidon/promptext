@@ -316,12 +316,13 @@ func processFileInWalk(path string, d fs.DirEntry, config Config, tokenCounter *
 	}
 
 	if fileInfo != nil {
-		*processedFiles = append(*processedFiles, *fileInfo)
-
 		// Count tokens and log immediately
 		fileTokens := tokenCounter.EstimateTokens(fileInfo.Content)
+		fileInfo.Tokens = fileTokens // Store token count in FileInfo (PTX v2.0)
 		*totalTokens += fileTokens
 		log.Debug("Processing: %s (%d tokens)", relPath, fileTokens)
+
+		*processedFiles = append(*processedFiles, *fileInfo)
 
 		if verbose && !log.IsDebugEnabled() {
 			fmt.Printf("\n### File: %s\n```\n%s\n```\n", path, fileInfo.Content)
@@ -610,6 +611,19 @@ func ProcessDirectory(config Config, verbose bool) (*ProcessResult, error) {
 
 	// Store processed files
 	projectOutput.Files = processedFiles
+
+	// Populate Budget information (PTX v2.0)
+	projectOutput.Budget = &format.BudgetInfo{
+		MaxTokens:       config.MaxTokens,
+		EstimatedTokens: totalTokens,
+		FileTruncations: 0, // Will be updated when truncation is implemented
+	}
+
+	// Populate FilterConfig (PTX v2.0)
+	projectOutput.FilterConfig = &format.FilterConfig{
+		Includes: config.Extensions,
+		Excludes: config.Excludes,
+	}
 
 	// Calculate file statistics
 	totalLines := 0

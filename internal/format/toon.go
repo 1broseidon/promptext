@@ -1,6 +1,7 @@
 package format
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -657,4 +658,13 @@ func (e *TOONEncoder) stringSlicesEqual(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+// encodeToJSON is a helper method for JSONL formatter to encode data to compact JSON
+func (e *TOONEncoder) encodeToJSON(v interface{}) (string, error) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
