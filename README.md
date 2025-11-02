@@ -45,6 +45,20 @@ go install github.com/1broseidon/promptext/cmd/promptext@latest
 
 See [installation docs](https://1broseidon.github.io/promptext/) for additional methods.
 
+### Updating
+
+**Check for updates:**
+```bash
+prx --check-update
+```
+
+**Update to latest version:**
+```bash
+prx --update
+```
+
+promptext automatically checks for new releases once per day and notifies you when updates are available. Network failures are silently ignored to avoid disrupting normal operation.
+
 ## Basic Usage
 
 ```bash

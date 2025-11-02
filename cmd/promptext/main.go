@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/1broseidon/promptext/internal/processor"
+	"github.com/1broseidon/promptext/internal/update"
 	"github.com/spf13/pflag"
 )
 
@@ -71,6 +72,10 @@ DEBUG OPTIONS:
     -h, --help               Show this help message
     -v, --version            Show version information
 
+UPDATE OPTIONS:
+        --update             Update promptext to the latest version from GitHub
+        --check-update       Check if a new version is available without updating
+
 EXAMPLES:
     # Basic usage - process current directory, copy to clipboard
     prx
@@ -119,6 +124,10 @@ EXAMPLES:
     # Filter to API files, limit to top 5000 tokens worth
     prx -r "api routes handlers" --max-tokens 5000 -o api-context.toon
 
+    # Check for updates and install latest version
+    prx --check-update                         # Check only
+    prx --update                               # Update to latest version
+
 CONFIGURATION:
     Create a .promptext.yml file in your project root for persistent settings:
 
@@ -153,6 +162,10 @@ func main() {
 	// Define command line flags with improved descriptions
 	help := pflag.BoolP("help", "h", false, "Show this help message")
 	showVersion := pflag.BoolP("version", "v", false, "Show version information and exit")
+
+	// Update options
+	checkUpdate := pflag.Bool("check-update", false, "Check if a new version is available")
+	doUpdate := pflag.Bool("update", false, "Update to the latest version from GitHub")
 
 	// Input options
 	dirPath := pflag.StringP("directory", "d", ".", "Directory to process (default: current directory)")
@@ -193,6 +206,34 @@ func main() {
 		fmt.Printf("promptext version %s (%s)\n", version, date)
 		os.Exit(0)
 	}
+
+	// Handle update flags
+	if *checkUpdate {
+		available, latestVersion, err := update.CheckForUpdate(version)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error checking for updates: %v\n", err)
+			os.Exit(1)
+		}
+		if available {
+			fmt.Printf("A new version is available: %s (current: %s)\n", latestVersion, version)
+			fmt.Println("Run 'promptext --update' to update to the latest version")
+		} else {
+			fmt.Printf("You are running the latest version (%s)\n", version)
+		}
+		os.Exit(0)
+	}
+
+	if *doUpdate {
+		if err := update.Update(version, true); err != nil {
+			fmt.Fprintf(os.Stderr, "Error updating: %v\n", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+
+	// Automatic update check (non-blocking, silently fails on network issues)
+	// Only runs during normal operation, not for update/version/help commands
+	go update.CheckAndNotifyUpdate(version)
 
 	// Handle positional argument for directory
 	args := pflag.Args()
