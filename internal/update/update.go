@@ -210,8 +210,10 @@ func downloadAndVerifyBinary(downloadURL, checksumURL, assetName string, verbose
 		}
 	}
 
-	// Copy to a permanent location before temp dir is cleaned up
-	permanentPath := binaryPath + ".new"
+	// Copy to system temp directory (outside our update temp dir)
+	// This survives the defer cleanup of tempDir
+	sysTempDir := os.TempDir()
+	permanentPath := filepath.Join(sysTempDir, "promptext-new-binary")
 	if err := copyFile(binaryPath, permanentPath); err != nil {
 		return "", fmt.Errorf("failed to copy binary: %w", err)
 	}
@@ -261,12 +263,16 @@ func replaceBinary(execPath, binaryPath string, verbose bool) error {
 		return fmt.Errorf("failed to backup current binary: %w", err)
 	}
 
-	// Move new binary to executable path
-	if err := os.Rename(binaryPath, execPath); err != nil {
+	// Copy new binary to executable path
+	// We use copy instead of rename because binaryPath might be on a different filesystem
+	if err := copyFile(binaryPath, execPath); err != nil {
 		// Rollback: restore backup
 		os.Rename(backupPath, execPath)
 		return fmt.Errorf("failed to install new binary: %w", err)
 	}
+
+	// Clean up temporary binary file
+	os.Remove(binaryPath)
 
 	// Remove backup on success
 	os.Remove(backupPath)
