@@ -328,14 +328,14 @@ func (t *PTXFormatter) Format(project *ProjectOutput) (string, error) {
 		}
 		data["files"] = fileMetadata
 
-		// Create content section as nested objects with multiline strings
-		// This is more token-efficient than tabular format for large code blocks
+		// Create content section with literal file paths as keys
+		// File paths will be quoted by TOON encoder (e.g., "internal/config.go")
+		// This provides zero ambiguity while maintaining token efficiency
 		contents := make(map[string]interface{})
 		for _, file := range project.Files {
-			// Use a sanitized version of the path as the key
-			key := strings.ReplaceAll(file.Path, "/", "_")
-			key = strings.ReplaceAll(key, ".", "_")
-			contents[key] = file.Content
+			// Use literal file path as key (PTX v2.0)
+			// TOON encoder will automatically quote paths with special chars
+			contents[file.Path] = file.Content
 		}
 		data["code"] = contents
 	}

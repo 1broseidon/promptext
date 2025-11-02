@@ -73,7 +73,7 @@ func (e *TOONEncoder) encodeValue(sb *strings.Builder, v reflect.Value, key stri
 func (e *TOONEncoder) encodeString(sb *strings.Builder, s string, key string) error {
 	e.writeIndent(sb)
 	if key != "" {
-		sb.WriteString(key)
+		e.writeKey(sb, key)
 		sb.WriteString(": ")
 	}
 
@@ -167,11 +167,66 @@ func (e *TOONEncoder) quoteString(s string) string {
 	return sb.String()
 }
 
+// needsQuotingAsKey checks if a map key needs to be quoted in YAML
+// File paths and keys with special characters need quoting
+func (e *TOONEncoder) needsQuotingAsKey(s string) bool {
+	if s == "" {
+		return true
+	}
+
+	// Quote if contains path separators or file extensions (file paths)
+	if strings.Contains(s, "/") || strings.Contains(s, ".") {
+		return true
+	}
+
+	// Quote if contains hyphens (common in filenames like "my-file.go")
+	if strings.Contains(s, "-") {
+		return true
+	}
+
+	// Quote if contains YAML special characters
+	specialChars := []string{":", ",", "\"", "\\", "\t", "|", "[", "]", "{", "}", "#", "&", "*", "?", ">", "<", "=", "!", "%", "@"}
+	for _, char := range specialChars {
+		if strings.Contains(s, char) {
+			return true
+		}
+	}
+
+	// Quote if starts with "- " (list item pattern)
+	if strings.HasPrefix(s, "- ") {
+		return true
+	}
+
+	// Quote if has leading/trailing spaces
+	if strings.TrimSpace(s) != s {
+		return true
+	}
+
+	// Quote if it looks like a number or boolean
+	if s == "true" || s == "false" || s == "null" || s == "yes" || s == "no" {
+		return true
+	}
+	if _, err := strconv.ParseFloat(s, 64); err == nil {
+		return true
+	}
+
+	return false
+}
+
+// writeKey writes a map key, quoting it if necessary
+func (e *TOONEncoder) writeKey(sb *strings.Builder, key string) {
+	if e.needsQuotingAsKey(key) {
+		sb.WriteString(e.quoteString(key))
+	} else {
+		sb.WriteString(key)
+	}
+}
+
 // encodeNumber encodes a numeric value
 func (e *TOONEncoder) encodeNumber(sb *strings.Builder, num string, key string) error {
 	e.writeIndent(sb)
 	if key != "" {
-		sb.WriteString(key)
+		e.writeKey(sb, key)
 		sb.WriteString(": ")
 	}
 	sb.WriteString(num)
@@ -183,7 +238,7 @@ func (e *TOONEncoder) encodeNumber(sb *strings.Builder, num string, key string) 
 func (e *TOONEncoder) encodeBool(sb *strings.Builder, b bool, key string) error {
 	e.writeIndent(sb)
 	if key != "" {
-		sb.WriteString(key)
+		e.writeKey(sb, key)
 		sb.WriteString(": ")
 	}
 	if b {
@@ -203,7 +258,7 @@ func (e *TOONEncoder) encodeArray(sb *strings.Builder, v reflect.Value, key stri
 	if length == 0 {
 		e.writeIndent(sb)
 		if key != "" {
-			sb.WriteString(key)
+			e.writeKey(sb, key)
 		}
 		sb.WriteString("[0]:\n")
 		return nil
@@ -229,7 +284,7 @@ func (e *TOONEncoder) encodeArray(sb *strings.Builder, v reflect.Value, key stri
 	if allPrimitives {
 		e.writeIndent(sb)
 		if key != "" {
-			sb.WriteString(key)
+			e.writeKey(sb, key)
 		}
 		sb.WriteString(fmt.Sprintf("[%d]: ", length))
 
@@ -259,7 +314,7 @@ func (e *TOONEncoder) encodeArray(sb *strings.Builder, v reflect.Value, key stri
 	// List format for mixed or non-uniform arrays
 	e.writeIndent(sb)
 	if key != "" {
-		sb.WriteString(key)
+		e.writeKey(sb, key)
 	}
 	sb.WriteString(fmt.Sprintf("[%d]:\n", length))
 
@@ -421,7 +476,7 @@ func (e *TOONEncoder) encodeTabularArray(sb *strings.Builder, v reflect.Value, k
 	// Write header
 	e.writeIndent(sb)
 	if key != "" {
-		sb.WriteString(key)
+		e.writeKey(sb, key)
 	}
 	sb.WriteString(fmt.Sprintf("[%d]{%s}:\n", length, strings.Join(keys, ",")))
 
@@ -471,7 +526,7 @@ func (e *TOONEncoder) encodeMap(sb *strings.Builder, v reflect.Value, key string
 	if v.Len() == 0 {
 		e.writeIndent(sb)
 		if key != "" {
-			sb.WriteString(key)
+			e.writeKey(sb, key)
 			sb.WriteString(":\n")
 		}
 		return nil
@@ -480,7 +535,7 @@ func (e *TOONEncoder) encodeMap(sb *strings.Builder, v reflect.Value, key string
 	// Write key if present
 	if key != "" {
 		e.writeIndent(sb)
-		sb.WriteString(key)
+		e.writeKey(sb, key)
 		sb.WriteString(":\n")
 		e.indent++
 	}
@@ -513,7 +568,7 @@ func (e *TOONEncoder) encodeStruct(sb *strings.Builder, v reflect.Value, key str
 	// Write key if present
 	if key != "" {
 		e.writeIndent(sb)
-		sb.WriteString(key)
+		e.writeKey(sb, key)
 		sb.WriteString(":\n")
 		e.indent++
 	}

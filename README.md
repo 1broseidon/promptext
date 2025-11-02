@@ -2,7 +2,7 @@
 
 Converts codebases to token-efficient formats for AI context windows.
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/1broseidon/promptext?prx=v0.4.3)](https://goreportcard.com/report/github.com/1broseidon/promptext)
+[![Go Report Card](https://goreportcard.com/badge/github.com/1broseidon/promptext?prx=v0.4.5)](https://goreportcard.com/report/github.com/1broseidon/promptext)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://img.shields.io/github/release/1broseidon/promptext.svg)](https://github.com/1broseidon/promptext/releases/latest)
 [![Documentation](https://img.shields.io/badge/docs-astro-blue)](https://1broseidon.github.io/promptext/)
@@ -156,12 +156,40 @@ Files included in priority order until budget exhausted.
 
 ## Output Formats
 
-| Format | Token Efficiency | Code Preservation | Use Case |
-|--------|-----------------|-------------------|----------|
-| **PTX** (default) | 25-30% reduction | Multiline blocks preserved | Code analysis, debugging |
-| **TOON-strict** | 30-60% reduction | Escaped to single line | Maximum compression |
-| **Markdown** | Baseline (0%) | Full fidelity | Human review, documentation |
-| **XML** | -20% (more verbose) | Structured elements | Tool integration, parsing |
+| Format | Token Efficiency | File Path Clarity | Code Preservation | Use Case |
+|--------|-----------------|-------------------|-------------------|----------|
+| **PTX** (default) | 25-30% reduction | ✅ Explicit quoted paths | Multiline blocks preserved | Code analysis, debugging |
+| **TOON-strict** | 30-60% reduction | ✅ Path in array | Escaped to single line | Maximum compression |
+| **Markdown** | Baseline (0%) | ✅ In headings | Full fidelity | Human review, documentation |
+| **XML** | -20% (more verbose) | ✅ path attribute | Structured elements | Tool integration, parsing |
+
+### PTX Format Example
+
+PTX uses explicit file paths as keys for zero ambiguity:
+
+```yaml
+code:
+  "internal/config.go": |
+    package config
+
+    type Config struct {
+        Port int
+    }
+  "cmd/server/main.go": |
+    package main
+
+    func main() {
+        // ...
+    }
+files[2]{path,ext,lines}:
+  internal/config.go,go,67
+  cmd/server/main.go,go,45
+```
+
+**Benefits:**
+- **Zero Ambiguity**: AI can instantly map code blocks to exact file paths
+- **Token Efficient**: Still uses `|` multiline blocks (~30% savings vs markdown)
+- **Human Readable**: No mental translation needed between sanitized keys and actual paths
 
 ```bash
 # PTX: Default, balances compression and readability
