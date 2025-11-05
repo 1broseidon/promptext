@@ -82,84 +82,54 @@ promptext automatically checks for new releases once per day and notifies you wh
 - **Bug Investigation**: Let AI analyze related files together with proper context
 - **API Integration**: Generate structured code context for AI-powered development tools
 
-## Basic Usage
+## Usage
+
+### Smart Context Building (The Power Features)
 
 ```bash
-# Current directory to clipboard (PTX format)
+# Find authentication-related files within token budget
+prx -r "auth login OAuth session" --max-tokens 10000
+
+# Get database layer for Claude Haiku (8K limit)
+prx -r "database SQL postgres migration" --max-tokens 8000 -o db-context.ptx
+
+# API routes for GPT-4 analysis
+prx -r "api routes handlers middleware" --max-tokens 15000
+
+# Bug investigation: error handling code only
+prx -r "error exception handler logging" --max-tokens 5000 -e .go,.js
+```
+
+**How relevance scoring works:**
+- Filename match: 10 points
+- Directory path match: 5 points
+- Import statement match: 3 points
+- Content match: 1 point
+
+### Quick Commands
+
+```bash
+# Current directory to clipboard
 prx
 
-# Specific directory
-prx /path/to/project
+# Specific directory with extension filter
+prx /path/to/project -e .go,.js,.ts
 
-# Filter by extensions
-prx -e .go,.js,.ts
+# Output to file (format auto-detected)
+prx -o context.ptx      # PTX (default)
+prx -o context.md       # Markdown
+prx -o project.xml      # XML
 
 # Summary only (file list, token counts)
 prx -i
 
-# Output to file (format auto-detected from extension)
-prx -o context.ptx      # PTX format
-prx -o context.toon     # PTX format (backward compatibility)
-prx -o context.md       # Markdown
-prx -o project.xml      # XML
-
-# Explicit format specification
-prx -f ptx -o context.txt        # PTX: readable code blocks
-prx -f toon-strict -o small.txt  # TOON v1.3: maximum compression
-prx -f markdown -o context.md    # Standard Markdown
-prx -f xml -o project.xml        # XML structure
-
-# Exclude patterns (comma-separated)
-prx -x "test/,vendor/" --verbose
-
-# Preview file selection without processing
-prx --dry-run -e .go
-
-# Suppress output (useful in scripts)
-prx -q -o output.ptx
+# Preview file selection
+prx --dry-run -r "auth"
 ```
 
-## Advanced Usage
+### Token Budget Output
 
-### Relevance Filtering
-
-Rank files by keyword frequency:
-
-```bash
-# Authentication-related files
-prx --relevant "auth login OAuth session"
-
-# Database layer
-prx -r "database SQL postgres migration"
-
-# API endpoints
-prx -r "api routes handlers middleware"
-```
-
-**Scoring algorithm:**
-- Filename match: 10 points per occurrence
-- Directory path match: 5 points per occurrence
-- Import statement match: 3 points per occurrence
-- Content match: 1 point per occurrence
-
-Files ranked by total score. Ties broken by file size (smaller first).
-
-### Token Budget Control
-
-Enforce context window limits:
-
-```bash
-# Claude 3 Haiku limit
-prx --max-tokens 8000
-
-# Combined relevance + budget
-prx -r "api routes handlers" --max-tokens 5000
-
-# Cost optimization for iterative queries
-prx --max-tokens 3000 -o quick-context.ptx
-```
-
-When budget exceeded, output shows inclusion/exclusion breakdown:
+When `--max-tokens` is set and exceeded, promptext shows exactly what was included and excluded:
 
 ```
 ╭───────────────────────────────────────────────╮
