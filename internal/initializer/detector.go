@@ -3,6 +3,17 @@ package initializer
 import (
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
+)
+
+// Priority constants for project types
+const (
+	PriorityFrameworkSpecific = 100 // Framework-specific (Next.js, Django, Laravel, Angular)
+	PriorityBuildTool         = 90  // Build tools and framework configs (Vite, Nuxt, Flask)
+	PriorityLanguage          = 80  // Language-specific (Go, Rust, Java, .NET)
+	PriorityGeneric           = 70  // Generic language (Python, PHP)
+	PriorityBasic             = 60  // Basic/generic (Node.js)
 )
 
 // ProjectType represents a detected project framework or language
@@ -46,7 +57,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "nextjs",
 				Description: "Next.js",
-				Priority:    100,
+				Priority:    PriorityFrameworkSpecific,
 			},
 		},
 		{
@@ -54,7 +65,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "nuxt",
 				Description: "Nuxt.js",
-				Priority:    100,
+				Priority:    PriorityFrameworkSpecific,
 			},
 		},
 		{
@@ -62,7 +73,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "vite",
 				Description: "Vite",
-				Priority:    90,
+				Priority:    PriorityBuildTool,
 			},
 		},
 		{
@@ -70,7 +81,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "vue",
 				Description: "Vue.js",
-				Priority:    90,
+				Priority:    PriorityBuildTool,
 			},
 		},
 		{
@@ -78,7 +89,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "angular",
 				Description: "Angular",
-				Priority:    100,
+				Priority:    PriorityFrameworkSpecific,
 			},
 		},
 		{
@@ -86,7 +97,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "svelte",
 				Description: "Svelte",
-				Priority:    90,
+				Priority:    PriorityBuildTool,
 			},
 		},
 
@@ -96,7 +107,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "go",
 				Description: "Go",
-				Priority:    80,
+				Priority:    PriorityLanguage,
 			},
 		},
 
@@ -106,7 +117,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "django",
 				Description: "Django",
-				Priority:    100,
+				Priority:    PriorityFrameworkSpecific,
 			},
 		},
 		{
@@ -114,7 +125,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "flask",
 				Description: "Flask",
-				Priority:    90,
+				Priority:    PriorityBuildTool,
 			},
 		},
 		{
@@ -122,7 +133,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "python",
 				Description: "Python",
-				Priority:    70,
+				Priority:    PriorityGeneric,
 			},
 		},
 
@@ -132,7 +143,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "rust",
 				Description: "Rust",
-				Priority:    80,
+				Priority:    PriorityLanguage,
 			},
 		},
 
@@ -142,7 +153,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "maven",
 				Description: "Maven (Java)",
-				Priority:    80,
+				Priority:    PriorityLanguage,
 			},
 		},
 		{
@@ -150,7 +161,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "gradle",
 				Description: "Gradle (Java/Kotlin)",
-				Priority:    80,
+				Priority:    PriorityLanguage,
 			},
 		},
 
@@ -160,7 +171,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "ruby",
 				Description: "Ruby/Rails",
-				Priority:    80,
+				Priority:    PriorityLanguage,
 			},
 		},
 
@@ -170,7 +181,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "php",
 				Description: "PHP",
-				Priority:    70,
+				Priority:    PriorityGeneric,
 			},
 		},
 		{
@@ -178,7 +189,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "laravel",
 				Description: "Laravel",
-				Priority:    90,
+				Priority:    PriorityBuildTool,
 			},
 		},
 
@@ -188,7 +199,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "dotnet",
 				Description: ".NET",
-				Priority:    80,
+				Priority:    PriorityLanguage,
 			},
 		},
 
@@ -198,7 +209,7 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 			projectType: ProjectType{
 				Name:        "node",
 				Description: "Node.js",
-				Priority:    60,
+				Priority:    PriorityBasic,
 			},
 		},
 	}
@@ -206,15 +217,21 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 	// Check each detection rule
 	for _, rule := range detectionRules {
 		for _, file := range rule.files {
-			// Handle wildcards
-			if filepath.Base(file) != file && (file[0] == '*' || file[len(file)-1] == '*') {
+			// Safety check for empty strings
+			if len(file) == 0 {
+				continue
+			}
+
+			// Check if pattern contains wildcards
+			if strings.Contains(file, "*") {
+				// Use glob matching for wildcard patterns
 				matches, err := filepath.Glob(filepath.Join(rootPath, file))
 				if err == nil && len(matches) > 0 {
 					detected = append(detected, rule.projectType)
 					break
 				}
 			} else {
-				// Regular file check
+				// Regular file existence check
 				filePath := filepath.Join(rootPath, file)
 				if _, err := os.Stat(filePath); err == nil {
 					detected = append(detected, rule.projectType)
@@ -224,14 +241,10 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 		}
 	}
 
-	// Sort by priority (highest first)
-	for i := 0; i < len(detected); i++ {
-		for j := i + 1; j < len(detected); j++ {
-			if detected[j].Priority > detected[i].Priority {
-				detected[i], detected[j] = detected[j], detected[i]
-			}
-		}
-	}
+	// Sort by priority (highest first) using sort.Slice
+	sort.Slice(detected, func(i, j int) bool {
+		return detected[i].Priority > detected[j].Priority
+	})
 
 	// Deduplicate
 	seen := make(map[string]bool)

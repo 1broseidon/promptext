@@ -30,6 +30,18 @@ func NewInitializer(rootPath string, force bool, quiet bool) *Initializer {
 
 // Run executes the initialization process
 func (i *Initializer) Run() error {
+	// Validate that rootPath exists and is a directory
+	info, err := os.Stat(i.rootPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("directory does not exist: %s", i.rootPath)
+		}
+		return fmt.Errorf("failed to access directory: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("path is not a directory: %s", i.rootPath)
+	}
+
 	// Check if config already exists
 	configPath := filepath.Join(i.rootPath, ".promptext.yml")
 	if _, err := os.Stat(configPath); err == nil && !i.force {
@@ -138,6 +150,18 @@ func (i *Initializer) promptConfirm(question string) bool {
 
 // RunQuick runs initialization with default options (no prompts)
 func (i *Initializer) RunQuick() error {
+	// Validate that rootPath exists and is a directory
+	info, err := os.Stat(i.rootPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("directory does not exist: %s", i.rootPath)
+		}
+		return fmt.Errorf("failed to access directory: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("path is not a directory: %s", i.rootPath)
+	}
+
 	// Check if config already exists
 	configPath := filepath.Join(i.rootPath, ".promptext.yml")
 	if _, err := os.Stat(configPath); err == nil && !i.force {

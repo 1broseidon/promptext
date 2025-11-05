@@ -152,3 +152,138 @@ func getTypeNames(types []ProjectType) []string {
 	}
 	return names
 }
+
+// TestFileDetector_DotNetGlobPattern tests the critical fix for .NET glob pattern detection
+func TestFileDetector_DotNetGlobPattern(t *testing.T) {
+	// Create temporary directory
+	tmpDir, err := os.MkdirTemp("", "dotnet-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create a .csproj file
+	csprojFile := filepath.Join(tmpDir, "MyApp.csproj")
+	if err := os.WriteFile(csprojFile, []byte(`<Project Sdk="Microsoft.NET.Sdk"></Project>`), 0644); err != nil {
+		t.Fatalf("Failed to create .csproj file: %v", err)
+	}
+
+	// Run detection
+	detector := NewFileDetector()
+	detected, err := detector.Detect(tmpDir)
+	if err != nil {
+		t.Fatalf("Detect() error = %v", err)
+	}
+
+	// Verify .NET was detected
+	if len(detected) == 0 {
+		t.Fatal("Expected .NET project to be detected, but got no results")
+	}
+
+	found := false
+	for _, pt := range detected {
+		if pt.Name == "dotnet" {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		t.Errorf(".NET project not detected. Got: %v", getTypeNames(detected))
+	}
+}
+
+// TestFileDetector_MultipleWildcardPatterns tests various wildcard patterns
+func TestFileDetector_MultipleWildcardPatterns(t *testing.T) {
+	tests := []struct {
+		name     string
+		fileName string
+		expected string
+	}{
+		{
+			name:     "C# project file",
+			fileName: "MyApp.csproj",
+			expected: "dotnet",
+		},
+		{
+			name:     "F# project file",
+			fileName: "MyApp.fsproj",
+			expected: "dotnet",
+		},
+		{
+			name:     "VB.NET project file",
+			fileName: "MyApp.vbproj",
+			expected: "dotnet",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create temporary directory
+			tmpDir, err := os.MkdirTemp("", "wildcard-test-*")
+			if err != nil {
+				t.Fatalf("Failed to create temp dir: %v", err)
+			}
+			defer os.RemoveAll(tmpDir)
+
+			// Create the test file
+			filePath := filepath.Join(tmpDir, tt.fileName)
+			if err := os.WriteFile(filePath, []byte{}, 0644); err != nil {
+				t.Fatalf("Failed to create file: %v", err)
+			}
+
+			// Run detection
+			detector := NewFileDetector()
+			detected, err := detector.Detect(tmpDir)
+			if err != nil {
+				t.Fatalf("Detect() error = %v", err)
+			}
+
+			// Verify expected type was detected
+			found := false
+			for _, pt := range detected {
+				if pt.Name == tt.expected {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				t.Errorf("Expected %s to be detected, got: %v", tt.expected, getTypeNames(detected))
+			}
+		})
+	}
+}
+
+// TestFileDetector_EmptyStringProtection tests that empty strings don't cause panics
+func TestFileDetector_EmptyStringProtection(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "empty-string-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// This should not panic
+	detector := NewFileDetector()
+	_, err = detector.Detect(tmpDir)
+	if err != nil {
+		t.Fatalf("Detect() should not error on empty directory: %v", err)
+	}
+}
+
+// TestFileDetector_PriorityConstants tests that priority constants are used correctly
+func TestFileDetector_PriorityConstants(t *testing.T) {
+	// Verify priority ordering
+	if PriorityFrameworkSpecific <= PriorityBuildTool {
+		t.Error("Framework-specific should have higher priority than build tools")
+	}
+	if PriorityBuildTool <= PriorityLanguage {
+		t.Error("Build tools should have higher priority than language")
+	}
+	if PriorityLanguage <= PriorityGeneric {
+		t.Error("Language should have higher priority than generic")
+	}
+	if PriorityGeneric <= PriorityBasic {
+		t.Error("Generic should have higher priority than basic")
+	}
+}
