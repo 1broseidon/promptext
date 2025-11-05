@@ -113,7 +113,9 @@ func (d *FileDetector) Detect(rootPath string) ([]ProjectType, error) {
 
 		// Python frameworks
 		{
-			files: []string{"manage.py", "django"},
+			// Django projects are identified by manage.py (Django's command-line utility)
+			// This is the standard entry point for all Django projects
+			files: []string{"manage.py"},
 			projectType: ProjectType{
 				Name:        "django",
 				Description: "Django",

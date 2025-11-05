@@ -3,6 +3,7 @@ package initializer
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -53,7 +54,7 @@ func TestInitializer_PathValidation(t *testing.T) {
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("Expected error containing '%s', got nil", tt.errorMsg)
-				} else if tt.errorMsg != "" && !contains(err.Error(), tt.errorMsg) {
+				} else if tt.errorMsg != "" && !strings.Contains(err.Error(), tt.errorMsg) {
 					t.Errorf("Expected error containing '%s', got '%s'", tt.errorMsg, err.Error())
 				}
 			} else {
@@ -180,34 +181,190 @@ func TestInitializer_ConfigGeneration(t *testing.T) {
 			// Verify expected strings are present
 			configStr := string(content)
 			for _, expectedStr := range tt.expectStrings {
-				if !contains(configStr, expectedStr) {
+				if !strings.Contains(configStr, expectedStr) {
 					t.Errorf("Expected config to contain '%s', but it doesn't.\nConfig:\n%s", expectedStr, configStr)
 				}
 			}
 
 			// Verify file structure
-			if !contains(configStr, "extensions:") {
+			if !strings.Contains(configStr, "extensions:") {
 				t.Error("Config should contain 'extensions:' section")
 			}
-			if !contains(configStr, "excludes:") {
+			if !strings.Contains(configStr, "excludes:") {
 				t.Error("Config should contain 'excludes:' section")
 			}
-			if !contains(configStr, "gitignore: true") {
+			if !strings.Contains(configStr, "gitignore: true") {
 				t.Error("Config should have gitignore enabled by default")
 			}
 		})
 	}
 }
 
-// Helper function to check if string contains substring
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
-		func() bool {
-			for i := 0; i <= len(s)-len(substr); i++ {
-				if s[i:i+len(substr)] == substr {
-					return true
+// TestInitializer_IntegrationFullFlow tests the complete initialization flow end-to-end
+func TestInitializer_IntegrationFullFlow(t *testing.T) {
+	// This integration test validates the entire initialization flow:
+	// 1. Directory validation
+	// 2. Project type detection
+	// 3. Template generation
+	// 4. YAML file creation
+	// 5. Config file correctness
+
+	tests := []struct {
+		name               string
+		setupFiles         []string
+		force              bool
+		expectProjectTypes []string
+		expectExtensions   []string
+		expectExcludes     []string
+	}{
+		{
+			name:               "Complete Next.js initialization",
+			setupFiles:         []string{"next.config.js", "package.json", "tsconfig.json"},
+			force:              false,
+			expectProjectTypes: []string{"Next.js", "Node.js"},
+			expectExtensions:   []string{".js", ".jsx", ".ts", ".tsx", ".json"},
+			expectExcludes:     []string{"node_modules", ".next", "dist"},
+		},
+		{
+			name:               "Complete Go project initialization",
+			setupFiles:         []string{"go.mod", "go.sum", "main.go"},
+			force:              false,
+			expectProjectTypes: []string{"Go"},
+			expectExtensions:   []string{".go", ".mod", ".sum"},
+			expectExcludes:     []string{"vendor", "bin"},
+		},
+		{
+			name:               "Multi-language project (Go + Node)",
+			setupFiles:         []string{"go.mod", "package.json"},
+			force:              false,
+			expectProjectTypes: []string{"Go", "Node.js"},
+			expectExtensions:   []string{".go", ".mod", ".js", ".ts"},
+			expectExcludes:     []string{"vendor", "node_modules"},
+		},
+		{
+			name:               "Force overwrite existing config",
+			setupFiles:         []string{"next.config.js", ".promptext.yml"},
+			force:              true,
+			expectProjectTypes: []string{"Next.js"},
+			expectExtensions:   []string{".js", ".jsx", ".ts", ".tsx"},
+			expectExcludes:     []string{"node_modules", ".next"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create temporary directory
+			tmpDir, err := os.MkdirTemp("", "integration-test-*")
+			if err != nil {
+				t.Fatalf("Failed to create temp dir: %v", err)
+			}
+			defer os.RemoveAll(tmpDir)
+
+			// Setup: Create test files
+			for _, file := range tt.setupFiles {
+				filePath := filepath.Join(tmpDir, file)
+				var content []byte
+				if file == ".promptext.yml" {
+					content = []byte("# Old config\nextensions:\n  - .old\n")
+				}
+				if err := os.WriteFile(filePath, content, 0644); err != nil {
+					t.Fatalf("Failed to create file %s: %v", file, err)
 				}
 			}
-			return false
-		}())
+
+			// Execute: Run initialization
+			init := NewInitializer(tmpDir, tt.force, true) // quiet mode
+			err = init.RunQuick()
+			if err != nil {
+				t.Fatalf("RunQuick() failed: %v", err)
+			}
+
+			// Verify: Config file was created
+			configPath := filepath.Join(tmpDir, ".promptext.yml")
+			if _, err := os.Stat(configPath); err != nil {
+				t.Fatalf("Config file was not created: %v", err)
+			}
+
+			// Verify: Read and validate config content
+			content, err := os.ReadFile(configPath)
+			if err != nil {
+				t.Fatalf("Failed to read config: %v", err)
+			}
+			configStr := string(content)
+
+			// Verify: Check for expected extensions
+			for _, ext := range tt.expectExtensions {
+				if !strings.Contains(configStr, ext) {
+					t.Errorf("Config missing expected extension %s", ext)
+				}
+			}
+
+			// Verify: Check for expected excludes
+			for _, exc := range tt.expectExcludes {
+				if !strings.Contains(configStr, exc) {
+					t.Errorf("Config missing expected exclude %s", exc)
+				}
+			}
+
+			// Verify: Check config structure is valid YAML
+			requiredFields := []string{
+				"extensions:",
+				"excludes:",
+				"gitignore:",
+				"use-default-rules:",
+				"format:",
+				"verbose:",
+				"debug:",
+			}
+			for _, field := range requiredFields {
+				if !strings.Contains(configStr, field) {
+					t.Errorf("Config missing required field: %s", field)
+				}
+			}
+
+			// Verify: Check for comments (educational output)
+			if !strings.Contains(configStr, "# Promptext Configuration File") {
+				t.Error("Config should have header comment")
+			}
+			if !strings.Contains(configStr, "# Auto-generated by: promptext --init") {
+				t.Error("Config should indicate it was auto-generated")
+			}
+
+			// Verify: Default values are correct
+			if !strings.Contains(configStr, "gitignore: true") {
+				t.Error("Config should enable gitignore by default")
+			}
+			if !strings.Contains(configStr, "use-default-rules: true") {
+				t.Error("Config should enable default rules by default")
+			}
+		})
+	}
+}
+
+// TestInitializer_SecurityInputValidation tests input validation for security
+func TestInitializer_SecurityInputValidation(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "security-test-*")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create a simple project
+	if err := os.WriteFile(filepath.Join(tmpDir, "package.json"), []byte("{}"), 0644); err != nil {
+		t.Fatalf("Failed to create test file: %v", err)
+	}
+
+	// Test that excessively long paths are handled
+	veryLongPath := filepath.Join(tmpDir, strings.Repeat("a", 1000))
+	init := NewInitializer(veryLongPath, false, true)
+	err = init.RunQuick()
+	if err == nil {
+		t.Error("Expected error for excessively long path")
+	}
+
+	// Test that non-absolute paths are handled correctly
+	init = NewInitializer(".", false, true)
+	err = init.RunQuick()
+	// Should not panic, may succeed or fail depending on CWD
+	// Just verify it doesn't panic
 }

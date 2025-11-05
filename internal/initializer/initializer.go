@@ -126,6 +126,7 @@ func (i *Initializer) Run() error {
 
 // promptConfirm asks a yes/no question and returns the answer
 func (i *Initializer) promptConfirm(question string) bool {
+	const maxInputLength = 100 // Security: prevent excessive input
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -133,6 +134,12 @@ func (i *Initializer) promptConfirm(question string) bool {
 		response, err := reader.ReadString('\n')
 		if err != nil {
 			return false
+		}
+
+		// Security: validate input length to prevent potential abuse
+		if len(response) > maxInputLength {
+			fmt.Println("Input too long. Please answer 'y' or 'n'")
+			continue
 		}
 
 		response = strings.TrimSpace(strings.ToLower(response))
