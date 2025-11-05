@@ -26,7 +26,7 @@ Unlike other tools like code2prompt, codebase-digest, or manual copy-pasting:
 
 ## Features
 
-- **PTX format**: 25-30% token reduction vs JSON (TOON v1.3-based hybrid with multiline code blocks)
+- **PTX format**: promptext's hybrid TOON format - 25-30% token reduction with explicit paths and multiline code blocks
 - **Token budgeting**: Hard limits with relevance-based file selection
 - **Relevance scoring**: Keyword matching in paths (10×), directories (5×), imports (3×), content (1×)
 - **Standard exclusions**: `.gitignore` patterns, `node_modules/`, lock files, binaries
@@ -178,6 +178,8 @@ When budget exceeded, output shows inclusion/exclusion breakdown:
 Files included in priority order until budget exhausted.
 
 ## Output Formats
+
+**About PTX**: PTX is a hybrid TOON format specifically created for promptext. It balances the extreme compression of TOON-strict with human readability by using explicit file paths as keys and preserving multiline code blocks. This gives you ~25-30% token savings without sacrificing clarity - perfect for AI assistants that need both efficiency and accurate file path context.
 
 | Format | Token Efficiency | File Path Clarity | Code Preservation | Use Case |
 |--------|-----------------|-------------------|-------------------|----------|
