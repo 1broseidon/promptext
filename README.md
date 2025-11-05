@@ -1,6 +1,6 @@
 # promptext
 
-Converts codebases to token-efficient formats for AI context windows.
+Convert your codebase into AI-ready prompts - a fast, token-efficient alternative to code2prompt for Claude, ChatGPT, and other LLMs.
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/1broseidon/promptext?prx=v0.4.5)](https://goreportcard.com/report/github.com/1broseidon/promptext)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -15,6 +15,15 @@ AI assistants need code context. Sending entire repositories exceeds token limit
 
 promptext filters files, ranks by relevance, and serializes to token-efficient formats within specified budgets.
 
+## Why promptext?
+
+Unlike other tools like code2prompt, codebase-digest, or manual copy-pasting:
+- **Faster**: Written in Go, processes large codebases in seconds
+- **Smarter**: Relevance scoring automatically finds the most important files
+- **Token-aware**: Built-in tiktoken counting prevents LLM context overflow
+- **Format-flexible**: PTX, TOON, Markdown, or XML output for any AI assistant
+- **Budget-conscious**: Enforce token limits before sending to expensive API calls
+
 ## Features
 
 - **PTX format**: 25-30% token reduction vs JSON (TOON v1.3-based hybrid with multiline code blocks)
@@ -23,6 +32,9 @@ promptext filters files, ranks by relevance, and serializes to token-efficient f
 - **Standard exclusions**: `.gitignore` patterns, `node_modules/`, lock files, binaries
 - **Accurate counting**: tiktoken cl100k_base tokenizer (GPT-3.5/4, Claude compatible)
 - **Format options**: PTX (default), TOON-strict, Markdown, XML
+- **LLM-optimized**: Works with ChatGPT, Claude, GPT-4, Gemini, and any AI assistant
+- **Context window aware**: Respect token limits for Claude Haiku/Sonnet/Opus, GPT-3.5/4
+- **AI-friendly formatting**: Structured output for better AI code comprehension
 
 Format reference: [johannschopplich/toon](https://github.com/johannschopplich/toon)
 
@@ -58,6 +70,17 @@ prx --update
 ```
 
 promptext automatically checks for new releases once per day and notifies you when updates are available. Network failures are silently ignored to avoid disrupting normal operation.
+
+## Use Cases
+
+- **AI Code Review**: Feed entire projects to Claude/ChatGPT for comprehensive code analysis
+- **Context Engineering**: Build optimized prompts within LLM token limits for better AI responses
+- **AI Pair Programming**: Provide full codebase context to AI assistants like GitHub Copilot, Cursor, or Windsurf
+- **Documentation Generation**: Help AI understand your complete project structure for accurate docs
+- **Code Migration**: Give LLMs full legacy codebase context for refactoring suggestions
+- **Prompt Engineering**: Create consistent, repeatable AI prompts from code for development workflows
+- **Bug Investigation**: Let AI analyze related files together with proper context
+- **API Integration**: Generate structured code context for AI-powered development tools
 
 ## Basic Usage
 
