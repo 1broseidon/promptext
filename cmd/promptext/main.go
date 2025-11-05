@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/1broseidon/promptext/internal/initializer"
 	"github.com/1broseidon/promptext/internal/processor"
 	"github.com/1broseidon/promptext/internal/update"
 	"github.com/spf13/pflag"
@@ -77,6 +78,11 @@ UPDATE OPTIONS:
         --update             Update promptext to the latest version from GitHub
         --check-update       Check if a new version is available without updating
 
+INITIALIZATION OPTIONS:
+        --init               Initialize a new .promptext.yml config file with smart defaults
+                             Detects project type and suggests framework-specific settings
+        --force              Force overwrite of existing config (use with --init)
+
 EXAMPLES:
     # Basic usage - process current directory, copy to clipboard
     prx
@@ -132,6 +138,10 @@ EXAMPLES:
     prx --check-update                         # Check only
     prx --update                               # Update to latest version
 
+    # Initialize config file with smart defaults based on project type
+    prx --init                                 # Interactive mode
+    prx --init --force                         # Overwrite existing config
+
 CONFIGURATION:
     Create a .promptext.yml file in your project root for persistent settings:
 
@@ -170,6 +180,10 @@ func main() {
 	// Update options
 	checkUpdate := pflag.Bool("check-update", false, "Check if a new version is available")
 	doUpdate := pflag.Bool("update", false, "Update to the latest version from GitHub")
+
+	// Initialization options
+	initConfig := pflag.Bool("init", false, "Initialize a new .promptext.yml config file with smart defaults")
+	forceInit := pflag.Bool("force", false, "Force overwrite of existing config (use with --init)")
 
 	// Input options
 	dirPath := pflag.StringP("directory", "d", ".", "Directory to process (default: current directory)")
@@ -230,6 +244,24 @@ func main() {
 	if *doUpdate {
 		if err := update.Update(version, true); err != nil {
 			fmt.Fprintf(os.Stderr, "Error updating: %v\n", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+
+	// Handle initialization flag
+	if *initConfig {
+		// Get absolute path
+		absPath, err := filepath.Abs(*dirPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error resolving directory path: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Create and run initializer
+		init := initializer.NewInitializer(absPath, *forceInit, *quiet)
+		if err := init.Run(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error initializing config: %v\n", err)
 			os.Exit(1)
 		}
 		os.Exit(0)
