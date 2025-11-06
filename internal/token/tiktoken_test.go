@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/1broseidon/promptext/internal/log"
 )
 
 func TestTokenCounter_EstimateTokens(t *testing.T) {
@@ -197,6 +199,22 @@ func TestTokenCounterCacheInitialization(t *testing.T) {
 
 	if original != "" {
 		os.Setenv("TIKTOKEN_CACHE_DIR", original)
+	}
+}
+
+func TestDebugTokenCountEmitsWhenDebugEnabled(t *testing.T) {
+	tc := NewTokenCounter()
+	log.Enable()
+	log.SetColorEnabled(false)
+	t.Cleanup(func() {
+		log.Disable()
+		log.SetColorEnabled(false)
+	})
+
+	text := strings.Repeat("line with code {}\n", 120)
+	tokens := tc.DebugTokenCount(text, "sample")
+	if tokens == 0 {
+		t.Fatalf("expected non-zero tokens from DebugTokenCount")
 	}
 }
 

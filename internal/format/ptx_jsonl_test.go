@@ -215,3 +215,48 @@ func TestJSONLFormatterProducesDeterministicLines(t *testing.T) {
 		t.Fatalf("expected token count in second file line")
 	}
 }
+
+func TestTOONStrictFormatterIncludesSections(t *testing.T) {
+	formatter := &TOONStrictFormatter{}
+	project := &ProjectOutput{
+		Metadata: &Metadata{
+			Language:     "Go",
+			Version:      "1.0",
+			Dependencies: []string{"fmt"},
+		},
+		GitInfo: &GitInfo{
+			Branch:        "main",
+			CommitHash:    "abc123",
+			CommitMessage: "Initial commit\nwith details",
+		},
+		FileStats: &FileStatistics{
+			TotalFiles:   2,
+			TotalLines:   10,
+			PackageCount: 1,
+			FilesByType: map[string]int{
+				".go": 2,
+			},
+		},
+		Files: []FileInfo{
+			{Path: "main.go", Content: "package main"},
+		},
+	}
+
+	out, err := formatter.Format(project)
+	if err != nil {
+		t.Fatalf("Format returned error: %v", err)
+	}
+
+	if !strings.Contains(out, "language: Go") {
+		t.Fatalf("expected metadata language in output: %s", out)
+	}
+	if !strings.Contains(out, `"Initial commit\\nwith details"`) {
+		t.Fatalf("expected escaped commit message")
+	}
+	if !strings.Contains(out, ".go") {
+		t.Fatalf("expected file type listing")
+	}
+	if !strings.Contains(out, "main.go") {
+		t.Fatalf("expected file path in output")
+	}
+}

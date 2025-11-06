@@ -260,6 +260,74 @@ func TestMergeConfigs(t *testing.T) {
 	}
 }
 
+func TestLoadGlobalConfigUsesXDGPath(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", tmp)
+	t.Setenv("HOME", tmp)
+
+	configDir := filepath.Join(tmp, "promptext")
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	configPath := filepath.Join(configDir, "config.yml")
+	if err := os.WriteFile(configPath, []byte("extensions:\n  - .go\nformat: markdown\n"), 0644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	cfg, err := LoadGlobalConfig()
+	if err != nil {
+		t.Fatalf("LoadGlobalConfig error: %v", err)
+	}
+	if len(cfg.Extensions) != 1 || cfg.Extensions[0] != ".go" {
+		t.Fatalf("expected .go extension, got %+v", cfg.Extensions)
+	}
+	if cfg.Format != "markdown" {
+		t.Fatalf("expected format markdown, got %s", cfg.Format)
+	}
+}
+
+func TestLoadGlobalConfigMissingReturnsEmpty(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+
+	cfg, err := LoadGlobalConfig()
+	if err != nil {
+		t.Fatalf("LoadGlobalConfig error: %v", err)
+	}
+	if len(cfg.Extensions) != 0 {
+		t.Fatalf("expected empty extensions for missing config, got %v", cfg.Extensions)
+	}
+}
+
+func TestLoadConfigReadsProjectFile(t *testing.T) {
+	dir := t.TempDir()
+	content := "excludes:\n  - vendor\nverbose: true\n"
+	if err := os.WriteFile(filepath.Join(dir, ".promptext.yml"), []byte(content), 0644); err != nil {
+		t.Fatalf("write project config: %v", err)
+	}
+
+	cfg, err := LoadConfig(dir)
+	if err != nil {
+		t.Fatalf("LoadConfig error: %v", err)
+	}
+	if len(cfg.Excludes) != 1 || cfg.Excludes[0] != "vendor" {
+		t.Fatalf("expected vendor exclude, got %v", cfg.Excludes)
+	}
+	if cfg.Verbose == nil || !*cfg.Verbose {
+		t.Fatalf("expected verbose true, got %+v", cfg.Verbose)
+	}
+}
+
+func TestLoadConfigMissingReturnsEmpty(t *testing.T) {
+	cfg, err := LoadConfig(t.TempDir())
+	if err != nil {
+		t.Fatalf("LoadConfig error: %v", err)
+	}
+	if len(cfg.Extensions) != 0 || len(cfg.Excludes) != 0 {
+		t.Fatalf("expected empty config for missing file, got %+v", cfg)
+	}
+}
+
 func TestGetGlobalConfigPaths(t *testing.T) {
 	// Save original env vars
 	originalXDGConfigHome := os.Getenv("XDG_CONFIG_HOME")

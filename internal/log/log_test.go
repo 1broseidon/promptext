@@ -2,7 +2,9 @@ package log
 
 import (
 	"bytes"
+	"io"
 	"log"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -556,3 +558,68 @@ func TestFatal_MessageFormatting(t *testing.T) {
 // Note: The Fatal function calls os.Exit(1) which cannot be tested in a standard unit test
 // without additional infrastructure. The function is simple (just logger.Printf + os.Exit)
 // so testing the logging part verifies the core functionality.
+
+// captureStdout captures standard output for testing functions that write via fmt.Print*
+func captureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+
+	orig := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	os.Stdout = w
+	fn()
+	w.Close()
+	os.Stdout = orig
+
+	data, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	return string(data)
+}
+
+func TestSetQuietTogglesState(t *testing.T) {
+	setupTest(t)
+
+	SetQuiet(true)
+	assert.True(t, quietMode)
+	assert.True(t, IsQuietMode())
+
+	SetQuiet(false)
+	assert.False(t, quietMode)
+	assert.False(t, IsQuietMode())
+}
+
+func TestWarnHonorsQuietMode(t *testing.T) {
+	setupTest(t)
+
+	SetQuiet(false)
+	output := captureLogOutput(t, func() {
+		Warn("warning %s", "message")
+	})
+	assert.Contains(t, output, "[WARN] warning message")
+
+	SetQuiet(true)
+	output = captureLogOutput(t, func() {
+		Warn("hidden %s", "message")
+	})
+	assert.Empty(t, output)
+}
+
+func TestOutputHonorsQuietMode(t *testing.T) {
+	setupTest(t)
+
+	SetQuiet(false)
+	visible := captureStdout(t, func() {
+		Output("hello %s", "world")
+	})
+	assert.Contains(t, visible, "hello world")
+
+	SetQuiet(true)
+	hidden := captureStdout(t, func() {
+		Output("should not %s", "appear")
+	})
+	assert.Empty(t, hidden)
+}

@@ -3,6 +3,9 @@ package main
 import (
 	"bytes"
 	"errors"
+	"io"
+	"os"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -286,5 +289,89 @@ func TestRunParseError(t *testing.T) {
 	deps, _, _ := newTestDeps()
 	if code := run([]string{"--unknown"}, deps); code != 2 {
 		t.Fatalf("expected exit code 2 for parse error, got %d", code)
+	}
+}
+
+func TestRunInitializesNilDependencies(t *testing.T) {
+	deps := cliDeps{
+		processorRun: func(string, string, string, bool, bool, bool, string, string, bool, bool, bool, bool, bool, string, int, bool) error {
+			t.Fatalf("processor should not execute in help mode")
+			return nil
+		},
+		newInitializer: func(string, bool, bool) initializerRunner {
+			return &fakeInitializer{}
+		},
+		absPath: func(p string) (string, error) { return p, nil },
+	}
+	if code := run([]string{"--help"}, deps); code != 0 {
+		t.Fatalf("expected success exit code, got %d", code)
+	}
+}
+
+func TestRunPropagatesProcessorError(t *testing.T) {
+	deps, _, stderr := newTestDeps()
+	deps.processorRun = func(string, string, string, bool, bool, bool, string, string, bool, bool, bool, bool, bool, string, int, bool) error {
+		return errors.New("boom")
+	}
+
+	if code := run([]string{}, deps); code != 1 {
+		t.Fatalf("expected failure exit code, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "boom") {
+		t.Fatalf("expected processor error in stderr, got %q", stderr.String())
+	}
+}
+
+func TestCustomUsageWithWriter(t *testing.T) {
+	var buf bytes.Buffer
+	customUsageWithWriter(&buf)
+	usage := buf.String()
+	if !strings.Contains(usage, "USAGE:") {
+		t.Fatalf("expected usage to mention USAGE section")
+	}
+	if !strings.Contains(usage, "UPDATE OPTIONS") {
+		t.Fatalf("expected usage to mention update options")
+	}
+}
+
+func TestCustomUsageWritesToStdout(t *testing.T) {
+	orig := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	os.Stdout = w
+	customUsage()
+	w.Close()
+	os.Stdout = orig
+
+	data, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	if len(data) == 0 {
+		t.Fatalf("expected customUsage to write output")
+	}
+}
+
+func TestDefaultCLIDepsProvidesConcreteDeps(t *testing.T) {
+	deps := defaultCLIDeps()
+	if deps.stdout == nil || deps.stderr == nil {
+		t.Fatalf("expected default deps to configure stdio")
+	}
+	if deps.usage == nil {
+		t.Fatalf("expected usage function to be set")
+	}
+	if deps.checkForUpdate == nil || deps.updater == nil {
+		t.Fatalf("expected update functions to be set")
+	}
+	if deps.processorRun == nil {
+		t.Fatalf("expected processor run function")
+	}
+	if deps.newInitializer == nil {
+		t.Fatalf("expected initializer factory")
+	}
+	if init := deps.newInitializer(".", false, true); init == nil {
+		t.Fatalf("expected initializer factory to return non-nil")
 	}
 }

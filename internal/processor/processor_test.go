@@ -1,13 +1,17 @@
 package processor
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/1broseidon/promptext/internal/filter"
 	"github.com/1broseidon/promptext/internal/format"
 	"github.com/1broseidon/promptext/internal/info"
+	"github.com/1broseidon/promptext/internal/log"
 	"github.com/1broseidon/promptext/internal/relevance"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -406,11 +410,11 @@ func TestPrioritizeFiles(t *testing.T) {
 // TestPreviewDirectory tests dry-run functionality
 func TestPreviewDirectory(t *testing.T) {
 	files := map[string]string{
-		"main.go":       "package main\nfunc main() {}",
-		"helper.go":     "package main\nfunc helper() {}",
-		"test_file.go":  "package main\nimport \"testing\"",
-		".gitignore":    "*.tmp",
-		"data.tmp":      "temporary data",
+		"main.go":      "package main\nfunc main() {}",
+		"helper.go":    "package main\nfunc helper() {}",
+		"test_file.go": "package main\nimport \"testing\"",
+		".gitignore":   "*.tmp",
+		"data.tmp":     "temporary data",
 	}
 
 	tmpDir := setupTestProject(t, files)
@@ -463,7 +467,7 @@ func TestCheckFilePermissions(t *testing.T) {
 	tmpFile, err := os.CreateTemp("", "test-*.txt")
 	require.NoError(t, err)
 	defer os.Remove(tmpFile.Name())
-	
+
 	tmpFile.WriteString("test content")
 	tmpFile.Close()
 
@@ -627,12 +631,12 @@ func TestBuildFileAnalysis(t *testing.T) {
 		"Markdown": 1,
 		"JSON":     1,
 	}
-	
+
 	totalSize := int64(1024)
 	entryPoints := []string{"main.go"}
 
 	analysis := buildFileAnalysis(fileTypes, totalSize, entryPoints)
-	
+
 	assert.NotEmpty(t, analysis)
 	assert.Contains(t, analysis, "Go")
 	assert.Contains(t, analysis, "main.go")
@@ -817,8 +821,8 @@ func TestLoadConfigurations(t *testing.T) {
 func TestFilterDirectoryTree(t *testing.T) {
 	// Create a sample directory tree
 	root := &format.DirectoryNode{
-		Name:     "root",
-		Type:     "dir",
+		Name: "root",
+		Type: "dir",
 		Children: []*format.DirectoryNode{
 			{
 				Name: "main.go",
@@ -1072,4 +1076,304 @@ func TestBuildGitSection(t *testing.T) {
 		output := buildGitSection(result)
 		assert.Empty(t, output)
 	})
+}
+
+func captureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	orig := os.Stdout
+	os.Stdout = w
+	fn()
+	w.Close()
+	os.Stdout = orig
+
+	data, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	return string(data)
+}
+
+func TestHandleOutputWritesFileQuiet(t *testing.T) {
+	result := &ProcessResult{
+		ProjectOutput: &format.ProjectOutput{
+			Files: []format.FileInfo{{Path: "main.go", Content: "package main"}},
+		},
+		TokenCount:       120,
+		ExcludedFiles:    2,
+		ExcludedFileList: []ExcludedFileInfo{{Path: "a.go", Tokens: 100}, {Path: "b.go", Tokens: 80}},
+	}
+
+	outFile := filepath.Join(t.TempDir(), "context.ptx")
+	output := captureStdout(t, func() {
+		if err := handleOutput("content", "ptx", outFile, "info", result, true, true); err != nil {
+			t.Fatalf("handleOutput error: %v", err)
+		}
+	})
+
+	data, err := os.ReadFile(outFile)
+	if err != nil {
+		t.Fatalf("read outFile: %v", err)
+	}
+	if string(data) != "content" {
+		t.Fatalf("unexpected file content: %s", data)
+	}
+	if !strings.Contains(output, "written=") || !strings.Contains(output, "excluded=2") {
+		t.Fatalf("unexpected quiet output: %s", output)
+	}
+}
+
+func TestHandleOutputSummaryNonQuiet(t *testing.T) {
+	result := &ProcessResult{
+		ProjectOutput: &format.ProjectOutput{
+			Files: []format.FileInfo{{Path: "file1", Content: "data"}},
+		},
+		TokenCount:    200,
+		ExcludedFiles: 6,
+		ExcludedFileList: []ExcludedFileInfo{
+			{Path: "a.go", Tokens: 50},
+			{Path: "b.go", Tokens: 40},
+			{Path: "c.go", Tokens: 30},
+			{Path: "d.go", Tokens: 20},
+			{Path: "e.go", Tokens: 10},
+			{Path: "f.go", Tokens: 5},
+		},
+	}
+
+	outFile := filepath.Join(t.TempDir(), "out.ptx")
+	output := captureStdout(t, func() {
+		if err := handleOutput("context", "ptx", outFile, "info", result, true, false); err != nil {
+			t.Fatalf("handleOutput error: %v", err)
+		}
+	})
+
+	if !strings.Contains(output, "Excluded 6 files") {
+		t.Fatalf("expected exclusion summary, got %s", output)
+	}
+	if !strings.Contains(output, "• a.go (~50 tokens)") {
+		t.Fatalf("expected detailed bullet list, got %s", output)
+	}
+}
+
+func TestRunGeneratesOutputFile(t *testing.T) {
+	projectDir := setupTestProject(t, map[string]string{
+		"main.go": "package main\nfunc main(){}",
+	})
+
+	outFile := filepath.Join(t.TempDir(), "output.md")
+	defer log.SetQuiet(false)
+
+	err := Run(projectDir, "", "", true, false, false, "markdown", outFile, false, true, true, false, true, "", 0, false)
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	data, err := os.ReadFile(outFile)
+	if err != nil {
+		t.Fatalf("read output: %v", err)
+	}
+	if len(data) == 0 {
+		t.Fatalf("expected output file to contain data")
+	}
+}
+
+func TestValidateFilePathSkipsExcludedAndDSStore(t *testing.T) {
+	dir := t.TempDir()
+	cfg := Config{
+		DirPath: dir,
+		Filter:  filter.New(filter.Options{UseDefaultRules: false, UseGitIgnore: false, Excludes: []string{"*.skip"}}),
+	}
+
+	path := filepath.Join(dir, "file.skip")
+	if err := os.WriteFile(path, []byte("data"), 0644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+
+	rel, err := validateFilePath(path, cfg)
+	if err != nil {
+		t.Fatalf("validateFilePath error: %v", err)
+	}
+	if rel != "" {
+		t.Fatalf("expected skip for excluded file, got %s", rel)
+	}
+
+	ds := filepath.Join(dir, ".DS_Store")
+	if err := os.WriteFile(ds, []byte("ignored"), 0644); err != nil {
+		t.Fatalf("write ds: %v", err)
+	}
+
+	rel, err = validateFilePath(ds, cfg)
+	if err != nil {
+		t.Fatalf("validate ds error: %v", err)
+	}
+	if rel != "" {
+		t.Fatalf("expected skip for .DS_Store, got %s", rel)
+	}
+}
+
+func TestCheckFilePermissionsFailures(t *testing.T) {
+	dir := t.TempDir()
+
+	if err := os.Mkdir(filepath.Join(dir, "subdir"), 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := checkFilePermissions(filepath.Join(dir, "subdir")); err == nil {
+		t.Fatalf("expected directory to be rejected")
+	}
+
+	noRead := filepath.Join(dir, "noread.txt")
+	if err := os.WriteFile(noRead, []byte("data"), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if err := os.Chmod(noRead, 0222); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	if err := checkFilePermissions(noRead); err == nil {
+		t.Fatalf("expected no read permissions error")
+	}
+
+	binary := filepath.Join(dir, "binary.bin")
+	if err := os.WriteFile(binary, []byte{0x00, 0x01, 0x02, 0x03}, 0644); err != nil {
+		t.Fatalf("write binary: %v", err)
+	}
+	if err := checkFilePermissions(binary); err == nil {
+		t.Fatalf("expected binary file to be rejected")
+	}
+}
+
+func TestProcessFileHandlesSkipsAndSuccess(t *testing.T) {
+	dir := t.TempDir()
+	cfg := Config{
+		DirPath: dir,
+		Filter:  filter.New(filter.Options{UseDefaultRules: false, UseGitIgnore: false, Excludes: []string{"*.skip"}}),
+	}
+
+	skipPath := filepath.Join(dir, "skip.skip")
+	if err := os.WriteFile(skipPath, []byte("data"), 0644); err != nil {
+		t.Fatalf("write skip: %v", err)
+	}
+	file, err := processFile(skipPath, cfg)
+	if err != nil {
+		t.Fatalf("process skip error: %v", err)
+	}
+	if file != nil {
+		t.Fatalf("expected skip to return nil file")
+	}
+
+	goodPath := filepath.Join(dir, "good.txt")
+	if err := os.WriteFile(goodPath, []byte("hello"), 0644); err != nil {
+		t.Fatalf("write good: %v", err)
+	}
+	cfg.Filter = filter.New(filter.Options{UseDefaultRules: false, UseGitIgnore: false})
+	file, err = processFile(goodPath, cfg)
+	if err != nil {
+		t.Fatalf("process good error: %v", err)
+	}
+	if file == nil || file.Path != "good.txt" || file.Content != "hello" {
+		t.Fatalf("unexpected file info: %+v", file)
+	}
+
+	missingPath := filepath.Join(dir, "missing.txt")
+	file, err = processFile(missingPath, cfg)
+	if err != nil {
+		t.Fatalf("process missing error: %v", err)
+	}
+	if file != nil {
+		t.Fatalf("expected nil file for missing content")
+	}
+}
+
+func TestFormatDryRunOutputSummarizesConfig(t *testing.T) {
+	dir := t.TempDir()
+	cfg := Config{
+		DirPath: dir,
+		Filter:  filter.New(filter.Options{UseDefaultRules: false, UseGitIgnore: false}),
+	}
+	paths := make([]string, 12)
+	for i := range paths {
+		paths[i] = fmt.Sprintf("file%d.go", i)
+	}
+	result := &DryRunResult{
+		FilePaths:       paths,
+		EstimatedTokens: 250,
+		ConfigSummary: &ConfigSummary{
+			Extensions:      []string{".go"},
+			Excludes:        []string{"vendor"},
+			UseGitIgnore:    true,
+			UseDefaultRules: true,
+			Format:          "markdown",
+			OutputFile:      "out.md",
+		},
+		ProjectInfo: &info.ProjectInfo{
+			Metadata: &info.ProjectMetadata{Name: "demo", Language: "Go"},
+		},
+	}
+
+	output := FormatDryRunOutput(result, cfg)
+	if !strings.Contains(output, "Would process: 12 files") {
+		t.Fatalf("expected file count in output\n%s", output)
+	}
+	if !strings.Contains(output, "Extensions: .go") {
+		t.Fatalf("expected extensions summary")
+	}
+	if !strings.Contains(output, "... and 2 more files") {
+		t.Fatalf("expected truncation summary")
+	}
+}
+
+func TestFormatDryRunOutputHandlesEmpty(t *testing.T) {
+	dir := t.TempDir()
+	cfg := Config{DirPath: dir}
+	result := &DryRunResult{
+		FilePaths:       []string{},
+		EstimatedTokens: 0,
+		ConfigSummary: &ConfigSummary{
+			Extensions:      []string{},
+			UseGitIgnore:    false,
+			UseDefaultRules: false,
+		},
+	}
+
+	output := FormatDryRunOutput(result, cfg)
+	if !strings.Contains(output, "No files would be processed") {
+		t.Fatalf("expected empty notice, got %s", output)
+	}
+}
+
+func TestHandleInfoOnlyQuietMode(t *testing.T) {
+	dir := t.TempDir()
+	cfg := Config{
+		DirPath: dir,
+		Filter:  filter.New(filter.Options{UseDefaultRules: false, UseGitIgnore: false}),
+	}
+	result := &ProcessResult{
+		ProjectOutput: &format.ProjectOutput{
+			Files:    []format.FileInfo{{Path: "main.go", Content: "package main"}},
+			Metadata: &format.Metadata{Language: "Go"},
+			GitInfo:  &format.GitInfo{Branch: "main"},
+		},
+		TokenCount: 5,
+		ProjectInfo: &info.ProjectInfo{
+			Metadata: &info.ProjectMetadata{Name: "demo", Language: "Go", Version: "1.0"},
+		},
+	}
+
+	info, err := handleInfoOnly(cfg, result, true, true)
+	if err != nil {
+		t.Fatalf("handleInfoOnly error: %v", err)
+	}
+	if info == "" {
+		t.Fatalf("expected summary content")
+	}
+}
+
+func TestRunDryRunMode(t *testing.T) {
+	dir := setupTestProject(t, map[string]string{"main.go": "package main"})
+	outFile := ""
+	if err := Run(dir, "", "", true, false, false, "markdown", outFile, false, true, true, true, true, "", 0, false); err != nil {
+		t.Fatalf("Run dry-run error: %v", err)
+	}
 }

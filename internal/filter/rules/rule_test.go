@@ -126,6 +126,13 @@ func TestMockRule_Implementation(t *testing.T) {
 	}
 }
 
+func TestBaseRule_ActionDirect(t *testing.T) {
+	base := &BaseRule{action: Skip}
+	if base.Action() != Skip {
+		t.Fatalf("expected Skip action, got %v", base.Action())
+	}
+}
+
 func BenchmarkBaseRule_Action(b *testing.B) {
 	rule := NewMockRule(types.Include, true)
 

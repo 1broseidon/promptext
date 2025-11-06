@@ -200,6 +200,58 @@ func TestInitializer_ConfigGeneration(t *testing.T) {
 	}
 }
 
+func TestInitializerRunCreatesConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	init := NewInitializer(tmpDir, false, true)
+
+	if err := init.Run(); err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+
+	if _, err := os.Stat(filepath.Join(tmpDir, ".promptext.yml")); err != nil {
+		t.Fatalf("expected config file to be created: %v", err)
+	}
+}
+
+func TestPromptConfirmFlow(t *testing.T) {
+	tmpDir := t.TempDir()
+	init := NewInitializer(tmpDir, false, false)
+
+	origStdin := os.Stdin
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	os.Stdin = r
+	t.Cleanup(func() {
+		os.Stdin = origStdin
+	})
+
+	// Provide invalid input followed by yes
+	go func() {
+		w.WriteString("maybe\ny\n")
+		w.Close()
+	}()
+
+	if !init.promptConfirm("overwrite?") {
+		t.Fatalf("expected prompt to eventually accept yes input")
+	}
+
+	r2, w2, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("pipe: %v", err)
+	}
+	os.Stdin = r2
+	go func() {
+		w2.WriteString("n\n")
+		w2.Close()
+	}()
+
+	if init.promptConfirm("cancel?") {
+		t.Fatalf("expected prompt to return false for no input")
+	}
+}
+
 // TestInitializer_IntegrationFullFlow tests the complete initialization flow end-to-end
 func TestInitializer_IntegrationFullFlow(t *testing.T) {
 	// This integration test validates the entire initialization flow:

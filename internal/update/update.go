@@ -20,10 +20,14 @@ import (
 )
 
 const (
-	githubAPIURL     = "https://api.github.com/repos/1broseidon/promptext/releases/latest"
 	githubReleaseURL = "https://github.com/1broseidon/promptext/releases/download"
 	downloadTimeout  = 5 * time.Minute
 	checkInterval    = 24 * time.Hour // Check for updates once per day
+)
+
+var (
+	githubAPIURL = "https://api.github.com/repos/1broseidon/promptext/releases/latest"
+	httpClient   = &http.Client{Timeout: 30 * time.Second}
 )
 
 var (
@@ -297,10 +301,6 @@ func replaceBinary(execPath, binaryPath string, verbose bool) error {
 
 // fetchLatestRelease queries GitHub API for latest release information
 func fetchLatestRelease() (*ReleaseInfo, error) {
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
 	req, err := http.NewRequest("GET", githubAPIURL, nil)
 	if err != nil {
 		return nil, err
@@ -310,7 +310,7 @@ func fetchLatestRelease() (*ReleaseInfo, error) {
 	req.Header.Set("User-Agent", "promptext-updater")
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
