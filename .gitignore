@@ -72,6 +72,7 @@ TEST_COVERAGE_*.md
 *_PLAN.md
 *_CHECKLIST.md
 coverage-dashboard.txt
+awesome-prs/
 
 # Test coverage
 coverage.out
