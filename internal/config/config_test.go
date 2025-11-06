@@ -310,3 +310,75 @@ func TestGetGlobalConfigPaths(t *testing.T) {
 		}
 	})
 }
+
+func TestParseCommaSeparated(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  []string
+	}{
+		{
+			name:  "empty string",
+			input: "",
+			want:  nil,
+		},
+		{
+			name:  "single value",
+			input: "value1",
+			want:  []string{"value1"},
+		},
+		{
+			name:  "multiple values",
+			input: "value1,value2,value3",
+			want:  []string{"value1", "value2", "value3"},
+		},
+		{
+			name:  "values with spaces",
+			input: "value 1,value 2,value 3",
+			want:  []string{"value 1", "value 2", "value 3"},
+		},
+		{
+			name:  "file extensions",
+			input: ".go,.js,.py",
+			want:  []string{".go", ".js", ".py"},
+		},
+		{
+			name:  "paths with commas",
+			input: "path/to/file,another/path",
+			want:  []string{"path/to/file", "another/path"},
+		},
+		{
+			name:  "single character values",
+			input: "a,b,c",
+			want:  []string{"a", "b", "c"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := parseCommaSeparated(tt.input)
+			if !stringSlicesEqual(got, tt.want) {
+				t.Errorf("parseCommaSeparated(%q) = %v, want %v", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+// Helper function to compare string slices
+func stringSlicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}

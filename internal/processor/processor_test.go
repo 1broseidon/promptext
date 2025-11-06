@@ -867,3 +867,209 @@ func TestFilterDirectoryTree(t *testing.T) {
 		assert.False(t, foundExcluded, "Should exclude excluded.go")
 	}
 }
+
+func TestBuildDependenciesSection(t *testing.T) {
+	tests := []struct {
+		name string
+		deps []string
+		want bool // whether output should be non-empty
+	}{
+		{
+			name: "with dependencies",
+			deps: []string{"github.com/stretchr/testify", "github.com/spf13/pflag"},
+			want: true,
+		},
+		{
+			name: "no dependencies",
+			deps: []string{},
+			want: false,
+		},
+		{
+			name: "nil dependencies",
+			deps: nil,
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := &ProcessResult{
+				ProjectOutput: &format.ProjectOutput{
+					Metadata: &format.Metadata{
+						Dependencies: tt.deps,
+					},
+				},
+			}
+
+			output := buildDependenciesSection(result)
+			if tt.want {
+				assert.Contains(t, output, "Dependencies")
+				for _, dep := range tt.deps {
+					assert.Contains(t, output, dep)
+				}
+			} else {
+				assert.Empty(t, output)
+			}
+		})
+	}
+
+	// Test with nil metadata
+	t.Run("nil metadata", func(t *testing.T) {
+		result := &ProcessResult{
+			ProjectOutput: &format.ProjectOutput{
+				Metadata: nil,
+			},
+		}
+		output := buildDependenciesSection(result)
+		assert.Empty(t, output)
+	})
+}
+
+func TestBuildHealthSection(t *testing.T) {
+	tests := []struct {
+		name   string
+		health *info.ProjectHealth
+		want   []string // strings that should be in output
+	}{
+		{
+			name: "healthy project",
+			health: &info.ProjectHealth{
+				HasReadme:  true,
+				HasLicense: true,
+				HasTests:   true,
+				HasCI:      true,
+				CISystem:   "GitHub Actions",
+			},
+			want: []string{"Project Health", "README: ✓", "LICENSE: ✓", "Tests: ✓", "CI/CD: ✓", "GitHub Actions"},
+		},
+		{
+			name: "minimal project",
+			health: &info.ProjectHealth{
+				HasReadme:  false,
+				HasLicense: false,
+				HasTests:   false,
+				HasCI:      false,
+			},
+			want: []string{"Project Health", "README: ✗", "LICENSE: ✗", "Tests: ✗", "CI/CD: ✗"},
+		},
+		{
+			name: "partial health",
+			health: &info.ProjectHealth{
+				HasReadme:  true,
+				HasLicense: false,
+				HasTests:   true,
+				HasCI:      false,
+			},
+			want: []string{"README: ✓", "LICENSE: ✗", "Tests: ✓", "CI/CD: ✗"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := &ProcessResult{
+				ProjectInfo: &info.ProjectInfo{
+					Metadata: &info.ProjectMetadata{
+						Health: tt.health,
+					},
+				},
+			}
+
+			output := buildHealthSection(result)
+			for _, expected := range tt.want {
+				assert.Contains(t, output, expected)
+			}
+		})
+	}
+
+	// Test with nil health
+	t.Run("nil health", func(t *testing.T) {
+		result := &ProcessResult{
+			ProjectInfo: &info.ProjectInfo{
+				Metadata: &info.ProjectMetadata{
+					Health: nil,
+				},
+			},
+		}
+		output := buildHealthSection(result)
+		assert.Empty(t, output)
+	})
+
+	// Test with nil metadata
+	t.Run("nil metadata", func(t *testing.T) {
+		result := &ProcessResult{
+			ProjectInfo: &info.ProjectInfo{
+				Metadata: nil,
+			},
+		}
+		output := buildHealthSection(result)
+		assert.Empty(t, output)
+	})
+}
+
+func TestBuildGitSection(t *testing.T) {
+	tests := []struct {
+		name    string
+		gitInfo *format.GitInfo
+		want    []string // strings that should be in output
+	}{
+		{
+			name: "full git info",
+			gitInfo: &format.GitInfo{
+				Branch:        "main",
+				CommitHash:    "abc123def456",
+				CommitMessage: "Add new feature",
+			},
+			want: []string{"Git Status", "Branch: main", "abc123d", "Add new feature"},
+		},
+		{
+			name: "short hash",
+			gitInfo: &format.GitInfo{
+				Branch:        "develop",
+				CommitHash:    "abc123",
+				CommitMessage: "Fix bug",
+			},
+			want: []string{"Branch: develop", "abc123", "Fix bug"},
+		},
+		{
+			name: "no commit message",
+			gitInfo: &format.GitInfo{
+				Branch:     "feature-branch",
+				CommitHash: "def456",
+			},
+			want: []string{"Branch: feature-branch", "def456"},
+		},
+		{
+			name: "no commit hash",
+			gitInfo: &format.GitInfo{
+				Branch: "main",
+			},
+			want: []string{"Branch: main"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := &ProcessResult{
+				ProjectOutput: &format.ProjectOutput{
+					GitInfo: tt.gitInfo,
+				},
+			}
+
+			output := buildGitSection(result)
+			for _, expected := range tt.want {
+				assert.Contains(t, output, expected)
+			}
+		})
+	}
+
+	// Test with nil git info
+	t.Run("nil git info", func(t *testing.T) {
+		result := &ProcessResult{
+			ProjectOutput: &format.ProjectOutput{
+				GitInfo: nil,
+			},
+		}
+		output := buildGitSection(result)
+		assert.Empty(t, output)
+	})
+}

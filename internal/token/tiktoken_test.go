@@ -278,4 +278,65 @@ func TestDebugTokenCount(t *testing.T) {
 	if tokens == 0 {
 		t.Errorf("DebugTokenCount returned 0 tokens")
 	}
+
+	// Test with empty string
+	emptyTokens := tc.DebugTokenCount("", "empty-test")
+	if emptyTokens != 0 {
+		t.Errorf("DebugTokenCount(\"\") returned %d tokens, want 0", emptyTokens)
+	}
+
+	// Test with longer text that will be previewed
+	longText := strings.Repeat("This is a test sentence that will be used to create a very long text. ", 10)
+	longTokens := tc.DebugTokenCount(longText, "long-test")
+	if longTokens == 0 {
+		t.Errorf("DebugTokenCount with long text returned 0 tokens")
+	}
+}
+
+func TestNewTokenCounter_EdgeCases(t *testing.T) {
+	// Just verify NewTokenCounter returns a usable counter
+	tc := NewTokenCounter()
+
+	if tc == nil {
+		t.Fatal("NewTokenCounter returned nil")
+	}
+
+	if tc.encodingName == "" {
+		t.Error("NewTokenCounter returned counter with empty encoding name")
+	}
+
+	// Verify it works regardless of fallback mode
+	tokens := tc.EstimateTokens("test")
+	if tokens == 0 {
+		t.Error("Counter should estimate >0 tokens for non-empty text")
+	}
+}
+
+func TestTokenCounter_GetEncodingName(t *testing.T) {
+	tc := NewTokenCounter()
+	name := tc.GetEncodingName()
+
+	if name == "" {
+		t.Error("GetEncodingName returned empty string")
+	}
+
+	// Should be either "cl100k_base" or "approximation"
+	if name != "cl100k_base" && name != "approximation" {
+		t.Errorf("GetEncodingName returned unexpected value: %q", name)
+	}
+}
+
+func TestTokenCounter_IsFallbackMode(t *testing.T) {
+	tc := NewTokenCounter()
+
+	// Just verify the method works
+	fallback := tc.IsFallbackMode()
+
+	// Should match encoding name
+	if fallback && tc.GetEncodingName() != "approximation" {
+		t.Error("IsFallbackMode is true but encoding name is not 'approximation'")
+	}
+	if !fallback && tc.GetEncodingName() != "cl100k_base" {
+		t.Error("IsFallbackMode is false but encoding name is not 'cl100k_base'")
+	}
 }
