@@ -68,6 +68,7 @@ CLAUDE.md
 
 # Test coverage
 coverage.out
+coverage.txt
 coverage.html
 
 # Temporary files
@@ -81,4 +82,4 @@ tmp/
 
 # Cache directories
 .cache/
-.tiktoken_cache/
+.tiktoken_cache/awesome-prs/
