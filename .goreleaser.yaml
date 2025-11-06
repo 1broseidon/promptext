@@ -1,0 +1,61 @@
+# GoReleaser configuration for promptext
+# Keep It Simple: https://goreleaser.com
+version: 2
+
+project_name: promptext
+
+# Build configuration
+builds:
+  - binary: prx
+    main: ./cmd/promptext
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.date={{.Date}}
+
+# Archive configuration
+archives:
+  - formats: ["tar.gz"]
+    format_overrides:
+      - goos: windows
+        formats: ["zip"]
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+# Checksum for verification
+checksum:
+  name_template: 'checksums.txt'
+
+# Changelog from git commits
+changelog:
+  sort: asc
+  use: github
+  groups:
+    - title: Features
+      regexp: '^.*?feat.*?:.*$'
+    - title: 'Bug Fixes'
+      regexp: '^.*?fix.*?:.*$'
+    - title: Others
+      order: 999
+
+# Homebrew tap
+homebrew_casks:
+  - name: promptext
+    repository:
+      owner: 1broseidon
+      name: homebrew-tap
+    homepage: "https://github.com/1broseidon/promptext"
+    description: "Smart code context extractor for AI assistants"
+    binaries:
+      - prx
