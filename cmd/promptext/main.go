@@ -1,8 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"log"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,7 +24,11 @@ var (
 
 // customUsage provides a modern, well-organized help text for the CLI
 func customUsage() {
-	fmt.Printf(`promptext %s - Smart code context extractor for AI assistants
+	customUsageWithWriter(os.Stdout)
+}
+
+func customUsageWithWriter(w io.Writer) {
+	fmt.Fprintf(w, `promptext %s - Smart code context extractor for AI assistants
 
 USAGE:
     prx [OPTIONS] [DIRECTORY]
@@ -169,115 +174,172 @@ DOCS:    https://1broseidon.github.io/promptext/
 `, version, version, date)
 }
 
-func main() {
-	// Set custom usage function
-	pflag.Usage = customUsage
+type initializerRunner interface {
+	Run() error
+}
 
-	// Define command line flags with improved descriptions
-	help := pflag.BoolP("help", "h", false, "Show this help message")
-	showVersion := pflag.BoolP("version", "v", false, "Show version information and exit")
+type initializerFactory func(root string, force bool, quiet bool) initializerRunner
 
-	// Update options
-	checkUpdate := pflag.Bool("check-update", false, "Check if a new version is available")
-	doUpdate := pflag.Bool("update", false, "Update to the latest version from GitHub")
+type processorFunc func(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string, debug bool, gitignore bool, useDefaultRules bool, dryRun bool, quiet bool, relevanceKeywords string, maxTokens int, explainSelection bool) error
 
-	// Initialization options
-	initConfig := pflag.Bool("init", false, "Initialize a new .promptext.yml config file with smart defaults")
-	forceInit := pflag.Bool("force", false, "Force overwrite of existing config (use with --init)")
+type cliDeps struct {
+	stdout         io.Writer
+	stderr         io.Writer
+	usage          func()
+	checkForUpdate func(string) (bool, string, error)
+	updater        func(string, bool) error
+	notifyUpdate   func(string)
+	newInitializer initializerFactory
+	processorRun   processorFunc
+	absPath        func(string) (string, error)
+}
 
-	// Input options
-	dirPath := pflag.StringP("directory", "d", ".", "Directory to process (default: current directory)")
-	extension := pflag.StringP("extension", "e", "", "File extensions to include (comma-separated, e.g., .go,.js,.py)")
-	gitignore := pflag.BoolP("gitignore", "g", true, "Use .gitignore patterns for filtering")
-	useDefaultRules := pflag.BoolP("use-default-rules", "u", true, "Use built-in filtering rules for common files")
+func defaultCLIDeps() cliDeps {
+	return cliDeps{
+		stdout:         os.Stdout,
+		stderr:         os.Stderr,
+		usage:          customUsage,
+		checkForUpdate: update.CheckForUpdate,
+		updater:        update.Update,
+		notifyUpdate:   update.CheckAndNotifyUpdate,
+		newInitializer: func(root string, force bool, quiet bool) initializerRunner {
+			return initializer.NewInitializer(root, force, quiet)
+		},
+		processorRun: processor.Run,
+		absPath:      filepath.Abs,
+	}
+}
 
-	// Filtering options
-	exclude := pflag.StringP("exclude", "x", "", "Patterns to exclude (comma-separated, e.g., vendor/,*.test.go)")
+func run(args []string, deps cliDeps) int {
+	if deps.stdout == nil {
+		deps.stdout = os.Stdout
+	}
+	if deps.stderr == nil {
+		deps.stderr = os.Stderr
+	}
+	if deps.usage == nil {
+		deps.usage = customUsage
+	}
+	if deps.checkForUpdate == nil {
+		deps.checkForUpdate = update.CheckForUpdate
+	}
+	if deps.updater == nil {
+		deps.updater = update.Update
+	}
+	if deps.notifyUpdate == nil {
+		deps.notifyUpdate = update.CheckAndNotifyUpdate
+	}
+	if deps.newInitializer == nil {
+		deps.newInitializer = func(root string, force bool, quiet bool) initializerRunner {
+			return initializer.NewInitializer(root, force, quiet)
+		}
+	}
+	if deps.processorRun == nil {
+		deps.processorRun = processor.Run
+	}
+	if deps.absPath == nil {
+		deps.absPath = filepath.Abs
+	}
 
-	// Output options
-	format := pflag.StringP("format", "f", "ptx", "Output format: ptx, toon, jsonl, toon-strict, markdown, md, or xml (default: ptx)")
-	outFile := pflag.StringP("output", "o", "", "Write output to file instead of clipboard")
-	noCopy := pflag.BoolP("no-copy", "n", false, "Don't copy output to clipboard")
-	infoOnly := pflag.BoolP("info", "i", false, "Show only project summary without file contents")
-	verbose := pflag.Bool("verbose", false, "Display full content in terminal while processing")
+	flagSet := pflag.NewFlagSet("promptext", pflag.ContinueOnError)
+	flagSet.SetOutput(deps.stderr)
+	flagSet.Usage = deps.usage
 
-	// Processing options
-	dryRun := pflag.Bool("dry-run", false, "Preview files that would be processed without reading content")
-	quiet := pflag.BoolP("quiet", "q", false, "Suppress non-essential output for scripting")
+	help := flagSet.BoolP("help", "h", false, "Show this help message")
+	showVersion := flagSet.BoolP("version", "v", false, "Show version information and exit")
 
-	// Relevance and token budget options
-	relevant := pflag.StringP("relevant", "r", "", "Keywords to prioritize files (comma or space separated, multi-factor scoring)")
-	maxTokens := pflag.Int("max-tokens", 0, "Maximum token budget for output (excludes lower-priority files when exceeded)")
-	explainSelection := pflag.Bool("explain-selection", false, "Show detailed priority scoring breakdown for file selection")
+	checkUpdate := flagSet.Bool("check-update", false, "Check if a new version is available")
+	doUpdate := flagSet.Bool("update", false, "Update to the latest version from GitHub")
 
-	// Debug options
-	debug := pflag.BoolP("debug", "D", false, "Enable debug logging and timing information")
+	initConfig := flagSet.Bool("init", false, "Initialize a new .promptext.yml config file with smart defaults")
+	forceInit := flagSet.Bool("force", false, "Force overwrite of existing config (use with --init)")
 
-	pflag.Parse()
+	dirPath := flagSet.StringP("directory", "d", ".", "Directory to process (default: current directory)")
+	extension := flagSet.StringP("extension", "e", "", "File extensions to include (comma-separated, e.g., .go,.js,.py)")
+	gitignore := flagSet.BoolP("gitignore", "g", true, "Use .gitignore patterns for filtering")
+	useDefaultRules := flagSet.BoolP("use-default-rules", "u", true, "Use built-in filtering rules for common files")
 
-	// Handle help and version flags
+	exclude := flagSet.StringP("exclude", "x", "", "Patterns to exclude (comma-separated, e.g., vendor/,*.test.go)")
+
+	format := flagSet.StringP("format", "f", "ptx", "Output format: ptx, toon, jsonl, toon-strict, markdown, md, or xml (default: ptx)")
+	outFile := flagSet.StringP("output", "o", "", "Write output to file instead of clipboard")
+	noCopy := flagSet.BoolP("no-copy", "n", false, "Don't copy output to clipboard")
+	infoOnly := flagSet.BoolP("info", "i", false, "Show only project summary without file contents")
+	verbose := flagSet.Bool("verbose", false, "Display full content in terminal while processing")
+
+	dryRun := flagSet.Bool("dry-run", false, "Preview files that would be processed without reading content")
+	quiet := flagSet.BoolP("quiet", "q", false, "Suppress non-essential output for scripting")
+
+	relevant := flagSet.StringP("relevant", "r", "", "Keywords to prioritize files (comma or space separated, multi-factor scoring)")
+	maxTokens := flagSet.Int("max-tokens", 0, "Maximum token budget for output (excludes lower-priority files when exceeded)")
+	explainSelection := flagSet.Bool("explain-selection", false, "Show detailed priority scoring breakdown for file selection")
+
+	debug := flagSet.BoolP("debug", "D", false, "Enable debug logging and timing information")
+
+	if err := flagSet.Parse(args); err != nil {
+		if errors.Is(err, pflag.ErrHelp) {
+			deps.usage()
+			return 0
+		}
+		return 2
+	}
+
 	if *help {
-		customUsage()
-		os.Exit(0)
+		deps.usage()
+		return 0
 	}
 	if *showVersion {
-		fmt.Printf("promptext version %s (%s)\n", version, date)
-		os.Exit(0)
+		fmt.Fprintf(deps.stdout, "promptext version %s (%s)\n", version, date)
+		return 0
 	}
 
-	// Handle update flags
 	if *checkUpdate {
-		available, latestVersion, err := update.CheckForUpdate(version)
+		available, latestVersion, err := deps.checkForUpdate(version)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error checking for updates: %v\n", err)
-			os.Exit(1)
+			fmt.Fprintf(deps.stderr, "Error checking for updates: %v\n", err)
+			return 1
 		}
 		if available {
-			fmt.Printf("A new version is available: %s (current: %s)\n", latestVersion, version)
-			fmt.Println("Run 'promptext --update' to update to the latest version")
+			fmt.Fprintf(deps.stdout, "A new version is available: %s (current: %s)\n", latestVersion, version)
+			fmt.Fprintln(deps.stdout, "Run 'promptext --update' to update to the latest version")
 		} else {
-			fmt.Printf("You are running the latest version (%s)\n", version)
+			fmt.Fprintf(deps.stdout, "You are running the latest version (%s)\n", version)
 		}
-		os.Exit(0)
+		return 0
 	}
 
 	if *doUpdate {
-		if err := update.Update(version, true); err != nil {
-			fmt.Fprintf(os.Stderr, "Error updating: %v\n", err)
-			os.Exit(1)
+		if err := deps.updater(version, true); err != nil {
+			fmt.Fprintf(deps.stderr, "Error updating: %v\n", err)
+			return 1
 		}
-		os.Exit(0)
+		return 0
 	}
 
-	// Handle initialization flag
 	if *initConfig {
-		// Get absolute path
-		absPath, err := filepath.Abs(*dirPath)
+		absPath, err := deps.absPath(*dirPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error resolving directory path: %v\n", err)
-			os.Exit(1)
+			fmt.Fprintf(deps.stderr, "Error resolving directory path: %v\n", err)
+			return 1
 		}
 
-		// Create and run initializer
-		init := initializer.NewInitializer(absPath, *forceInit, *quiet)
+		init := deps.newInitializer(absPath, *forceInit, *quiet)
 		if err := init.Run(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error initializing config: %v\n", err)
-			os.Exit(1)
+			fmt.Fprintf(deps.stderr, "Error initializing config: %v\n", err)
+			return 1
 		}
-		os.Exit(0)
+		return 0
 	}
 
-	// Automatic update check (non-blocking, silently fails on network issues)
-	// Only runs during normal operation, not for update/version/help commands
-	go update.CheckAndNotifyUpdate(version)
-
-	// Handle positional argument for directory
-	args := pflag.Args()
-	if len(args) > 0 {
-		*dirPath = args[0]
+	if deps.notifyUpdate != nil {
+		go deps.notifyUpdate(version)
 	}
 
-	// Format auto-detection from output file extension
+	positional := flagSet.Args()
+	if len(positional) > 0 {
+		*dirPath = positional[0]
+	}
+
 	if *outFile != "" {
 		ext := strings.ToLower(filepath.Ext(*outFile))
 		detectedFormat := ""
@@ -285,28 +347,30 @@ func main() {
 		case ".ptx":
 			detectedFormat = "ptx"
 		case ".toon":
-			detectedFormat = "toon" // Maps to PTX for backward compatibility
+			detectedFormat = "toon"
 		case ".md", ".markdown":
 			detectedFormat = "markdown"
 		case ".xml":
 			detectedFormat = "xml"
 		}
 
-		// Check for format conflict and warn
 		if detectedFormat != "" && *format != detectedFormat {
-			// User explicitly set format flag
-			formatFlag := pflag.Lookup("format")
-			if formatFlag.Changed {
-				// Warn about conflict
-				fmt.Fprintf(os.Stderr, "⚠️  Warning: format flag '%s' conflicts with output extension '%s' - using '%s' (flag takes precedence)\n", *format, ext, *format)
+			formatFlag := flagSet.Lookup("format")
+			if formatFlag != nil && formatFlag.Changed {
+				fmt.Fprintf(deps.stderr, "⚠️  Warning: format flag '%s' conflicts with output extension '%s' - using '%s' (flag takes precedence)\n", *format, ext, *format)
 			} else {
-				// Auto-detect format from extension since flag wasn't explicitly set
 				*format = detectedFormat
 			}
 		}
 	}
 
-	if err := processor.Run(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose, *format, *outFile, *debug, *gitignore, *useDefaultRules, *dryRun, *quiet, *relevant, *maxTokens, *explainSelection); err != nil {
-		log.Fatal(err)
+	if err := deps.processorRun(*dirPath, *extension, *exclude, *noCopy, *infoOnly, *verbose, *format, *outFile, *debug, *gitignore, *useDefaultRules, *dryRun, *quiet, *relevant, *maxTokens, *explainSelection); err != nil {
+		fmt.Fprintf(deps.stderr, "%v\n", err)
+		return 1
 	}
+	return 0
+}
+
+func main() {
+	os.Exit(run(os.Args[1:], defaultCLIDeps()))
 }

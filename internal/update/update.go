@@ -26,6 +26,22 @@ const (
 	checkInterval    = 24 * time.Hour // Check for updates once per day
 )
 
+var (
+	fetchLatestReleaseFn   = fetchLatestRelease
+	downloadFileFn         = downloadFile
+	verifyChecksumFn       = verifyChecksum
+	extractBinaryFn        = extractBinary
+	getExecutablePathFn    = getExecutablePath
+	getPlatformAssetNameFn = getPlatformAssetName
+	findReleaseAssetsFn    = findReleaseAssets
+	replaceBinaryFn        = replaceBinary
+	checkForUpdateFn       = CheckForUpdate
+	loadUpdateCacheFn      = loadUpdateCache
+	saveUpdateCacheFn      = saveUpdateCache
+	copyFileFn             = copyFile
+	getCacheDirFn          = getCacheDir
+)
+
 // ReleaseInfo represents GitHub release metadata
 type ReleaseInfo struct {
 	TagName string `json:"tag_name"`
@@ -52,7 +68,7 @@ func CheckForUpdate(currentVersion string) (available bool, latestVersion string
 	}
 
 	// Fetch latest release info
-	release, err := fetchLatestRelease()
+	release, err := fetchLatestReleaseFn()
 	if err != nil {
 		return false, "", fmt.Errorf("failed to fetch latest release: %w", err)
 	}
@@ -71,7 +87,7 @@ func CheckForUpdate(currentVersion string) (available bool, latestVersion string
 // Update downloads and installs the latest version
 func Update(currentVersion string, verbose bool) error {
 	// Check if update is available
-	available, latestVersion, err := CheckForUpdate(currentVersion)
+	available, latestVersion, err := checkForUpdateFn(currentVersion)
 	if err != nil {
 		return err
 	}
@@ -88,23 +104,23 @@ func Update(currentVersion string, verbose bool) error {
 	}
 
 	// Get current executable path
-	execPath, err := getExecutablePath()
+	execPath, err := getExecutablePathFn()
 	if err != nil {
 		return err
 	}
 
 	// Fetch release info and find assets
-	release, err := fetchLatestRelease()
+	release, err := fetchLatestReleaseFn()
 	if err != nil {
 		return fmt.Errorf("failed to fetch release info: %w", err)
 	}
 
-	assetName, err := getPlatformAssetName()
+	assetName, err := getPlatformAssetNameFn()
 	if err != nil {
 		return fmt.Errorf("unsupported platform: %w", err)
 	}
 
-	downloadURL, checksumURL, err := findReleaseAssets(release, assetName)
+	downloadURL, checksumURL, err := findReleaseAssetsFn(release, assetName)
 	if err != nil {
 		return err
 	}
@@ -116,7 +132,7 @@ func Update(currentVersion string, verbose bool) error {
 	}
 
 	// Replace current binary with new one
-	if err := replaceBinary(execPath, binaryPath, verbose); err != nil {
+	if err := replaceBinaryFn(execPath, binaryPath, verbose); err != nil {
 		return err
 	}
 
@@ -173,7 +189,7 @@ func downloadAndVerifyBinary(downloadURL, checksumURL, assetName string, verbose
 	if verbose {
 		fmt.Printf("Downloading %s...\n", assetName)
 	}
-	if err := downloadFile(archivePath, downloadURL); err != nil {
+	if err := downloadFileFn(archivePath, downloadURL); err != nil {
 		return "", fmt.Errorf("failed to download update: %w", err)
 	}
 
@@ -183,10 +199,10 @@ func downloadAndVerifyBinary(downloadURL, checksumURL, assetName string, verbose
 			fmt.Println("Verifying checksum...")
 		}
 		checksumPath := filepath.Join(tempDir, "checksums.txt")
-		if err := downloadFile(checksumPath, checksumURL); err != nil {
+		if err := downloadFileFn(checksumPath, checksumURL); err != nil {
 			return "", fmt.Errorf("failed to download checksums: %w", err)
 		}
-		if err := verifyChecksum(archivePath, checksumPath, assetName); err != nil {
+		if err := verifyChecksumFn(archivePath, checksumPath, assetName); err != nil {
 			return "", fmt.Errorf("checksum verification failed: %w", err)
 		}
 		if verbose {
@@ -198,7 +214,7 @@ func downloadAndVerifyBinary(downloadURL, checksumURL, assetName string, verbose
 	if verbose {
 		fmt.Println("Extracting archive...")
 	}
-	binaryPath, err := extractBinary(archivePath, tempDir)
+	binaryPath, err := extractBinaryFn(archivePath, tempDir)
 	if err != nil {
 		return "", fmt.Errorf("failed to extract binary: %w", err)
 	}
@@ -214,7 +230,7 @@ func downloadAndVerifyBinary(downloadURL, checksumURL, assetName string, verbose
 	// This survives the defer cleanup of tempDir
 	sysTempDir := os.TempDir()
 	permanentPath := filepath.Join(sysTempDir, "promptext-new-binary")
-	if err := copyFile(binaryPath, permanentPath); err != nil {
+	if err := copyFileFn(binaryPath, permanentPath); err != nil {
 		return "", fmt.Errorf("failed to copy binary: %w", err)
 	}
 
@@ -265,7 +281,7 @@ func replaceBinary(execPath, binaryPath string, verbose bool) error {
 
 	// Copy new binary to executable path
 	// We use copy instead of rename because binaryPath might be on a different filesystem
-	if err := copyFile(binaryPath, execPath); err != nil {
+	if err := copyFileFn(binaryPath, execPath); err != nil {
 		// Rollback: restore backup
 		os.Rename(backupPath, execPath)
 		return fmt.Errorf("failed to install new binary: %w", err)
@@ -573,7 +589,7 @@ func CheckAndNotifyUpdate(currentVersion string) {
 	}
 
 	// Check cache first to avoid excessive API calls
-	cache, err := loadUpdateCache()
+	cache, err := loadUpdateCacheFn()
 	if err == nil && time.Since(cache.LastCheck) < checkInterval {
 		// Recent check exists, use cached result
 		if cache.UpdateAvailable {
@@ -596,7 +612,7 @@ func CheckAndNotifyUpdate(currentVersion string) {
 		LatestVersion:   latestVersion,
 		UpdateAvailable: available,
 	}
-	saveUpdateCache(newCache) // Ignore errors
+	saveUpdateCacheFn(newCache) // Ignore errors
 
 	// Notify user if update is available
 	if available {
@@ -617,7 +633,7 @@ func checkForUpdateWithTimeout(currentVersion string, timeout time.Duration) (bo
 
 	// Run check in goroutine
 	go func() {
-		available, version, err := CheckForUpdate(currentVersion)
+		available, version, err := checkForUpdateFn(currentVersion)
 		ch <- result{available, version, err}
 	}()
 
@@ -674,7 +690,7 @@ func getCacheDir() (string, error) {
 
 // loadUpdateCache loads the cached update check information
 func loadUpdateCache() (*UpdateCheckCache, error) {
-	cacheDir, err := getCacheDir()
+	cacheDir, err := getCacheDirFn()
 	if err != nil {
 		return nil, err
 	}
@@ -695,7 +711,7 @@ func loadUpdateCache() (*UpdateCheckCache, error) {
 
 // saveUpdateCache saves the update check cache
 func saveUpdateCache(cache UpdateCheckCache) error {
-	cacheDir, err := getCacheDir()
+	cacheDir, err := getCacheDirFn()
 	if err != nil {
 		return err
 	}
