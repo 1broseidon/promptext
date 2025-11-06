@@ -6,7 +6,7 @@ project_name: promptext
 
 # Build configuration
 builds:
-  - binary: prx
+  - binary: promptext
     main: ./cmd/promptext
     env:
       - CGO_ENABLED=0
@@ -28,6 +28,15 @@ archives:
     format_overrides:
       - goos: windows
         formats: ["zip"]
+    # Match existing naming: promptext_Darwin_x86_64.tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- if eq .Os "darwin" }}Darwin
+      {{- else if eq .Os "linux" }}Linux
+      {{- else if eq .Os "windows" }}Windows
+      {{- else }}{{ .Os }}{{ end }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
     files:
       - README.md
       - LICENSE
@@ -58,4 +67,4 @@ homebrew_casks:
     homepage: "https://github.com/1broseidon/promptext"
     description: "Smart code context extractor for AI assistants"
     binaries:
-      - prx
+      - promptext

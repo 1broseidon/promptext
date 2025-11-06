@@ -42,12 +42,9 @@ function Get-OSInfo {
 function Get-AssetUrl {
     param($Release)
     $osInfo = Get-OSInfo
-    # GoReleaser uses lowercase "windows" and formats like: promptext_0.5.3_windows_amd64.zip
-    # But for "latest" download URLs, version is omitted
     $patterns = @(
-        "promptext_windows_$($osInfo.Arch).zip",
-        "promptext_Windows_$($osInfo.Arch).zip",
-        "promptext-windows-$($osInfo.Arch).zip"
+        "promptext_$($osInfo.OS)_$($osInfo.Arch).zip",
+        "promptext-$($osInfo.OS)-$($osInfo.Arch).zip"
     )
     
     Write-Host "Looking for release assets:" -ForegroundColor Yellow
@@ -173,18 +170,18 @@ try {
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         $zip = [System.IO.Compression.ZipFile]::OpenRead($zipPath)
         
-        # Find the executable entry (GoReleaser builds it as "prx.exe")
+        # Find the executable entry
         $exeEntry = $zip.Entries | Where-Object {
-            $_.Name -eq "prx.exe" -and
+            $_.Name -eq "promptext.exe" -and
             -not $_.FullName.Contains("../") -and
             -not $_.FullName.StartsWith("/")
         } | Select-Object -First 1
 
         if (-not $exeEntry) {
-            throw "Could not find valid prx.exe in the archive"
+            throw "Could not find valid promptext.exe in the archive"
         }
 
-        # Extract the executable and rename to promptext.exe
+        # Extract the executable
         $exePath = Join-Path $defaultInstallDir "promptext.exe"
         [System.IO.Compression.ZipFileExtensions]::ExtractToFile($exeEntry, $exePath, $true)
         
