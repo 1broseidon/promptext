@@ -6,6 +6,10 @@ import (
 	"testing"
 
 	"github.com/1broseidon/promptext/internal/filter"
+	"github.com/1broseidon/promptext/internal/format"
+	"github.com/1broseidon/promptext/internal/relevance"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func setupTestProject(t *testing.T, files map[string]string) string {
@@ -193,4 +197,280 @@ func main() {}`,
 		t.Errorf("Expected primary language Go, got %s",
 			result.ProjectOutput.Metadata.Language)
 	}
+}
+
+// TestParseCommaSeparated tests the input parsing utility
+func TestParseCommaSeparated(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{
+			name:     "empty string",
+			input:    "",
+			expected: nil,
+		},
+		{
+			name:     "single value",
+			input:    "value",
+			expected: []string{"value"},
+		},
+		{
+			name:     "comma separated",
+			input:    "val1,val2,val3",
+			expected: []string{"val1", "val2", "val3"},
+		},
+		{
+			name:     "with spaces",
+			input:    "val1 , val2 , val3",
+			expected: []string{"val1 ", " val2 ", " val3"},
+		},
+		{
+			name:     "mixed delimiters",
+			input:    "val1, val2 val3",
+			expected: []string{"val1", " val2 val3"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ParseCommaSeparated(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestFormatTokenCount tests token count formatting
+func TestFormatTokenCount(t *testing.T) {
+	tests := []struct {
+		name     string
+		tokens   int
+		expected string
+	}{
+		{
+			name:     "zero tokens",
+			tokens:   0,
+			expected: "0",
+		},
+		{
+			name:     "small number",
+			tokens:   999,
+			expected: "999",
+		},
+		{
+			name:     "thousands",
+			tokens:   1500,
+			expected: "1,500",
+		},
+		{
+			name:     "large number",
+			tokens:   1234567,
+			expected: "1,234,567",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatTokenCount(tt.tokens)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestFormatSize tests file size formatting
+func TestFormatSize(t *testing.T) {
+	tests := []struct {
+		name     string
+		bytes    int64
+		expected string
+	}{
+		{
+			name:     "zero bytes",
+			bytes:    0,
+			expected: "0 B",
+		},
+		{
+			name:     "bytes",
+			bytes:    512,
+			expected: "512 B",
+		},
+		{
+			name:     "kilobytes",
+			bytes:    2048,
+			expected: "2.0 KB",
+		},
+		{
+			name:     "megabytes",
+			bytes:    1048576,
+			expected: "1.0 MB",
+		},
+		{
+			name:     "gigabytes",
+			bytes:    1073741824,
+			expected: "1.0 GB",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatSize(tt.bytes)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestDetectEntryPoints tests entry point detection
+func TestDetectEntryPoints(t *testing.T) {
+	tests := []struct {
+		name          string
+		files         []format.FileInfo
+		expectedCount int
+		shouldContain []string
+	}{
+		{
+			name: "main.go entry point",
+			files: []format.FileInfo{
+				{Path: "main.go"},
+				{Path: "helper.go"},
+			},
+			expectedCount: 1,
+			shouldContain: []string{"main.go"},
+		},
+		{
+			name: "index.js entry point",
+			files: []format.FileInfo{
+				{Path: "src/index.js"},
+				{Path: "src/utils.js"},
+			},
+			expectedCount: 1,
+			shouldContain: []string{"src/index.js"},
+		},
+		{
+			name: "multiple entry points",
+			files: []format.FileInfo{
+				{Path: "cmd/app1/main.go"},
+				{Path: "cmd/app2/main.go"},
+				{Path: "pkg/lib.go"},
+			},
+			expectedCount: 2,
+			shouldContain: []string{"cmd/app1/main.go", "cmd/app2/main.go"},
+		},
+		{
+			name: "no entry points",
+			files: []format.FileInfo{
+				{Path: "util.go"},
+				{Path: "helper.go"},
+			},
+			expectedCount: 0,
+			shouldContain: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := detectEntryPoints(tt.files)
+			assert.Equal(t, tt.expectedCount, len(result))
+			for _, path := range tt.shouldContain {
+				assert.True(t, result[path], "Expected %s to be an entry point", path)
+			}
+		})
+	}
+}
+
+// TestPrioritizeFiles tests file prioritization logic
+func TestPrioritizeFiles(t *testing.T) {
+	scorer := relevance.NewScorer("auth login")
+
+	files := []format.FileInfo{
+		{Path: "auth/handler.go", Tokens: 100},
+		{Path: "login/service.go", Tokens: 150},
+		{Path: "utils/helper.go", Tokens: 50},
+		{Path: "main.go", Tokens: 200},
+	}
+
+	entryPoints := map[string]bool{
+		"main.go": true,
+	}
+
+	result := prioritizeFiles(files, scorer, entryPoints)
+
+	// Verify result is not empty
+	assert.NotEmpty(t, result)
+
+	// Result should be sorted
+	assert.Len(t, result, len(files))
+}
+
+// TestPreviewDirectory tests dry-run functionality
+func TestPreviewDirectory(t *testing.T) {
+	files := map[string]string{
+		"main.go":       "package main\nfunc main() {}",
+		"helper.go":     "package main\nfunc helper() {}",
+		"test_file.go":  "package main\nimport \"testing\"",
+		".gitignore":    "*.tmp",
+		"data.tmp":      "temporary data",
+	}
+
+	tmpDir := setupTestProject(t, files)
+	defer os.RemoveAll(tmpDir)
+
+	config := Config{
+		DirPath: tmpDir,
+		Filter: filter.New(filter.Options{
+			UseDefaultRules: true,
+			UseGitIgnore:    true,
+		}),
+	}
+
+	result, err := PreviewDirectory(config)
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+
+	// Should include some files
+	assert.NotEmpty(t, result.FilePaths)
+
+	// Should have estimated tokens
+	assert.Greater(t, result.EstimatedTokens, 0)
+
+	// Should have config summary
+	assert.NotNil(t, result.ConfigSummary)
+}
+
+// TestValidateFilePath tests path validation
+func TestValidateFilePath(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "promptext-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	config := Config{
+		DirPath: tmpDir,
+		Filter: filter.New(filter.Options{
+			UseDefaultRules: true,
+		}),
+	}
+
+	// Test with valid path
+	absPath, err := validateFilePath(tmpDir, config)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, absPath)
+}
+
+// TestCheckFilePermissions tests permission checking
+func TestCheckFilePermissions(t *testing.T) {
+	// Create a readable file
+	tmpFile, err := os.CreateTemp("", "test-*.txt")
+	require.NoError(t, err)
+	defer os.Remove(tmpFile.Name())
+	
+	tmpFile.WriteString("test content")
+	tmpFile.Close()
+
+	// Test readable file
+	err = checkFilePermissions(tmpFile.Name())
+	assert.NoError(t, err)
+
+	// Test non-existent file
+	err = checkFilePermissions("/nonexistent/file.txt")
+	assert.Error(t, err)
 }
