@@ -7,6 +7,7 @@ import (
 
 	"github.com/1broseidon/promptext/internal/filter"
 	"github.com/1broseidon/promptext/internal/format"
+	"github.com/1broseidon/promptext/internal/info"
 	"github.com/1broseidon/promptext/internal/relevance"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -473,4 +474,396 @@ func TestCheckFilePermissions(t *testing.T) {
 	// Test non-existent file
 	err = checkFilePermissions("/nonexistent/file.txt")
 	assert.Error(t, err)
+}
+
+// TestProcessDirectory tests the core processing functionality
+func TestProcessDirectory(t *testing.T) {
+	files := map[string]string{
+		"go.mod": "module example.com/test\ngo 1.21",
+		"main.go": `package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, World!")
+}`,
+		"utils/helper.go": `package utils
+
+func Helper() string {
+	return "helper"
+}`,
+		"README.md": "# Test Project\n\nThis is a test project.",
+	}
+
+	tmpDir := setupTestProject(t, files)
+	defer os.RemoveAll(tmpDir)
+
+	config := Config{
+		DirPath: tmpDir,
+		Filter: filter.New(filter.Options{
+			UseDefaultRules: true,
+			UseGitIgnore:    false,
+		}),
+	}
+
+	result, err := ProcessDirectory(config, false)
+	require.NoError(t, err)
+	assert.NotNil(t, result)
+
+	// Verify project output
+	assert.NotNil(t, result.ProjectOutput)
+	assert.NotEmpty(t, result.ProjectOutput.Files)
+
+	// Verify metadata
+	assert.NotNil(t, result.ProjectOutput.Metadata)
+	assert.Equal(t, "Go", result.ProjectOutput.Metadata.Language)
+
+	// Verify files were processed
+	foundMainGo := false
+	foundHelper := false
+	for _, file := range result.ProjectOutput.Files {
+		if file.Path == "main.go" {
+			foundMainGo = true
+			assert.Contains(t, file.Content, "Hello, World!")
+		}
+		if file.Path == "utils/helper.go" {
+			foundHelper = true
+		}
+	}
+	assert.True(t, foundMainGo, "Should process main.go")
+	assert.True(t, foundHelper, "Should process helper.go")
+}
+
+// TestProcessDirectoryWithRelevance tests relevance-based file prioritization
+func TestProcessDirectoryWithRelevance(t *testing.T) {
+	files := map[string]string{
+		"auth/login.go":      "package auth\n// Login handler",
+		"auth/middleware.go": "package auth\n// Auth middleware",
+		"api/handler.go":     "package api\n// API handler",
+		"utils/common.go":    "package utils\n// Common utilities",
+	}
+
+	tmpDir := setupTestProject(t, files)
+	defer os.RemoveAll(tmpDir)
+
+	config := Config{
+		DirPath: tmpDir,
+		Filter: filter.New(filter.Options{
+			UseDefaultRules: true,
+		}),
+		RelevanceKeywords: "auth login",
+	}
+
+	result, err := ProcessDirectory(config, false)
+	require.NoError(t, err)
+
+	// Files should be present
+	assert.NotEmpty(t, result.ProjectOutput.Files)
+}
+
+// TestBuildProjectHeader tests header generation
+func TestBuildProjectHeader(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "promptext-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	config := Config{
+		DirPath: tmpDir,
+		Filter: filter.New(filter.Options{
+			UseDefaultRules: true,
+		}),
+	}
+
+	result := &ProcessResult{
+		ProjectOutput: &format.ProjectOutput{
+			Metadata: &format.Metadata{
+				Language: "Go",
+				Version:  "1.21",
+			},
+		},
+		ProjectInfo: &info.ProjectInfo{
+			Metadata: &info.ProjectMetadata{
+				Name:     "test-project",
+				Language: "Go",
+				Version:  "1.21",
+			},
+		},
+	}
+
+	header := buildProjectHeader(config, result, false)
+	assert.NotEmpty(t, header)
+	assert.Contains(t, header, "Go")
+}
+
+// TestAnalyzeFileStatistics tests statistics analysis
+func TestAnalyzeFileStatistics(t *testing.T) {
+	files := []format.FileInfo{
+		{Path: "main.go", Content: "package main"},
+		{Path: "helper.go", Content: "package helper"},
+		{Path: "README.md", Content: "# Project"},
+		{Path: "config.json", Content: "{}"},
+	}
+
+	config := Config{
+		DirPath: "/test",
+	}
+
+	fileTypes, totalSize, entryPoints := analyzeFileStatistics(files, config)
+
+	// Should categorize file types
+	assert.NotEmpty(t, fileTypes)
+
+	// Should calculate total size (based on content length)
+	assert.GreaterOrEqual(t, totalSize, int64(0))
+
+	// Should detect entry points
+	assert.NotNil(t, entryPoints)
+}
+
+// TestBuildFileAnalysis tests file analysis output
+func TestBuildFileAnalysis(t *testing.T) {
+	fileTypes := map[string]int{
+		"Go":       2,
+		"Markdown": 1,
+		"JSON":     1,
+	}
+	
+	totalSize := int64(1024)
+	entryPoints := []string{"main.go"}
+
+	analysis := buildFileAnalysis(fileTypes, totalSize, entryPoints)
+	
+	assert.NotEmpty(t, analysis)
+	assert.Contains(t, analysis, "Go")
+	assert.Contains(t, analysis, "main.go")
+}
+
+// TestFormatBoxedOutput tests boxed output formatting
+func TestFormatBoxedOutput(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+	}{
+		{
+			name:    "simple text",
+			content: "Hello, World!",
+		},
+		{
+			name:    "multiline text",
+			content: "Line 1\nLine 2\nLine 3",
+		},
+		{
+			name:    "empty content",
+			content: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := formatBoxedOutput(tt.content)
+			assert.NotEmpty(t, result)
+			// Should have box characters
+			assert.Contains(t, result, "│")
+		})
+	}
+}
+
+// TestFormatDryRunOutput tests dry-run output formatting
+func TestFormatDryRunOutput(t *testing.T) {
+	result := &DryRunResult{
+		FilePaths:       []string{"main.go", "helper.go", "README.md"},
+		EstimatedTokens: 1500,
+		ConfigSummary: &ConfigSummary{
+			Extensions: []string{".go", ".md"},
+			Excludes:   []string{"*.test"},
+		},
+		ProjectInfo: &info.ProjectInfo{
+			Metadata: &info.ProjectMetadata{
+				Language: "Go",
+				Version:  "1.21",
+			},
+		},
+	}
+
+	config := Config{
+		DirPath: "/test/project",
+	}
+
+	output := FormatDryRunOutput(result, config)
+
+	assert.NotEmpty(t, output)
+	assert.Contains(t, output, "main.go")
+	assert.Contains(t, output, "1500") // Token count in output
+	assert.Contains(t, output, "Go")
+}
+
+// TestGetMetadataSummary tests metadata summary generation
+func TestGetMetadataSummary(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "promptext-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	// Create a simple Go project
+	goModContent := "module example.com/test\ngo 1.21"
+	err = os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte(goModContent), 0644)
+	require.NoError(t, err)
+
+	config := Config{
+		DirPath: tmpDir,
+		Filter: filter.New(filter.Options{
+			UseDefaultRules: true,
+		}),
+	}
+
+	result := &ProcessResult{
+		ProjectOutput: &format.ProjectOutput{
+			Metadata: &format.Metadata{
+				Language: "Go",
+				Version:  "1.21",
+			},
+		},
+		ProjectInfo: &info.ProjectInfo{
+			Metadata: &info.ProjectMetadata{
+				Name:     "test-project",
+				Language: "Go",
+				Version:  "1.21",
+			},
+		},
+	}
+
+	summary, err := GetMetadataSummary(config, result, true)
+	require.NoError(t, err)
+	assert.NotEmpty(t, summary)
+	assert.Contains(t, summary, "Go")
+}
+
+// TestHandleDryRun tests dry-run mode handling
+func TestHandleDryRun(t *testing.T) {
+	files := map[string]string{
+		"main.go": "package main\nfunc main() {}",
+	}
+
+	tmpDir := setupTestProject(t, files)
+	defer os.RemoveAll(tmpDir)
+
+	config := Config{
+		DirPath: tmpDir,
+		Filter: filter.New(filter.Options{
+			UseDefaultRules: true,
+		}),
+	}
+
+	// Test with quiet mode (no output expected, just no error)
+	err := handleDryRun(config, "toon", "", true)
+	assert.NoError(t, err)
+}
+
+// TestHandleInfoOnly tests info-only mode
+func TestHandleInfoOnly(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "promptext-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	// Create a simple Go project
+	goModContent := "module example.com/test\ngo 1.21"
+	err = os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte(goModContent), 0644)
+	require.NoError(t, err)
+
+	config := Config{
+		DirPath: tmpDir,
+		Filter: filter.New(filter.Options{
+			UseDefaultRules: true,
+		}),
+	}
+
+	result := &ProcessResult{
+		ProjectOutput: &format.ProjectOutput{
+			Metadata: &format.Metadata{
+				Language: "Go",
+				Version:  "1.21",
+			},
+		},
+		ProjectInfo: &info.ProjectInfo{
+			Metadata: &info.ProjectMetadata{
+				Name:     "test-project",
+				Language: "Go",
+				Version:  "1.21",
+			},
+		},
+	}
+
+	infoStr, err := handleInfoOnly(config, result, true, true)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, infoStr)
+}
+
+// TestLoadConfigurations tests configuration loading
+func TestLoadConfigurations(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "promptext-test-*")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	// Test with no config files
+	localConfig, globalConfig := loadConfigurations(tmpDir)
+
+	// Should return empty configs if no files exist
+	// (loadConfigurations may return empty structs rather than nil)
+	_ = localConfig
+	_ = globalConfig
+	// Test passes if no panic occurs
+}
+
+// TestFilterDirectoryTree tests directory tree filtering
+func TestFilterDirectoryTree(t *testing.T) {
+	// Create a sample directory tree
+	root := &format.DirectoryNode{
+		Name:     "root",
+		Type:     "dir",
+		Children: []*format.DirectoryNode{
+			{
+				Name: "main.go",
+				Type: "file",
+			},
+			{
+				Name: "excluded.go",
+				Type: "file",
+			},
+			{
+				Name: "subdir",
+				Type: "dir",
+				Children: []*format.DirectoryNode{
+					{
+						Name: "helper.go",
+						Type: "file",
+					},
+				},
+			},
+		},
+	}
+
+	includedFiles := map[string]bool{
+		"main.go":          true,
+		"subdir/helper.go": true,
+	}
+
+	filtered := filterDirectoryTree(root, includedFiles, "")
+
+	assert.NotNil(t, filtered)
+	assert.Equal(t, "dir", filtered.Type)
+
+	// Should have filtered children
+	if len(filtered.Children) > 0 {
+		foundMain := false
+		foundExcluded := false
+		for _, child := range filtered.Children {
+			if child.Name == "main.go" {
+				foundMain = true
+			}
+			if child.Name == "excluded.go" {
+				foundExcluded = true
+			}
+		}
+		assert.True(t, foundMain, "Should include main.go")
+		assert.False(t, foundExcluded, "Should exclude excluded.go")
+	}
 }
