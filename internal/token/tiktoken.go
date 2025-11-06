@@ -10,23 +10,29 @@ import (
 )
 
 func init() {
+	ensureCacheDir()
+}
+
+func ensureCacheDir() {
 	// Set default cache directory if TIKTOKEN_CACHE_DIR is not set
-	if os.Getenv("TIKTOKEN_CACHE_DIR") == "" {
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			log.Debug("Warning: Could not get user home directory: %v", err)
-			return
-		}
-
-		cacheDir := filepath.Join(homeDir, ".promptext", "cache")
-		if err := os.MkdirAll(cacheDir, 0755); err != nil {
-			log.Debug("Warning: Could not create cache directory: %v", err)
-			return
-		}
-
-		os.Setenv("TIKTOKEN_CACHE_DIR", cacheDir)
-		log.Debug("Set tiktoken cache to: %s", cacheDir)
+	if os.Getenv("TIKTOKEN_CACHE_DIR") != "" {
+		return
 	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Debug("Warning: Could not get user home directory: %v", err)
+		return
+	}
+
+	cacheDir := filepath.Join(homeDir, ".promptext", "cache")
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		log.Debug("Warning: Could not create cache directory: %v", err)
+		return
+	}
+
+	os.Setenv("TIKTOKEN_CACHE_DIR", cacheDir)
+	log.Debug("Set tiktoken cache to: %s", cacheDir)
 }
 
 type TokenCounter struct {
