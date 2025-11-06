@@ -1,24 +1,26 @@
 ---
 title: Introduction
-description: Smart code context extractor for AI assistants
+description: Convert your codebase into AI-ready prompts
 ---
 
-# promptext
+# Welcome to promptext
 
-Smart code context extraction for AI assistants. Process codebases efficiently with accurate token counting, intelligent filtering, and token-optimized output.
+A fast, token-efficient tool that transforms your code into optimized context for Claude, ChatGPT, and other LLMs.
 
-## Features
+## What is promptext?
 
-- **Multi-Layered Lock File Detection** — Automatically excludes package lock files (99% signature-based, 95% ecosystem-aware, 85% heuristic) — saves 50K-100K+ tokens per project
-- **PTX Format** — Default hybrid format combining TOON v1.3 metadata efficiency with readable multiline code blocks (25-30% smaller than JSON)
-- **TOON-Strict Mode** — Full TOON v1.3 compliance for maximum compression (30-60% smaller than JSON), based on [johannschopplich/toon](https://github.com/johannschopplich/toon)
-- **Relevance Filtering** — Multi-factor scoring prioritizes files by keywords
-- **Token Budget Management** — Limit output to stay within AI model context windows
-- **Smart Filtering** — .gitignore integration, intelligent defaults, and generated file detection
-- **Token Analysis** — Accurate counting using tiktoken `cl100k_base` encoding (GPT-4/GPT-3.5-turbo) with intelligent fallback
-- **Project Detection** — Language and framework identification with ecosystem-aware filtering
-- **Multiple Formats** — PTX (default), TOON-strict, Markdown, and XML with auto-detection
-- **Performance Focused** — Optimized for large codebases
+`promptext` intelligently filters your codebase, ranks files by relevance, and packages them into token-efficient formats—all within your specified budget. It's designed to help you work more effectively with AI assistants by providing the right code context without exceeding token limits.
+
+## Key Features
+
+- 🚀 **Fast** — Written in Go, processes large codebases in seconds
+- 🧠 **Smart** — Relevance scoring automatically prioritizes important files
+- 💰 **Budget-Aware** — Enforces token limits to prevent context overflow
+- 📦 **Token-Efficient Formats** — PTX (25-30% savings), TOON-strict (30-60% savings), Markdown, or XML
+- 🎯 **Accurate Counting** — Uses `cl100k_base` tokenizer (GPT-4, GPT-3.5, Claude compatible)
+- ⚙️ **Highly Configurable** — Project-level `.promptext.yml` and global settings support
+- 🔒 **Multi-Layered Lock File Detection** — Automatically excludes lock files, saving 50K-100K+ tokens per project
+- 🎨 **Multiple Output Formats** — PTX (default), TOON-strict, Markdown, and XML with auto-detection
 
 ## Quick Start
 

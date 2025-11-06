@@ -233,8 +233,8 @@ promptext -f xml -o output.md
 | AI assistant queries | PTX | 25-30% reduction + readable code |
 | Code debugging sessions | PTX | Preserves formatting and indentation |
 | Token-limited models | TOON-strict | 30-60% maximum compression |
-| Claude Haiku / GPT-3.5 | TOON-strict | Extreme token efficiency |
-| Claude Opus / GPT-4 | PTX or Markdown | Either works, PTX saves tokens |
+| Smaller context windows | TOON-strict | Extreme token efficiency |
+| Large context windows | PTX or Markdown | Either works, PTX saves tokens |
 | Human code review | Markdown | Better readability |
 | CI/CD integration | XML | Machine-parseable structure |
 | Documentation | Markdown | Rich formatting |

@@ -79,7 +79,7 @@ promptext -r "database" -e .go
 Limit output to stay within token constraints:
 
 ```bash
-# Limit to 8000 tokens (Claude Haiku sweet spot)
+# Limit for smaller context windows
 promptext --max-tokens 8000
 
 # Combine with relevance for smart prioritization
@@ -138,19 +138,19 @@ structure:
 
 ### AI Model Context Windows
 
-Match your budget to AI model capabilities:
+Match your budget to your LLM's capabilities:
 
 ```bash
-# Claude Haiku (100k context, but efficient at 8k)
+# Smaller context windows (8-16k tokens)
 promptext --max-tokens 8000
 
-# Claude Sonnet/Opus (200k context)
+# Medium context windows (32-64k tokens)
+promptext --max-tokens 30000
+
+# Large context windows (100k+ tokens)
 promptext --max-tokens 100000
 
-# GPT-3.5-Turbo (16k context)
-promptext --max-tokens 12000
-
-# GPT-4 (8k context, older models)
+# Legacy or limited context models
 promptext --max-tokens 6000
 ```
 
@@ -215,7 +215,7 @@ promptext -e .ts,.tsx -r "api fetch axios" --max-tokens 4000
 # Exclude tests, focus on core logic, limit tokens
 promptext -x "test/,spec/" -r "business logic core" --max-tokens 8000
 
-# Exclude vendors, focus on database, optimize for Claude Haiku
+# Exclude vendors, focus on database, smaller context window
 promptext -x "vendor/,node_modules/" -r "database" --max-tokens 8000
 ```
 

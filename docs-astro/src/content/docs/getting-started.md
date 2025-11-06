@@ -34,79 +34,79 @@ Download binaries from [GitHub Releases](https://github.com/1broseidon/promptext
 ### Simple Commands
 
 ```bash
-# Process current directory (TOON format to clipboard)
+# Process current directory (PTX format to clipboard)
 promptext
 
 # Use alias for convenience
 prx
 
 # Process specific directory
-promptext -d /path/to/project
+prx /path/to/project
 
 # Show project overview only
-promptext -i
+prx -i
 
 # Export to file (format auto-detected from extension)
-promptext -o context.toon
-promptext -o context.md
-promptext -o project.xml
+prx -o context.ptx   # PTX format (default)
+prx -o context.md    # Markdown format
+prx -o project.xml   # XML format
 ```
 
 ### Common Options
 
 | Flag | Description |
 |------|-------------|
-| `-d` | Directory to process |
+| (path) | Directory to process (e.g., `prx /path/to/project`) |
 | `-e` | File extensions (`.go,.js`) |
 | `-x` | Exclude patterns |
-| `-f` | Format (`toon`, `markdown`, `xml`) |
-| `-o` | Output file (auto-detects format) |
+| `-f` | Format (`ptx`, `toon-strict`, `markdown`, `xml`) |
+| `-o` | Output file (auto-detects format from extension) |
 | `-i` | Info mode only |
 | `-r` | Relevant keywords for prioritization |
 | `--max-tokens` | Token budget limit |
 | `-v` | Verbose output |
-| `-q` | Quiet mode for scripting |
+| `-D` | Debug mode with timing |
 
 ### Examples
 
 **Filter by file type:**
 ```bash
-promptext -e .go,.js,.ts
+prx -e .go,.js,.ts
 ```
 
 **Exclude directories:**
 ```bash
-promptext -x "node_modules/,vendor/,test/"
+prx -x "node_modules/,vendor/,test/"
 ```
 
 **Generate reports:**
 ```bash
-# TOON format (default, token-optimized)
-promptext -o context.toon
+# PTX format (default, token-optimized)
+prx -o context.ptx
 
 # Markdown format
-promptext -f markdown -o context.md
+prx -f markdown -o context.md
 
 # XML format for automation
-promptext -f xml -o report.xml
+prx -f xml -o report.xml
 ```
 
 **Prioritize relevant files:**
 ```bash
 # Focus on authentication code
-promptext -r "auth login OAuth"
+prx -r "auth login OAuth"
 
 # Database-related files
-promptext -r "database SQL migration"
+prx -r "database SQL migration"
 ```
 
 **Stay within token budgets:**
 ```bash
 # Limit to 8000 tokens (Claude Haiku)
-promptext --max-tokens 8000
+prx --max-tokens 8000
 
 # Combine with relevance for smart selection
-promptext -r "api routes" --max-tokens 5000
+prx -r "api routes" --max-tokens 5000
 ```
 
 ## Quick Workflows
@@ -140,13 +140,13 @@ prx -f markdown -o full-context.md
 # Machine-readable XML
 prx -f xml -o build/context.xml
 
-# Quiet mode for scripting
-prx -q -o context.toon
+# PTX format for programmatic use
+prx -o context.ptx
 ```
 
 ## Next Steps
 
-- [Output Formats](output-formats) - TOON, Markdown, and XML formats
+- [Output Formats](output-formats) - PTX, TOON-strict, Markdown, and XML formats
 - [Relevance Filtering](relevance-filtering) - Smart file prioritization
 - [Configuration](configuration) - Customize behavior
 - [File Filtering](file-filtering) - Advanced filtering rules

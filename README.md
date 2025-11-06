@@ -1,137 +1,198 @@
+<div align="center">
+
 # promptext
 
-Convert your codebase into AI-ready prompts - a fast, token-efficient alternative to code2prompt for Claude, ChatGPT, and other LLMs.
+**Convert your codebase into AI-ready prompts**
+
+A fast, token-efficient tool that transforms your code into optimized context for Claude, ChatGPT, and other LLMs.
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/1broseidon/promptext.svg)](https://pkg.go.dev/github.com/1broseidon/promptext)
-[![Go Report Card](https://goreportcard.com/badge/github.com/1broseidon/promptext?prx=v0.4.5)](https://goreportcard.com/report/github.com/1broseidon/promptext)
+[![Go Report Card](https://goreportcard.com/badge/github.com/1broseidon/promptext)](https://goreportcard.com/report/github.com/1broseidon/promptext)
 [![codecov](https://codecov.io/gh/1broseidon/promptext/branch/main/graph/badge.svg)](https://codecov.io/gh/1broseidon/promptext)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://img.shields.io/github/release/1broseidon/promptext.svg)](https://github.com/1broseidon/promptext/releases/latest)
 [![Documentation](https://img.shields.io/badge/docs-astro-blue)](https://1broseidon.github.io/promptext/)
 
-## Problem
+[Documentation](https://1broseidon.github.io/promptext/) • [Installation](#installation) • [Quick Start](#quick-start) • [Examples](#usage)
 
-AI assistants need code context. Sending entire repositories exceeds token limits. Manual file selection wastes time. Standard formats (JSON, XML) are verbose.
+</div>
 
-## Solution
+---
 
-promptext filters files, ranks by relevance, and serializes to token-efficient formats within specified budgets.
+## The Problem
 
-## Why promptext?
+Working with AI assistants requires code context, but:
+- 🔴 Entire repositories exceed token limits
+- 🔴 Manual file selection is tedious and error-prone
+- 🔴 Standard formats (JSON, XML) waste precious tokens
+- 🔴 You never know if you'll hit the context limit until it's too late
 
-Unlike other tools like code2prompt, codebase-digest, or manual copy-pasting:
-- **Faster**: Written in Go, processes large codebases in seconds
-- **Smarter**: Relevance scoring automatically finds the most important files
-- **Token-aware**: Built-in tiktoken counting prevents LLM context overflow
-- **Format-flexible**: PTX, TOON, Markdown, or XML output for any AI assistant
-- **Budget-conscious**: Enforce token limits before sending to expensive API calls
+## The Solution
 
-## Features
+`promptext` intelligently filters your codebase, ranks files by relevance, and packages them into token-efficient formats—all within your specified budget.
 
-- **PTX format**: promptext's hybrid TOON format - 25-30% token reduction with explicit paths and multiline code blocks
-- **Token budgeting**: Hard limits with relevance-based file selection
-- **Relevance scoring**: Keyword matching in paths (10×), directories (5×), imports (3×), content (1×)
-- **Standard exclusions**: `.gitignore` patterns, `node_modules/`, lock files, binaries
-- **Accurate counting**: tiktoken cl100k_base tokenizer (GPT-3.5/4, Claude compatible)
-- **Format options**: PTX (default), TOON-strict, Markdown, XML
-- **LLM-optimized**: Works with ChatGPT, Claude, GPT-4, Gemini, and any AI assistant
-- **Context window aware**: Respect token limits for Claude Haiku/Sonnet/Opus, GPT-3.5/4
-- **AI-friendly formatting**: Structured output for better AI code comprehension
+## Why Choose promptext?
 
-Format reference: [johannschopplich/toon](https://github.com/johannschopplich/toon)
+| Challenge | Manual Approach | promptext Solution |
+|-----------|----------------|-------------------|
+| **Selecting relevant files** | 😓 Manually browse and choose | 🧠 Automatic relevance scoring |
+| **Staying within token limits** | ❌ Trial and error, wasted API calls | ✅ Enforced budgets with preview |
+| **Efficient formatting** | 📝 Verbose markdown/JSON | 📦 25-60% token reduction |
+| **Token counting** | ❓ Guesswork | 🎯 Accurate tiktoken counting |
+| **Processing speed** | 🐌 Copy-paste each file | ⚡ Entire codebase in seconds |
+
+### Key Features
+
+- 🚀 **Fast**: Written in Go—processes large codebases in seconds
+- 🧠 **Smart**: Relevance scoring automatically prioritizes important files
+- 💰 **Budget-Aware**: Enforces token limits to prevent context overflow and save on API costs
+- 📦 **Token-Efficient Formats**: PTX (25-30% savings), TOON-strict (30-60% savings), Markdown, or XML
+- 🎯 **Accurate Counting**: Uses `cl100k_base` tokenizer (GPT-4, GPT-3.5, Claude compatible)
+- ⚙️ **Highly Configurable**: Project-level `.promptext.yml` and global settings support
 
 ## Installation
 
-**Linux/macOS:**
+### Quick Install
+
+**macOS / Linux:**
 ```bash
 curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
 ```
 
-**Windows:**
+**Windows (PowerShell):**
 ```powershell
 irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
 ```
 
-**Go:**
+**Go (1.21+):**
 ```bash
 go install github.com/1broseidon/promptext/cmd/promptext@latest
 ```
 
-See [installation docs](https://1broseidon.github.io/promptext/) for additional methods.
+The executable is installed as `prx`. For more installation options, see the [documentation](https://1broseidon.github.io/promptext/).
 
 ### Updating
 
-**Check for updates:**
 ```bash
+# Check for updates
 prx --check-update
-```
 
-**Update to latest version:**
-```bash
+# Update to latest version
 prx --update
 ```
 
-promptext automatically checks for new releases once per day and notifies you when updates are available. Network failures are silently ignored to avoid disrupting normal operation.
+> **Note:** `promptext` automatically checks for new releases once per day and notifies you when updates are available.
+
+---
+
+## Quick Start
+
+Navigate to your project directory and run:
+
+```bash
+prx
+```
+
+That's it! `promptext` will:
+1. Analyze your project structure
+2. Filter out unnecessary files (node_modules, binaries, etc.)
+3. Package everything into a token-efficient format
+4. Copy the result to your clipboard
+
+Now paste into ChatGPT, Claude, or your favorite LLM and start coding!
+
+---
 
 ## Use Cases
 
-- **AI Code Review**: Feed entire projects to Claude/ChatGPT for comprehensive code analysis
-- **Context Engineering**: Build optimized prompts within LLM token limits for better AI responses
-- **AI Pair Programming**: Provide full codebase context to AI assistants like GitHub Copilot, Cursor, or Windsurf
-- **Documentation Generation**: Help AI understand your complete project structure for accurate docs
-- **Code Migration**: Give LLMs full legacy codebase context for refactoring suggestions
-- **Prompt Engineering**: Create consistent, repeatable AI prompts from code for development workflows
-- **Bug Investigation**: Let AI analyze related files together with proper context
-- **API Integration**: Generate structured code context for AI-powered development tools
+Perfect for:
+
+- 🔍 **AI Code Review** — Feed complete projects to Claude/ChatGPT for comprehensive analysis
+- 🤖 **AI Pair Programming** — Provide full context to GitHub Copilot, Cursor, or Windsurf
+- 📚 **Documentation Generation** — Help AI understand your complete project structure
+- 🐛 **Bug Investigation** — Let AI analyze related files together with proper context
+- 🔄 **Code Migration** — Give LLMs full legacy codebase context for refactoring
+- 🎯 **Prompt Engineering** — Create consistent, repeatable AI prompts from code
+- 🔌 **API Integration** — Generate structured code context for AI-powered dev tools
+
+---
 
 ## Usage
 
-### Smart Context Building (The Power Features)
+### Basic Commands
 
 ```bash
-# Find authentication-related files within token budget
-prx -r "auth login OAuth session" --max-tokens 10000
-
-# Get database layer for Claude Haiku (8K limit)
-prx -r "database SQL postgres migration" --max-tokens 8000 -o db-context.ptx
-
-# API routes for GPT-4 analysis
-prx -r "api routes handlers middleware" --max-tokens 15000
-
-# Bug investigation: error handling code only
-prx -r "error exception handler logging" --max-tokens 5000 -e .go,.js
-```
-
-**How relevance scoring works:**
-- Filename match: 10 points
-- Directory path match: 5 points
-- Import statement match: 3 points
-- Content match: 1 point
-
-### Quick Commands
-
-```bash
-# Current directory to clipboard
+# Process current directory and copy to clipboard
 prx
 
-# Specific directory with extension filter
-prx /path/to/project -e .go,.js,.ts
+# Process specific directory
+prx /path/to/project
 
-# Output to file (format auto-detected)
-prx -o context.ptx      # PTX (default)
-prx -o context.md       # Markdown
-prx -o project.xml      # XML
+# Filter by file extensions
+prx -e .go,.js,.ts
 
-# Summary only (file list, token counts)
+# Output to file (format auto-detected from extension)
+prx -o context.ptx      # PTX format
+prx -o context.md       # Markdown format  
+prx -o project.xml      # XML format
+
+# Show file list and token counts (no output)
 prx -i
 
-# Preview file selection
-prx --dry-run -r "auth"
+# Preview file selection without generating output
+prx --dry-run
 ```
 
-### Token Budget Output
+### Smart Context Building
 
-When `--max-tokens` is set and exceeded, promptext shows exactly what was included and excluded:
+Build focused prompts with relevance scoring and token budgets. Start simple and combine options as needed:
+
+```bash
+# Start simple: Find authentication-related files
+prx -r "auth login session"
+
+# Add a token budget for smaller context windows
+prx -r "auth login session" --max-tokens 8000
+
+# Narrow down by file extensions
+prx -r "auth login session" --max-tokens 8000 -e .go,.js
+
+# Save to a file for reuse
+prx -r "auth login session" --max-tokens 8000 -e .go,.js -o auth-context.ptx
+
+# Complex example: Database layer with multiple keywords
+prx -r "database SQL postgres migration schema" --max-tokens 12000 -e .go,.sql -o db-layer.ptx
+```
+
+**Real-world scenarios:**
+
+```bash
+# Bug investigation: error handling code for limited context LLM
+prx -r "error exception handler logging" --max-tokens 5000
+
+# API routes for models with larger context windows
+prx -r "api routes handlers middleware" --max-tokens 20000
+
+# Quick security audit: authentication and authorization
+prx -r "auth token jwt security session" --max-tokens 10000 -e .go,.js,.ts
+```
+
+#### How Relevance Scoring Works
+
+Files are ranked by keyword matches with weighted scoring:
+
+| Match Location | Score | Example |
+|----------------|-------|---------|
+| Filename | 10x | `auth.go` matches "auth" |
+| Directory path | 5x | `auth/handlers/` matches "auth" |
+| Import statements | 3x | `import auth` matches "auth" |
+| File content | 1x | "auth" appears in code |
+
+Files with the highest scores are included first until the token budget is exhausted.
+
+### Understanding Token Budget Output
+
+When `--max-tokens` is set, `promptext` shows exactly what was included:
 
 ```
 ╭───────────────────────────────────────────────╮
@@ -147,22 +208,26 @@ When `--max-tokens` is set and exceeded, promptext shows exactly what was includ
     Total excluded: ~9,297 tokens
 ```
 
-Files included in priority order until budget exhausted.
+This helps you understand the trade-offs and adjust your filters or budget as needed.
+
+---
 
 ## Output Formats
 
-**About PTX**: PTX is a hybrid TOON format specifically created for promptext. It balances the extreme compression of TOON-strict with human readability by using explicit file paths as keys and preserving multiline code blocks. This gives you ~25-30% token savings without sacrificing clarity - perfect for AI assistants that need both efficiency and accurate file path context.
+`promptext` supports multiple output formats optimized for different use cases:
 
-| Format | Token Efficiency | File Path Clarity | Code Preservation | Use Case |
-|--------|-----------------|-------------------|-------------------|----------|
-| **PTX** (default) | 25-30% reduction | ✅ Explicit quoted paths | Multiline blocks preserved | Code analysis, debugging |
-| **TOON-strict** | 30-60% reduction | ✅ Path in array | Escaped to single line | Maximum compression |
-| **Markdown** | Baseline (0%) | ✅ In headings | Full fidelity | Human review, documentation |
-| **XML** | -20% (more verbose) | ✅ path attribute | Structured elements | Tool integration, parsing |
+| Format | Token Efficiency | Best For |
+|--------|-----------------|----------|
+| **PTX** (default) | 25-30% reduction | General AI interactions, code analysis |
+| **TOON-strict** | 30-60% reduction | Maximum compression, large codebases |
+| **Markdown** | Baseline (0%) | Human readability, documentation |
+| **XML** | -20% (more verbose) | Structured parsing, tool integration |
 
-### PTX Format Example
+### PTX Format (Recommended)
 
-PTX uses explicit file paths as keys for zero ambiguity:
+PTX is a hybrid format created specifically for `promptext`. It balances token efficiency with readability by using explicit file paths and preserving multiline code blocks.
+
+**Example:**
 
 ```yaml
 code:
@@ -183,85 +248,169 @@ files[2]{path,ext,lines}:
   cmd/server/main.go,go,45
 ```
 
-**Benefits:**
-- **Zero Ambiguity**: AI can instantly map code blocks to exact file paths
-- **Token Efficient**: Still uses `|` multiline blocks (~30% savings vs markdown)
-- **Human Readable**: No mental translation needed between sanitized keys and actual paths
+**Why PTX?**
+- ✅ Zero ambiguity — AI instantly maps code to exact file paths
+- ✅ Token efficient — ~30% savings vs. markdown
+- ✅ Human readable — No mental translation needed
+- ✅ LLM-friendly — Clear structure for better AI comprehension
+
+### Switching Formats
 
 ```bash
-# PTX: Default, balances compression and readability
+# PTX (default) — balanced compression and readability
 prx
 
-# TOON-strict: Aggressive compression, all code escaped
+# TOON-strict — maximum compression
 prx -f toon-strict
 
-# Markdown: No compression, standard formatting
+# Markdown — no compression, human-friendly
 prx -f markdown
 
-# XML: Structured output for programmatic consumption
+# XML — structured output
 prx -f xml
 ```
 
+> **Format Reference:** PTX and TOON-strict are based on [johannschopplich/toon](https://github.com/johannschopplich/toon)
+
+---
+
 ## Configuration
 
-Configuration hierarchy (later overrides earlier):
+Customize `promptext` behavior with configuration files. Settings are applied in order (later overrides earlier):
+
 1. Global config: `~/.config/promptext/config.yml`
 2. Project config: `.promptext.yml`
 3. CLI flags
 
-**Project config (`.promptext.yml`):**
+### Project Configuration
+
+Generate a starter configuration file in your project:
+
+```bash
+prx --init
+```
+
+This creates a `.promptext.yml` file with sensible defaults. Customize it for your project:
+
 ```yaml
+# File extensions to include
 extensions:
   - .go
   - .js
   - .ts
+
+# Patterns to exclude (supports glob patterns)
 excludes:
-  - vendor/
-  - node_modules/
+  - "vendor/"
+  - "node_modules/"
   - "*.test.go"
+
+# Default output format
 format: ptx        # Options: ptx, toon-strict, markdown, xml
+
+# Use .gitignore patterns
+gitignore: true
+
+# Enable verbose output
 verbose: false
 ```
 
-**Global config (`~/.config/promptext/config.yml`):**
+### Global Configuration
+
+Set defaults for all projects in `~/.config/promptext/config.yml`:
+
 ```yaml
 extensions:
   - .go
   - .py
   - .js
+  - .ts
+
 excludes:
-  - vendor/
-  - __pycache__/
+  - "vendor/"
+  - "__pycache__/"
+  
 format: ptx
 ```
 
-## Default Exclusions
+### Default Exclusions
 
-Always excluded:
-- `.git/`, `.hg/`, `.svn/`
-- `node_modules/`, `vendor/`, `__pycache__/`
-- Lock files: `*-lock.json`, `*.lock`, `Gemfile.lock`, etc.
-- Binary files (detected by content)
-- Files matching `.gitignore` patterns
+The following are **always excluded** automatically:
 
-Override with `-x` flag or config file `excludes` list.
+- **Version control:** `.git/`, `.hg/`, `.svn/`
+- **Dependencies:** `node_modules/`, `vendor/`, `__pycache__/`
+- **Lock files:** `*-lock.json`, `*.lock`, `Gemfile.lock`, `poetry.lock`, etc.
+- **Binary files:** Detected by content analysis
+- **Gitignored files:** Respects your `.gitignore` patterns
+
+> **Tip:** Override exclusions with the `-x` flag or `excludes` list in your config file.
+
+---
 
 ## Documentation
 
-[Full documentation](https://1broseidon.github.io/promptext/):
+For comprehensive documentation, visit [1broseidon.github.io/promptext](https://1broseidon.github.io/promptext/)
 
-- Configuration reference
-- Filtering rules and precedence
-- Relevance scoring algorithm
-- Token counting methodology
-- Format specifications (PTX, TOON-strict, Markdown, XML)
-- Performance characteristics
+Topics covered:
+- 📖 **Configuration Reference** — All options and settings
+- 🎯 **Filtering Rules** — How files are selected and excluded
+- 🧮 **Relevance Scoring** — Algorithm details and tuning
+- 🔢 **Token Counting** — Methodology and accuracy
+- 📦 **Format Specifications** — PTX, TOON-strict, Markdown, and XML
+- ⚡ **Performance** — Benchmarks and optimization tips
 
-## Requirements
+---
 
-- Go 1.21+ (for building from source)
-- Git (for `.gitignore` pattern support)
+## Contributing
+
+Contributions are welcome! Whether it's bug reports, feature requests, or code contributions, we'd love your help.
+
+### Ways to Contribute
+
+- 🐛 **Report bugs** — [Open an issue](https://github.com/1broseidon/promptext/issues/new)
+- 💡 **Suggest features** — [Start a discussion](https://github.com/1broseidon/promptext/discussions)
+- 📝 **Improve docs** — Help make documentation clearer
+- 🔧 **Submit PRs** — Fix bugs or add features
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/1broseidon/promptext.git
+cd promptext
+
+# Build the project
+go build -o prx ./cmd/promptext
+
+# Run tests
+go test ./...
+
+# Run with coverage
+go test -coverprofile=coverage.out ./...
+```
+
+### Pull Request Process
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes and add tests
+4. Ensure tests pass (`go test ./...`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to your fork (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+---
 
 ## License
 
-MIT
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+**Built with ❤️ by the promptext community**
+
+[⭐ Star on GitHub](https://github.com/1broseidon/promptext) • [📖 Documentation](https://1broseidon.github.io/promptext/) • [🐛 Report Bug](https://github.com/1broseidon/promptext/issues)
+
+</div>

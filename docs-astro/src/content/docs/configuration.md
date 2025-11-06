@@ -5,7 +5,13 @@ description: Configure promptext using YAML files and command-line flags
 
 ## Config File
 
-Create `.promptext.yml` in your project root:
+Generate a starter configuration file:
+
+```bash
+prx --init
+```
+
+This creates a `.promptext.yml` in your project root with sensible defaults. Customize it as needed:
 
 ```yaml
 extensions:
