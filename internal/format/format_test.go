@@ -274,3 +274,25 @@ func TestDirectoryNode_ToMarkdown(t *testing.T) {
 		})
 	}
 }
+
+func TestEscapeForTOON(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"simple text", "simple text"},
+		{"text with\nnewline", "text with\\nnewline"},
+		{"text with\ttab", "text with\\ttab"},
+		{"text with \"quotes\"", "text with \\\"quotes\\\""},
+		{"text with\\backslash", "text with\\\\backslash"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got := escapeForTOON(tt.input)
+			if got != tt.want {
+				t.Errorf("escapeForTOON(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
