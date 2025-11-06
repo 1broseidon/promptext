@@ -71,6 +71,7 @@ COVERAGE_*.md
 TEST_COVERAGE_*.md
 *_PLAN.md
 *_CHECKLIST.md
+coverage-dashboard.txt
 
 # Test coverage
 coverage.out
