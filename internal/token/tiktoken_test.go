@@ -12,15 +12,17 @@ func TestTokenCounter_EstimateTokens(t *testing.T) {
 	tc := NewTokenCounter()
 
 	tests := []struct {
-		name string
-		text string
+		name     string
+		text     string
+		minRatio float64
+		maxRatio float64
 	}{
-		{"Simple prose", "The quick brown fox jumps over the lazy dog."},
-		{"JSON structure", `{"name": "test", "version": "1.0.0", "dependencies": {}}`},
-		{"Code with braces", `func main() { fmt.Println("hello") }`},
-		{"Very long word", strings.Repeat("a", 1000)},
-		{"Code block with imports", "import (\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tfmt.Println(\"hello\")\n}"},
-		{"Markdown with code", "# Title\n\nSome text with `code` and **bold**.\n\n```go\nfunc main() {}\n```"},
+		{"Simple prose", "The quick brown fox jumps over the lazy dog.", 3.5, 5.0},
+		{"JSON structure", `{"name": "test", "version": "1.0.0", "dependencies": {}}`, 2.5, 4.0},
+		{"Code with braces", `func main() { fmt.Println("hello") }`, 2.5, 4.5},
+		{"Very long word", strings.Repeat("a", 1000), 1.0, 10.0},
+		{"Code block with imports", "import (\n\t\"fmt\"\n\t\"os\"\n)\n\nfunc main() {\n\tfmt.Println(\"hello\")\n}", 2.0, 4.5},
+		{"Markdown with code", "# Title\n\nSome text with `code` and **bold**.\n\n```go\nfunc main() {}\n```", 2.5, 5.0},
 	}
 
 	for _, tt := range tests {
@@ -37,8 +39,8 @@ func TestTokenCounter_EstimateTokens(t *testing.T) {
 				}
 			} else {
 				ratio := float64(len(tt.text)) / float64(tokens)
-				if ratio < 1.0 || ratio > 6.0 {
-					t.Fatalf("unreasonable chars/token ratio %.2f for %q", ratio, tt.text)
+				if ratio < tt.minRatio || ratio > tt.maxRatio {
+					t.Fatalf("unreasonable chars/token ratio %.2f for %q (expected %.2f-%.2f)", ratio, tt.text, tt.minRatio, tt.maxRatio)
 				}
 			}
 		})
