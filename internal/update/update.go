@@ -162,10 +162,32 @@ func getExecutablePath() (string, error) {
 }
 
 // findReleaseAssets finds download and checksum URLs from release assets
+// Supports multiple naming patterns for backward compatibility
 func findReleaseAssets(release *ReleaseInfo, assetName string) (downloadURL, checksumURL string, err error) {
+	// Generate alternative asset name patterns for backward compatibility
+	// assetName is the new format: promptext_darwin_amd64.tar.gz
+	// Old format was: promptext_Darwin_x86_64.tar.gz
+	alternativeNames := []string{assetName}
+
+	// Add versioned format if this is a tagged release
+	// GoReleaser creates: promptext_{version}_{os}_{arch}.tar.gz
+	if release.TagName != "" {
+		version := strings.TrimPrefix(release.TagName, "v")
+		parts := strings.Split(assetName, "_")
+		if len(parts) == 3 {
+			// Insert version: promptext_{version}_{os}_{arch}.ext
+			versionedName := fmt.Sprintf("%s_%s_%s_%s", parts[0], version, parts[1], parts[2])
+			alternativeNames = append(alternativeNames, versionedName)
+		}
+	}
+
 	for _, asset := range release.Assets {
-		if asset.Name == assetName {
-			downloadURL = asset.BrowserDownloadURL
+		// Check if this asset matches any of our patterns
+		for _, name := range alternativeNames {
+			if asset.Name == name {
+				downloadURL = asset.BrowserDownloadURL
+				break
+			}
 		}
 		if asset.Name == "checksums.txt" {
 			checksumURL = asset.BrowserDownloadURL
@@ -173,7 +195,7 @@ func findReleaseAssets(release *ReleaseInfo, assetName string) (downloadURL, che
 	}
 
 	if downloadURL == "" {
-		return "", "", fmt.Errorf("no release asset found for %s", assetName)
+		return "", "", fmt.Errorf("no release asset found for %s (tried: %v)", assetName, alternativeNames)
 	}
 
 	return downloadURL, checksumURL, nil
@@ -329,25 +351,26 @@ func fetchLatestRelease() (*ReleaseInfo, error) {
 }
 
 // getPlatformAssetName returns the asset name for the current platform
+// Supports both old format (promptext_Darwin_x86_64.tar.gz) and new GoReleaser format (promptext_0.5.3_darwin_amd64.tar.gz)
 func getPlatformAssetName() (string, error) {
 	var osName, archName string
 
-	// Map GOOS to release asset OS name
+	// GoReleaser uses lowercase OS names
 	switch runtime.GOOS {
 	case "darwin":
-		osName = "Darwin"
+		osName = "darwin"
 	case "linux":
-		osName = "Linux"
+		osName = "linux"
 	case "windows":
-		osName = "Windows"
+		osName = "windows"
 	default:
 		return "", fmt.Errorf("unsupported OS: %s", runtime.GOOS)
 	}
 
-	// Map GOARCH to release asset architecture name
+	// GoReleaser uses amd64/arm64 naming
 	switch runtime.GOARCH {
 	case "amd64":
-		archName = "x86_64"
+		archName = "amd64"
 	case "arm64":
 		archName = "arm64"
 	default:
@@ -360,6 +383,8 @@ func getPlatformAssetName() (string, error) {
 		ext = ".zip"
 	}
 
+	// GoReleaser format (without version in asset name when using "latest")
+	// Example: promptext_darwin_amd64.tar.gz
 	return fmt.Sprintf("promptext_%s_%s%s", osName, archName, ext), nil
 }
 
