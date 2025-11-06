@@ -66,6 +66,12 @@ docs-old/
 CLAUDE.md
 .claude/
 
+# Internal planning files (should not be committed)
+COVERAGE_*.md
+TEST_COVERAGE_*.md
+*_PLAN.md
+*_CHECKLIST.md
+
 # Test coverage
 coverage.out
 coverage.txt
