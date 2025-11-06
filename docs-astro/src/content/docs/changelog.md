@@ -5,6 +5,115 @@ description: Release notes and version history for promptext
 
 # Changelog
 
+All notable changes to promptext are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Changed
+- **Documentation Overhaul**: Professional README redesign with centered header, clear navigation, and better organization
+- **Comparison Update**: Replaced tool comparison with manual workflow comparison for accuracy
+- **Progressive Examples**: Smart Context Building section now teaches simple → complex progressively
+- **Generic Terminology**: Removed specific model names, using "smaller/larger context windows" instead
+- **Configuration Enhancement**: Added `--init` flag documentation for easier config file generation
+
+### Added
+- Contributing section with development setup instructions
+- Professional footer with community engagement links
+- Improved Quick Start with numbered steps
+
+---
+
+## [0.5.1] - 2025-11-05
+
+### Added
+- **--init Flag**: Automatic configuration file generation with sensible defaults
+  - Creates `.promptext.yml` in current directory
+  - Pre-populated with common settings for detected project type
+  - Interactive prompts for customization options
+
+### Fixed
+- **Security**: Addressed path traversal vulnerability in file processing
+- **Testing**: Enhanced test coverage with comprehensive edge case scenarios
+- **Documentation**: Clarified configuration hierarchy and precedence rules
+
+### Changed
+- Improved error messages for invalid configuration values
+- Enhanced help text for CLI flags
+
+---
+
+## [0.5.0] - 2025-11-01
+
+### Added
+- **PTX v2.0 Enhanced Manifest**: Comprehensive project metadata in output
+  - Git information (branch, commit, status)
+  - Dependency analysis and versioning
+  - Language and framework detection
+  - Entry point identification
+- **JSONL Format**: New line-delimited JSON format for streaming and large datasets
+- **Deterministic Output**: Consistent file ordering for reproducible results
+
+### Changed
+- Enhanced manifest section with richer project context
+- Improved directory tree representation
+- Better token counting in budget summaries
+
+---
+
+## [0.4.6] - 2025-11-01
+
+### Fixed
+- **Update Mechanism**: Handle cross-filesystem binary replacement
+  - Resolves issues when tmp directory is on different filesystem
+  - Properly handles atomic file operations
+  - Improved error messages for update failures
+
+---
+
+## [0.4.5] - 2025-11-01
+
+### Changed
+- **PTX v2.0**: Explicit file path keys for zero ambiguity
+  - File paths used directly as keys (e.g., `"cmd/main.go"` not `cmd_main_go`)
+  - Preserves original path separators
+  - Easier to parse and reference specific files
+  - Better compatibility with AI assistants
+
+### Fixed
+- Path sanitization edge cases in PTX formatter
+
+---
+
+## [0.4.4] - 2025-11-01
+
+### Added
+- **Self-Update Mechanism**: Built-in update functionality
+  - `prx --update` to update to latest version
+  - `prx --check-update` to check for new releases
+  - Automatic daily update notifications (non-intrusive)
+  - Smart caching to avoid excessive GitHub API calls
+
+### Changed
+- Version checking respects network failures silently
+- Update notifications only shown once per day
+
+---
+
+## [0.4.3] - 2025-11-01
+
+### Fixed
+- Go Report Card badge cache issues
+- Code quality improvements for better report card score
+
+### Changed
+- Removed unused code and improved formatting
+- Enhanced code documentation
+
+---
+
 ## [0.4.2] - 2025-11-01
 
 ### Breaking Changes
@@ -147,5 +256,125 @@ Implemented sophisticated 3-layer detection system for automatic lock file exclu
 
 ---
 
-## [0.2.6] - Previous Release
-- Last stable release before major refactoring
+## [0.4.0] - 2025-10-28
+
+### Added
+- **TOON Format**: Token-optimized output format (30-60% smaller than JSON)
+- **Relevance Filtering**: Multi-factor scoring system for smart file prioritization
+  - Filename matches (10x weight)
+  - Directory path matches (5x weight)
+  - Import statement matches (3x weight)
+  - Content matches (1x weight)
+- **Token Budget Management**: Hard limits with `--max-tokens` flag
+- **Budget Visualization**: Clear reporting of included/excluded files
+
+### Changed
+- Major refactoring of output generation system
+- Enhanced file filtering logic
+
+---
+
+## [0.3.0] - 2025-08-31
+
+### Added
+- **Astro Documentation System**: Migrated from Docusaurus for better performance
+- **Global Configuration Support**: `~/.config/promptext/config.yml` for user-wide defaults
+- **XDG_CONFIG_HOME Support**: Respects XDG Base Directory specification
+
+### Changed
+- **Modern CLI Interface**: Complete refactoring with pflag for better flag handling
+- **Configuration Precedence**: CLI flags > project config > global config
+- Enhanced .gitignore pattern support
+- Improved help text and flag descriptions
+
+### Fixed
+- CLI flag mapping for version and verbose options
+- Angle bracket escaping in documentation
+- Configuration precedence edge cases
+
+---
+
+## [0.2.6] - 2024-12-19
+
+### Added
+- **Enhanced File Type Detection**: Detailed categorization with size information
+- Better language and framework identification
+
+### Changed
+- Improved project analysis output
+
+---
+
+## [0.2.5] - 2024-12-19
+
+### Added
+- **Build-Time Version Management**: Automatic version injection during builds
+- Version information in CLI output
+
+---
+
+## [0.2.4] - 2024-12-19
+
+### Fixed
+- Documentation clarity for `UseDefaultRules` configuration option
+
+---
+
+## [0.2.3] - 2024-12-18
+
+### Changed
+- Reorganized project info retrieval for better performance
+- Improved logging format consistency
+
+---
+
+## [0.2.2] - 2024-12-18
+
+### Changed
+- Code formatting cleanup across codebase
+- Improved consistency in code style
+
+---
+
+## [0.2.1] - 2024-12-17
+
+### Added
+- Release process improvements
+- GitHub Actions workflow enhancements
+
+---
+
+## [0.2.0] - 2024-12-17
+
+### Added
+- Initial stable release with core functionality
+- Directory processing and file filtering
+- Configuration file support
+- Multiple output formats (Markdown, XML)
+
+---
+
+## [0.1.9] - 2024-12-16
+
+### Added
+- Python and Go sample projects
+- Example configuration files
+- Entry point detection examples
+
+---
+
+## [0.1.8] - 2024-12-16
+
+### Added
+- Cross-platform binary releases via GitHub Actions
+- Automated build pipeline
+
+---
+
+## [0.1.0] - 2024-12-16
+
+### Added
+- Initial release of promptext
+- Core directory processing functionality
+- Basic file filtering
+- Markdown output format
