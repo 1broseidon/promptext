@@ -10,7 +10,7 @@ All notable changes to promptext are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## Documentation Updates - 2025-11-06
 
 ### Changed
 - **Documentation Overhaul**: Professional README redesign with centered header, clear navigation, and better organization
@@ -18,11 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Progressive Examples**: Smart Context Building section now teaches simple → complex progressively
 - **Generic Terminology**: Removed specific model names, using "smaller/larger context windows" instead
 - **Configuration Enhancement**: Added `--init` flag documentation for easier config file generation
+- **Comprehensive Changelog**: Added complete version history from v0.1.0 to v0.5.1 with detailed release notes
 
 ### Added
 - Contributing section with development setup instructions
 - Professional footer with community engagement links
 - Improved Quick Start with numbered steps
+- Complete historical changelog following Keep a Changelog format
 
 ---
 
