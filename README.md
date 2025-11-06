@@ -54,7 +54,13 @@ Working with AI assistants requires code context, but:
 
 ### Quick Install
 
-**macOS / Linux:**
+**Homebrew (macOS/Linux):**
+```bash
+brew tap 1broseidon/tap
+brew install promptext
+```
+
+**Linux / macOS (curl):**
 ```bash
 curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
 ```
@@ -69,7 +75,10 @@ irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.
 go install github.com/1broseidon/promptext/cmd/promptext@latest
 ```
 
-The executable is installed as `prx`. For more installation options, see the [documentation](https://1broseidon.github.io/promptext/).
+**Manual Download:**
+Download pre-built binaries from [GitHub Releases](https://github.com/1broseidon/promptext/releases/latest)
+
+The executable is installed as `promptext` with `prx` alias. For more installation options, see the [documentation](https://1broseidon.github.io/promptext/).
 
 ### Updating
 

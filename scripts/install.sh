@@ -163,14 +163,11 @@ detect_arch() {
 get_latest_release_url() {
 	local os=$1
 	local arch=$2
-	local os_name
-	if [ "$os" == "darwin" ]; then
-		os_name="Darwin"
-	else
-		os_name="Linux"
-	fi
 
-	echo "https://github.com/1broseidon/promptext/releases/latest/download/promptext_${os_name}_${arch}.tar.gz"
+	# GoReleaser uses lowercase OS names and version in filename
+	# Format: promptext_{version}_{os}_{arch}.tar.gz
+	# We use "latest" which redirects to the actual version
+	echo "https://github.com/1broseidon/promptext/releases/latest/download/promptext_${os}_${arch}.tar.gz"
 }
 
 # Function to verify checksum
@@ -270,14 +267,15 @@ install_promptext() {
         exit 1
     fi
 
-    # Install binary
+    # Install binary (GoReleaser builds it as "prx")
     write_status "Installing binary..."
     if [ -f "$INSTALL_DIR/$BINARY_NAME" ]; then
         write_status "Removing existing installation..."
         rm -f "$INSTALL_DIR/$BINARY_NAME"
     fi
 
-    mv promptext "$INSTALL_DIR/"
+    # Binary is named "prx" in the archive, rename to "promptext"
+    mv prx "$INSTALL_DIR/$BINARY_NAME"
     chmod +x "$INSTALL_DIR/$BINARY_NAME"
 
     # Add to PATH if needed
