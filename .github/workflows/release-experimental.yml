@@ -70,7 +70,6 @@ jobs:
   chocolatey:
     runs-on: ubuntu-latest
     continue-on-error: true  # Don't block workflow on failure
-    if: false  # Disabled until Chocolatey setup is fixed
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -113,7 +112,7 @@ jobs:
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --clean --config .goreleaser.experimental.yaml --skip=snapcraft
+          args: release --clean --config .goreleaser.choco.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
