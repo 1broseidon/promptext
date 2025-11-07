@@ -60,6 +60,23 @@ brew tap 1broseidon/tap
 brew install promptext
 ```
 
+**Chocolatey (Windows):**
+```powershell
+choco install promptext
+```
+
+**Snap (Linux):**
+```bash
+sudo snap install promptext --classic
+```
+
+**Go Install:**
+```bash
+go install github.com/1broseidon/promptext/cmd/promptext@latest
+```
+
+### Alternative Methods
+
 **Linux / macOS (curl):**
 ```bash
 curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
@@ -68,11 +85,6 @@ curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/in
 **Windows (PowerShell):**
 ```powershell
 irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
-```
-
-**Go (1.21+):**
-```bash
-go install github.com/1broseidon/promptext/cmd/promptext@latest
 ```
 
 **Manual Download:**
