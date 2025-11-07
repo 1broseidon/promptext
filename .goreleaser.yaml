@@ -60,49 +60,33 @@ release:
     name: promptext
   mode: replace
   header: |
-    ## Installation (Stable & Verified)
+    ## Installation
 
-    **Homebrew (macOS/Linux)** - Recommended:
+    **Install Scripts (Recommended):**
     ```bash
-    brew tap 1broseidon/tap
-    brew install promptext
-    ```
-
-    **Go Install** (All platforms):
-    ```bash
-    go install github.com/1broseidon/promptext/cmd/promptext@latest
-    ```
-
-    **Direct Install Scripts:**
-    ```bash
-    # Linux/macOS
+    # macOS/Linux
     curl -sSL promptext.sh/install | bash
 
     # Windows PowerShell
     irm promptext.sh/install.ps1 | iex
     ```
 
-    **Uninstall:**
+    **Go Install:**
     ```bash
-    # Linux/macOS
-    curl -sSL promptext.sh/uninstall | bash
-
-    # Homebrew
-    brew uninstall promptext
+    go install github.com/1broseidon/promptext/cmd/promptext@latest
     ```
 
     **Manual Download:**
     Download binaries for your platform from the Assets section below.
 
-    ---
-
-    ### 🚧 Experimental Publishers
-    - **Snap** (Linux): Pending manual review in Snap Store (check back in 2-3 days)
-    - **Chocolatey** (Windows): Under development
+    **Uninstall:**
+    ```bash
+    curl -sSL promptext.sh/uninstall | bash
+    ```
 
     ---
   footer: |
-    **Full Documentation:** https://github.com/1broseidon/promptext#readme
+    **Documentation:** https://promptext.sh
 
     **Verify Installation:**
     ```bash
@@ -110,76 +94,3 @@ release:
     # or use the alias
     prx --version
     ```
-
-homebrew_casks:
-  - name: promptext
-    repository:
-      owner: 1broseidon
-      name: homebrew-tap
-    homepage: https://github.com/1broseidon/promptext
-    description: Smart code context extractor for AI assistants
-    binaries:
-      - promptext
-    custom_block: |
-      postflight do
-        system_command "/usr/bin/xattr",
-                       args: ["-d", "com.apple.quarantine", "#{staged_path}/promptext"],
-                       sudo: false
-
-        bin_path = "#{HOMEBREW_PREFIX}/bin"
-        prx_link = "#{bin_path}/prx"
-        promptext_bin = "#{bin_path}/promptext"
-
-        if File.exist?(promptext_bin) && !File.exist?(prx_link)
-          File.symlink(promptext_bin, prx_link)
-        end
-      end
-
-      uninstall_postflight do
-        prx_link = "#{HOMEBREW_PREFIX}/bin/prx"
-        File.delete(prx_link) if File.symlink?(prx_link)
-      end
-
-snapcrafts:
-  - name: promptext
-    publish: true
-    summary: Smart code context extractor for AI assistants
-    description: |
-      Promptext analyzes codebases, filters relevant files, estimates token
-      usage using tiktoken (GPT-3.5/4 compatible), and provides formatted
-      output suitable for AI prompts.
-    grade: stable
-    confinement: classic
-    license: MIT
-    apps:
-      promptext:
-        command: promptext
-
-chocolateys:
-  - name: promptext
-    ids:
-      - default
-    title: Promptext
-    authors: George Dikeakos
-    project_url: https://github.com/1broseidon/promptext
-    url_template: https://github.com/1broseidon/promptext/releases/download/{{ .Tag }}/{{ .ArtifactName }}
-    license_url: https://github.com/1broseidon/promptext/blob/main/LICENSE
-    copyright: 2024 George Dikeakos
-    require_license_acceptance: false
-    project_source_url: https://github.com/1broseidon/promptext
-    docs_url: https://github.com/1broseidon/promptext#readme
-    bug_tracker_url: https://github.com/1broseidon/promptext/issues
-    tags: cli go ai llm token-counter context promptext
-    summary: Smart code context extractor for AI assistants
-    description: |
-      Promptext analyzes codebases, filters relevant files, estimates token
-      usage using tiktoken (GPT-3.5/4 compatible), and provides formatted
-      output suitable for AI prompts.
-
-      Features:
-      - Smart file filtering with .gitignore support
-      - Relevance prioritization with multi-factor scoring
-      - Token budget management
-      - Multiple output formats (PTX, TOON, Markdown, XML)
-      - Accurate token counting using tiktoken
-    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"

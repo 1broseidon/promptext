@@ -5,6 +5,34 @@ All notable changes to promptext will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - 2025-11-07
+
+### Changed
+- **Simplified Installation**: Removed all package manager support in favor of install scripts
+  - Removed Homebrew tap configuration
+  - Removed Snapcraft packaging
+  - Removed Chocolatey packaging
+  - Removed AUR packaging
+  - Streamlined to curl|bash for Linux/macOS and PowerShell for Windows
+  - Reduced maintenance burden and complexity
+- **Landing Page Redesign**: Modern segmented control for OS selection
+  - Sleek three-way toggle with macOS, Linux, and Windows options
+  - Sliding background indicator with smooth animations
+  - SVG icons for visual clarity
+  - Improved layout with better visual hierarchy
+- **Terminal Animation Enhancement**: More realistic workflow demonstration
+  - Added directory navigation (cd command) for context
+  - Shows project directory in prompt
+  - Enhanced readability with additional spacing
+  - Better demonstration of real-world usage patterns
+
+### Removed
+- GoReleaser configurations for Homebrew, Snap, Chocolatey, and AUR
+- Package manager installation instructions from documentation
+- Maintenance overhead for multiple distribution channels
+
+---
+
 ## [0.6.2] - 2025-11-07
 
 ### Added

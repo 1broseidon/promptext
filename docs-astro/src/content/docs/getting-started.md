@@ -5,71 +5,29 @@ description: Quick start guide for promptext installation and basic usage
 
 ## Installation
 
-Choose your preferred installation method:
-
-### Package Managers (Recommended)
-
-**Homebrew (macOS/Linux):**
-```bash
-brew tap 1broseidon/tap
-brew install promptext
-```
-
-### Go Install
-
-For Go developers (requires Go 1.19+):
-```bash
-go install github.com/1broseidon/promptext/cmd/promptext@latest
-```
-
-### Script Install
-
-**Linux/macOS:**
+**macOS/Linux:**
 ```bash
 curl -sSL promptext.sh/install | bash
 ```
 
-**Windows PowerShell:**
+**Windows:**
 ```powershell
 irm promptext.sh/install.ps1 | iex
 ```
 
-### Manual Install
+**Go Install (requires Go 1.19+):**
+```bash
+go install github.com/1broseidon/promptext/cmd/promptext@latest
+```
 
+**Manual Install:**
 Download binaries from [GitHub Releases](https://github.com/1broseidon/promptext/releases) and add to your PATH.
 
 ## Uninstalling
 
-### Package Managers
-
-**Homebrew:**
+**Linux/macOS:**
 ```bash
-brew uninstall promptext
-brew untap 1broseidon/tap  # Optional: remove the tap
-```
-
-**Go Install:**
-```bash
-rm $(which promptext)
-```
-
-### Script Install
-
-**Linux/macOS (Recommended):**
-```bash
-# Dedicated uninstall script
 curl -sSL promptext.sh/uninstall | bash
-```
-
-**Linux/macOS (Alternative):**
-```bash
-# Using install script with flag
-curl -sSL promptext.sh/install | bash -s -- --uninstall
-```
-
-**Windows PowerShell:**
-```powershell
-irm promptext.sh/install.ps1 | iex -uninstall
 ```
 
 **Manual Removal:**
@@ -78,8 +36,7 @@ irm promptext.sh/install.ps1 | iex -uninstall
 rm ~/.local/bin/promptext
 
 # Remove aliases from shell configs
-sed -i '/alias prx=/d' ~/.bashrc
-sed -i '/alias prx=/d' ~/.zshrc
+sed -i '/alias prx=/d' ~/.bashrc ~/.zshrc
 ```
 
 ## Basic Usage

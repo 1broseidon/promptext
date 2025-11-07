@@ -52,35 +52,25 @@ Working with AI assistants requires code context, but:
 
 ## Installation
 
-### Quick Install
-
-**Homebrew (macOS/Linux):**
-```bash
-brew tap 1broseidon/tap
-brew install promptext
-```
-
-**Go Install (All platforms - requires Go 1.19+):**
-```bash
-go install github.com/1broseidon/promptext/cmd/promptext@latest
-```
-
-### Alternative Methods
-
-**Linux / macOS (curl):**
+**macOS/Linux:**
 ```bash
 curl -sSL promptext.sh/install | bash
 ```
 
-**Windows (PowerShell):**
+**Windows:**
 ```powershell
 irm promptext.sh/install.ps1 | iex
+```
+
+**Go Install (requires Go 1.19+):**
+```bash
+go install github.com/1broseidon/promptext/cmd/promptext@latest
 ```
 
 **Manual Download:**
 Download pre-built binaries from [GitHub Releases](https://github.com/1broseidon/promptext/releases/latest)
 
-The executable is installed as `promptext` with `prx` alias. For more installation options, see the [documentation](https://1broseidon.github.io/promptext/).
+The executable is installed as `promptext` with `prx` alias.
 
 ### Updating
 
@@ -90,6 +80,11 @@ prx --check-update
 
 # Update to latest version
 prx --update
+```
+
+**Uninstall:**
+```bash
+curl -sSL promptext.sh/uninstall | bash
 ```
 
 > **Note:** `promptext` automatically checks for new releases once per day and notifies you when updates are available.
