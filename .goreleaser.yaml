@@ -68,6 +68,9 @@ homebrew_casks:
     description: "Smart code context extractor for AI assistants"
     binaries:
       - promptext
-    caveats: |
-      On first run, if macOS blocks promptext, run:
-        xattr -d com.apple.quarantine $(which promptext)
+    custom_block: |
+      postflight do
+        system_command "/usr/bin/xattr",
+                       args: ["-d", "com.apple.quarantine", "#{staged_path}/promptext"],
+                       sudo: false
+      end
