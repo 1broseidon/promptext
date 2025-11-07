@@ -1,0 +1,678 @@
+---
+import { Icon } from '@astrojs/starlight/components';
+
+const features = [
+  {
+    title: "Smart Filtering",
+    description: "Automatically excludes node_modules, lock files, and build artifacts. Respects .gitignore patterns.",
+    icon: "puzzle"
+  },
+  {
+    title: "Relevance Scoring",
+    description: "Ranks files by keyword matches in names, paths, and content. Get the most relevant code first.",
+    icon: "star"
+  },
+  {
+    title: "Token Budget",
+    description: "Set hard limits on token count. Automatically excludes lower-priority files to stay within budget.",
+    icon: "warning"
+  },
+  {
+    title: "Accurate Counting",
+    description: "Uses tiktoken cl100k_base tokenizer. Compatible with GPT-4, GPT-3.5, and Claude models.",
+    icon: "information"
+  },
+  {
+    title: "Multiple Formats",
+    description: "PTX (default), TOON (30-60% savings), Markdown, or XML. Auto-detect from file extension.",
+    icon: "document"
+  },
+  {
+    title: "Lightning Fast",
+    description: "Written in Go. Processes thousands of files in seconds. Zero dependencies after install.",
+    icon: "rocket"
+  }
+];
+---
+
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>promptext - Smart code context for AI assistants</title>
+  <meta name="description" content="Transform your codebase into AI-ready context. Fast, token-efficient, smart filtering.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #000000;
+      --text: #FFFFFF;
+      --text-muted: rgba(255, 255, 255, 0.6);
+      --accent: #FFFFFF;
+      --border: rgba(255, 255, 255, 0.08);
+      --code-bg: #0A0A0A;
+      --green: #10B981;
+
+      --space-xs: 8px;
+      --space-sm: 16px;
+      --space-md: 24px;
+      --space-lg: 32px;
+      --space-xl: 48px;
+      --space-2xl: 64px;
+      --space-3xl: 96px;
+      --space-4xl: 128px;
+    }
+
+    html[data-theme="light"] {
+      --bg: #FFFFFF;
+      --text: #000000;
+      --text-muted: rgba(0, 0, 0, 0.6);
+      --accent: #10B981;
+      --border: rgba(0, 0, 0, 0.08);
+      --code-bg: #FAFAFA;
+      --green: #059669;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      letter-spacing: -0.01em;
+      overflow-x: hidden;
+    }
+
+    ::selection {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-lg);
+    }
+
+    html[data-theme="light"] nav {
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .logo {
+      font-weight: 600;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: var(--space-lg);
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9375rem;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: var(--space-xs) var(--space-sm);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      transition: all 0.2s;
+    }
+
+    .theme-toggle:hover {
+      border-color: var(--accent);
+    }
+
+    /* Hero Section */
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-4xl) var(--space-lg) var(--space-3xl);
+      margin-top: 56px;
+    }
+
+    .hero-content {
+      max-width: 1200px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3xl);
+      align-items: center;
+    }
+
+    .hero-text {
+      max-width: 540px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 5vw, 3.5rem);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      margin-bottom: var(--space-lg);
+    }
+
+    .hero p {
+      font-size: clamp(1.125rem, 2vw, 1.25rem);
+      color: var(--text-muted);
+      margin-bottom: var(--space-xl);
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: var(--space-md);
+      margin-bottom: 0;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: var(--space-sm) var(--space-lg);
+      font-size: 1rem;
+      font-weight: 500;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: var(--text);
+      color: var(--bg);
+      border-color: var(--text);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+    }
+
+    /* Terminal */
+    .terminal-window {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      font-family: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      margin-top: var(--space-xl);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .terminal-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      padding: var(--space-sm) var(--space-md);
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      opacity: 0.3;
+    }
+
+    .terminal-body {
+      padding: var(--space-md);
+      min-height: 450px;
+    }
+
+    .terminal-line {
+      display: flex;
+      margin-bottom: var(--space-xs);
+      opacity: 0;
+      animation: fadeIn 0.3s forwards;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    .prompt {
+      color: var(--green);
+      margin-right: var(--space-xs);
+      user-select: none;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 18px;
+      background: var(--text);
+      margin-left: 2px;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .output {
+      color: var(--text-muted);
+      margin: var(--space-sm) 0;
+      line-height: 1.6;
+    }
+
+    .output div {
+      min-height: 1.6em;
+    }
+
+    .success {
+      color: var(--green);
+    }
+
+    .warning {
+      color: #FFA500;
+    }
+
+    .terminal-box {
+      color: var(--green);
+      margin: var(--space-sm) 0;
+      line-height: 1.4;
+      font-family: inherit;
+      display: inline-block;
+      min-width: 0;
+    }
+
+    .terminal-box-top,
+    .terminal-box-bottom {
+      user-select: none;
+      line-height: 1;
+    }
+
+    .terminal-box-line {
+      display: flex;
+      align-items: stretch;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+
+    .terminal-box-border {
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .terminal-box-content {
+      flex: 1;
+      min-width: 0;
+      white-space: pre;
+    }
+
+    /* Features Section */
+    .features {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-2xl) var(--space-lg) var(--space-4xl);
+    }
+
+    .section-title {
+      font-size: clamp(1.75rem, 3vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: var(--space-xl);
+      text-align: center;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: var(--space-lg);
+    }
+
+    .feature-card {
+      border: 1px solid var(--border);
+      padding: var(--space-lg);
+      transition: all 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+    }
+
+    .feature-card h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: var(--space-sm);
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.9375rem;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: var(--space-xl) var(--space-lg);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    footer a {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Responsive */
+    @media (max-width: 968px) {
+      .hero-content {
+        grid-template-columns: 1fr;
+        gap: var(--space-2xl);
+      }
+
+      .hero-text {
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 768px) {
+      nav {
+        padding: 0 var(--space-md);
+      }
+
+      .hero {
+        padding: var(--space-2xl) var(--space-md);
+      }
+
+      .cta-buttons {
+        flex-direction: column;
+      }
+
+      .btn {
+        text-align: center;
+      }
+
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .terminal-body {
+        font-size: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/" class="logo">promptext</a>
+    <div class="nav-links">
+      <a href="/getting-started">Documentation</a>
+      <a href="https://github.com/1broseidon/promptext" target="_blank">GitHub</a>
+      <button class="theme-toggle" id="themeToggle">Toggle Theme</button>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1>Turn your codebase into AI-ready context</h1>
+        <p>Smart filtering, relevance scoring, and token budgets. Extract only what matters.</p>
+
+        <div class="cta-buttons">
+          <a href="/getting-started" class="btn btn-primary">Get Started</a>
+          <a href="/getting-started" class="btn btn-secondary">View Documentation</a>
+        </div>
+      </div>
+
+      <div class="terminal-window">
+        <div class="terminal-header">
+          <div class="terminal-dot"></div>
+          <div class="terminal-dot"></div>
+          <div class="terminal-dot"></div>
+        </div>
+        <div class="terminal-body" id="terminal"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <h2 class="section-title">Built for efficiency</h2>
+    <div class="feature-grid">
+      {features.map(feature => (
+        <div class="feature-card">
+          <h3>{feature.title}</h3>
+          <p>{feature.description}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      Built with <a href="https://astro.build" target="_blank">Astro</a> ·
+      Open source on <a href="https://github.com/1broseidon/promptext" target="_blank">GitHub</a>
+    </p>
+  </footer>
+
+  <script>
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+
+    themeToggle?.addEventListener('click', () => {
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    });
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    html.setAttribute('data-theme', savedTheme);
+
+    // Terminal animation
+    const terminal = document.getElementById('terminal');
+    const commands = [
+      {
+        type: 'command',
+        text: 'prx -r "auth login" --max-tokens 8000',
+        delay: 0
+      },
+      {
+        type: 'output',
+        lines: [
+          '📦 promptext (Go)',
+          '   Included: 7/18 files • ~4,847 tokens',
+          '   Full project: 18 files • ~19,512 tokens'
+        ],
+        delay: 600,
+        success: true
+      },
+      {
+        type: 'output',
+        lines: [
+          '',
+          '⚠️  Excluded 11 files due to token budget:',
+          '    • internal/cli/commands.go (~784 tokens)',
+          '    • internal/app/app.go (~623 tokens)',
+          '    • internal/token/counter.go (~541 tokens)',
+          '    ... and 8 more files (~7,349 tokens)',
+          '    Total excluded: ~9,297 tokens'
+        ],
+        delay: 800,
+        warning: true
+      },
+      {
+        type: 'output',
+        lines: [
+          '',
+          '✓ Copied to clipboard!'
+        ],
+        delay: 1000,
+        success: true
+      }
+    ];
+
+    async function typeWriter(element, text, speed = 20) {
+      for (let i = 0; i < text.length; i++) {
+        element.textContent += text.charAt(i);
+        await new Promise(resolve => setTimeout(resolve, speed));
+      }
+    }
+
+    async function runTerminalAnimation() {
+      for (const cmd of commands) {
+        await new Promise(resolve => setTimeout(resolve, cmd.delay));
+
+        if (cmd.type === 'command') {
+          const line = document.createElement('div');
+          line.className = 'terminal-line';
+          const prompt = document.createElement('span');
+          prompt.className = 'prompt';
+          prompt.textContent = '$ ';
+          const command = document.createElement('span');
+          line.appendChild(prompt);
+          line.appendChild(command);
+          terminal?.appendChild(line);
+
+          await typeWriter(command, cmd.text, 25);
+        } else if (cmd.type === 'box') {
+          // Create boxed output with borders - use fixed width approach
+          const box = document.createElement('div');
+          box.className = 'terminal-box';
+
+          // Fixed width for consistency (matches longest line)
+          const boxWidth = 46;
+
+          // Top border
+          const topBorder = document.createElement('div');
+          topBorder.className = 'terminal-box-top';
+          topBorder.textContent = '╭' + '─'.repeat(boxWidth) + '╮';
+          box.appendChild(topBorder);
+
+          // Content lines - use fixed width with proper padding
+          cmd.lines.forEach(line => {
+            const lineDiv = document.createElement('div');
+            lineDiv.className = 'terminal-box-line';
+
+            const leftBorder = document.createElement('span');
+            leftBorder.className = 'terminal-box-border';
+            leftBorder.textContent = '│ ';
+
+            const content = document.createElement('span');
+            content.className = 'terminal-box-content';
+
+            // Calculate visual length accounting for emojis
+            let visualLength = 0;
+            for (const char of line) {
+              const code = char.codePointAt(0);
+              // Emoji range check
+              if ((code >= 0x1F300 && code <= 0x1F9FF) ||
+                  (code >= 0x2600 && code <= 0x26FF) ||
+                  (code >= 0x2700 && code <= 0x27BF)) {
+                visualLength += 2; // Emojis take 2 spaces in monospace
+              } else {
+                visualLength += 1;
+              }
+            }
+
+            // Pad to fixed width
+            const paddingNeeded = boxWidth - visualLength;
+            content.textContent = line + ' '.repeat(Math.max(0, paddingNeeded));
+
+            const rightBorder = document.createElement('span');
+            rightBorder.className = 'terminal-box-border';
+            rightBorder.textContent = ' │';
+
+            lineDiv.appendChild(leftBorder);
+            lineDiv.appendChild(content);
+            lineDiv.appendChild(rightBorder);
+            box.appendChild(lineDiv);
+          });
+
+          // Bottom border
+          const bottomBorder = document.createElement('div');
+          bottomBorder.className = 'terminal-box-bottom';
+          bottomBorder.textContent = '╰' + '─'.repeat(boxWidth) + '╯';
+          box.appendChild(bottomBorder);
+
+          terminal?.appendChild(box);
+        } else if (cmd.type === 'output') {
+          const output = document.createElement('div');
+          output.className = cmd.success ? 'output success' : cmd.warning ? 'output warning' : 'output';
+
+          // Add each line separately to preserve line breaks
+          cmd.lines.forEach((line, index) => {
+            const lineDiv = document.createElement('div');
+            lineDiv.textContent = line || '\u00A0'; // Use non-breaking space for empty lines
+            output.appendChild(lineDiv);
+          });
+
+          terminal?.appendChild(output);
+        }
+      }
+
+      // Add blinking cursor at end
+      const cursorLine = document.createElement('div');
+      cursorLine.className = 'terminal-line';
+      const prompt = document.createElement('span');
+      prompt.className = 'prompt';
+      prompt.textContent = '$ ';
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      cursorLine.appendChild(prompt);
+      cursorLine.appendChild(cursor);
+      terminal?.appendChild(cursorLine);
+    }
+
+    // Start animation when page loads
+    runTerminalAnimation();
+  </script>
+</body>
+</html>

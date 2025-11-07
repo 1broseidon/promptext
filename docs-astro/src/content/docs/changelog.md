@@ -10,6 +10,34 @@ All notable changes to promptext are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2025-11-07
+
+### Added
+- **Custom Domain**: Configured promptext.sh as the official documentation domain
+  - DNS records configured for GitHub Pages
+  - Domain verified and secured with HTTPS
+  - All documentation now served from promptext.sh
+- **Landing Page**: Beautiful minimal hero section with live terminal demo
+  - Split-screen layout with hero text and animated terminal
+  - Real-time demonstration of token budget and relevance filtering
+  - Authentic output styling matching CLI behavior
+  - Feature grid highlighting 6 core capabilities
+  - Dark/light theme toggle with localStorage persistence
+  - Fully responsive design (desktop, tablet, mobile)
+- **Terminal Animation**: Interactive demo showing real-world usage
+  - Live typing animation for commands
+  - Green-colored success messages matching CLI output
+  - Warning-colored budget exclusion details
+  - Auto-plays on page load for immediate engagement
+
+### Changed
+- Documentation site now uses custom domain instead of GitHub Pages subdomain
+- Hero section redesigned with better hierarchy and visual balance
+- Navigation links updated to use Starlight's root-level routing
+- Feature descriptions refined for clarity and impact
+
+---
+
 ## Documentation Updates - 2025-11-06
 
 ### Changed

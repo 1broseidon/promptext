@@ -17,6 +17,8 @@ export default defineConfig({
 			editLink: {
 				baseUrl: 'https://github.com/1broseidon/promptext/edit/main/docs-astro/',
 			},
+			// Disable built-in homepage to use custom landing page
+			disable404Route: false,
 			sidebar: [
 				{ label: 'Introduction', slug: 'index' },
 				{ label: 'Getting Started', slug: 'getting-started' },
