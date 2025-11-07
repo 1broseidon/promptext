@@ -23,6 +23,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.inputs.version || github.ref }}
 
       - name: Fetch all tags
         run: git fetch --force --tags
@@ -68,6 +69,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.inputs.version || github.ref }}
 
       - name: Fetch all tags
         run: git fetch --force --tags
