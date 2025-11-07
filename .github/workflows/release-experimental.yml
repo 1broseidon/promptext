@@ -50,7 +50,7 @@ jobs:
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --clean --config .goreleaser.experimental.yaml
+          args: release --clean --config .goreleaser.snap.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
