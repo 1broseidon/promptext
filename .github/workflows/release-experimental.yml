@@ -28,6 +28,13 @@ jobs:
       - name: Fetch all tags
         run: git fetch --force --tags
 
+      - name: Checkout tag for manual trigger
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git checkout ${{ github.event.inputs.version }}
+          echo "Checked out tag: $(git describe --tags)"
+          echo "Current commit: $(git rev-parse HEAD)"
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -73,6 +80,13 @@ jobs:
 
       - name: Fetch all tags
         run: git fetch --force --tags
+
+      - name: Checkout tag for manual trigger
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git checkout ${{ github.event.inputs.version }}
+          echo "Checked out tag: $(git describe --tags)"
+          echo "Current commit: $(git rev-parse HEAD)"
 
       - name: Set up Go
         uses: actions/setup-go@v5
