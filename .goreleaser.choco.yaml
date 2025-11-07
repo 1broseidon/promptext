@@ -35,17 +35,19 @@ archives:
       - README.md
       - LICENSE
 
-# Disable checksums
+# Skip checksums and changelog (not needed for choco)
 checksum:
   disable: true
 
-# Disable changelog
 changelog:
   disable: true
 
-# Disable GitHub release
+# Use existing GitHub release (created by stable workflow)
 release:
-  disable: true
+  disable: false
+  make_latest: false
+  prerelease: auto
+  mode: keep-existing
 
 # Chocolatey (EXPERIMENTAL)
 chocolateys:
