@@ -59,6 +59,10 @@ changelog:
     - title: Others
       order: 999
 
+# Disable GitHub release (handled by stable workflow)
+release:
+  disable: true
+
 # Snap (EXPERIMENTAL - pending store approval)
 snapcrafts:
   - name: promptext
