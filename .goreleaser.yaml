@@ -1,10 +1,9 @@
-# GoReleaser configuration for promptext
-# Keep It Simple: https://goreleaser.com
+# Unified GoReleaser configuration
+# Handles GitHub Releases, Homebrew Tap, Snapcraft, and Chocolatey in one pass
 version: 2
 
 project_name: promptext
 
-# Build configuration
 builds:
   - id: default
     binary: promptext
@@ -23,13 +22,11 @@ builds:
       - -X main.version={{.Version}}
       - -X main.date={{.Date}}
 
-# Archive configuration
 archives:
   - formats: ["tar.gz"]
     format_overrides:
       - goos: windows
         formats: ["zip"]
-    # Match existing naming: promptext_Darwin_x86_64.tar.gz
     name_template: >-
       {{ .ProjectName }}_
       {{- if eq .Os "darwin" }}Darwin
@@ -43,23 +40,97 @@ archives:
       - LICENSE
       - CHANGELOG.md
 
-# Checksum for verification
 checksum:
-  name_template: 'checksums.txt'
+  name_template: checksums.txt
 
-# Changelog from git commits
 changelog:
   sort: asc
   use: github
   groups:
     - title: Features
       regexp: '^.*?feat.*?:.*$'
-    - title: 'Bug Fixes'
+    - title: Bug Fixes
       regexp: '^.*?fix.*?:.*$'
     - title: Others
       order: 999
 
-# Snap (Linux package manager)
+release:
+  github:
+    owner: 1broseidon
+    name: promptext
+  mode: replace
+  header: |
+    ## Installation (Stable & Verified)
+
+    **Homebrew (macOS/Linux)** - Recommended:
+    ```bash
+    brew tap 1broseidon/tap
+    brew install promptext
+    ```
+
+    **Go Install** (All platforms):
+    ```bash
+    go install github.com/1broseidon/promptext/cmd/promptext@latest
+    ```
+
+    **Direct Install Scripts:**
+    ```bash
+    # Linux/macOS
+    curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
+
+    # Windows PowerShell
+    irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
+    ```
+
+    **Manual Download:**
+    Download binaries for your platform from the Assets section below.
+
+    ---
+
+    ### 🚧 Experimental Publishers
+    - **Snap** (Linux): Pending manual review in Snap Store (check back in 2-3 days)
+    - **Chocolatey** (Windows): Under development
+
+    ---
+  footer: |
+    **Full Documentation:** https://github.com/1broseidon/promptext#readme
+
+    **Verify Installation:**
+    ```bash
+    promptext --version
+    # or use the alias
+    prx --version
+    ```
+
+homebrew_casks:
+  - name: promptext
+    repository:
+      owner: 1broseidon
+      name: homebrew-tap
+    homepage: https://github.com/1broseidon/promptext
+    description: Smart code context extractor for AI assistants
+    binaries:
+      - promptext
+    custom_block: |
+      postflight do
+        system_command "/usr/bin/xattr",
+                       args: ["-d", "com.apple.quarantine", "#{staged_path}/promptext"],
+                       sudo: false
+
+        bin_path = "#{HOMEBREW_PREFIX}/bin"
+        prx_link = "#{bin_path}/prx"
+        promptext_bin = "#{bin_path}/promptext"
+
+        if File.exist?(promptext_bin) && !File.exist?(prx_link)
+          File.symlink(promptext_bin, prx_link)
+        end
+      end
+
+      uninstall_postflight do
+        prx_link = "#{HOMEBREW_PREFIX}/bin/prx"
+        File.delete(prx_link) if File.symlink?(prx_link)
+      end
+
 snapcrafts:
   - name: promptext
     publish: true
@@ -75,35 +146,31 @@ snapcrafts:
       promptext:
         command: promptext
 
-# Homebrew tap
-homebrew_casks:
+chocolateys:
   - name: promptext
-    repository:
-      owner: 1broseidon
-      name: homebrew-tap
-    homepage: "https://github.com/1broseidon/promptext"
-    description: "Smart code context extractor for AI assistants"
-    binaries:
-      - promptext
-    custom_block: |
-      postflight do
-        # Remove quarantine attribute
-        system_command "/usr/bin/xattr",
-                       args: ["-d", "com.apple.quarantine", "#{staged_path}/promptext"],
-                       sudo: false
+    ids:
+      - default
+    title: Promptext
+    authors: George Dikeakos
+    project_url: https://github.com/1broseidon/promptext
+    url_template: https://github.com/1broseidon/promptext/releases/download/{{ .Tag }}/{{ .ArtifactName }}
+    license_url: https://github.com/1broseidon/promptext/blob/main/LICENSE
+    copyright: 2024 George Dikeakos
+    require_license_acceptance: false
+    project_source_url: https://github.com/1broseidon/promptext
+    docs_url: https://github.com/1broseidon/promptext#readme
+    bug_tracker_url: https://github.com/1broseidon/promptext/issues
+    tags: cli go ai llm token-counter context promptext
+    summary: Smart code context extractor for AI assistants
+    description: |
+      Promptext analyzes codebases, filters relevant files, estimates token
+      usage using tiktoken (GPT-3.5/4 compatible), and provides formatted
+      output suitable for AI prompts.
 
-        # Create prx symlink
-        bin_path = "#{HOMEBREW_PREFIX}/bin"
-        prx_link = "#{bin_path}/prx"
-        promptext_bin = "#{bin_path}/promptext"
-
-        if File.exist?(promptext_bin) && !File.exist?(prx_link)
-          File.symlink(promptext_bin, prx_link)
-        end
-      end
-
-      uninstall_postflight do
-        # Remove prx symlink during uninstall
-        prx_link = "#{HOMEBREW_PREFIX}/bin/prx"
-        File.delete(prx_link) if File.symlink?(prx_link)
-      end
+      Features:
+      - Smart file filtering with .gitignore support
+      - Relevance prioritization with multi-factor scoring
+      - Token budget management
+      - Multiple output formats (PTX, TOON, Markdown, XML)
+      - Accurate token counting using tiktoken
+    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
