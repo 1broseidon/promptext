@@ -38,10 +38,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y mono-complete
-          mkdir -p /opt/chocolatey
+          sudo mkdir -p /opt/chocolatey
           wget -q -O- "https://github.com/chocolatey/choco/releases/download/2.4.1/chocolatey.v2.4.1.tar.gz" | sudo tar -xz -C "/opt/chocolatey"
-          echo 'mono /opt/chocolatey/choco.exe "$@"' | sudo tee /usr/local/bin/choco
+          echo '#!/bin/bash' | sudo tee /usr/local/bin/choco
+          echo 'mono /opt/chocolatey/choco.exe "$@"' | sudo tee -a /usr/local/bin/choco
           sudo chmod +x /usr/local/bin/choco
+          # Test that choco works
+          choco --version
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
