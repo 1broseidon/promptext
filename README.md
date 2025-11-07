@@ -60,11 +60,6 @@ brew tap 1broseidon/tap
 brew install promptext
 ```
 
-**Snap (Linux):**
-```bash
-sudo snap install promptext --classic
-```
-
 **Go Install (All platforms - requires Go 1.19+):**
 ```bash
 go install github.com/1broseidon/promptext/cmd/promptext@latest
