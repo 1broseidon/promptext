@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - "docs-astro/**"
+      - ".github/workflows/deploy-docs.yml"
+  workflow_dispatch:
 
 permissions:
   contents: write
