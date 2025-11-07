@@ -26,17 +26,61 @@ go install github.com/1broseidon/promptext/cmd/promptext@latest
 
 **Linux/macOS:**
 ```bash
-curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
+curl -sSL promptext.sh/install | bash
 ```
 
 **Windows PowerShell:**
 ```powershell
-irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
+irm promptext.sh/install.ps1 | iex
 ```
 
 ### Manual Install
 
 Download binaries from [GitHub Releases](https://github.com/1broseidon/promptext/releases) and add to your PATH.
+
+## Uninstalling
+
+### Package Managers
+
+**Homebrew:**
+```bash
+brew uninstall promptext
+brew untap 1broseidon/tap  # Optional: remove the tap
+```
+
+**Go Install:**
+```bash
+rm $(which promptext)
+```
+
+### Script Install
+
+**Linux/macOS (Recommended):**
+```bash
+# Dedicated uninstall script
+curl -sSL promptext.sh/uninstall | bash
+```
+
+**Linux/macOS (Alternative):**
+```bash
+# Using install script with flag
+curl -sSL promptext.sh/install | bash -s -- --uninstall
+```
+
+**Windows PowerShell:**
+```powershell
+irm promptext.sh/install.ps1 | iex -uninstall
+```
+
+**Manual Removal:**
+```bash
+# Remove binary (default location)
+rm ~/.local/bin/promptext
+
+# Remove aliases from shell configs
+sed -i '/alias prx=/d' ~/.bashrc
+sed -i '/alias prx=/d' ~/.zshrc
+```
 
 ## Basic Usage
 

@@ -76,10 +76,19 @@ release:
     **Direct Install Scripts:**
     ```bash
     # Linux/macOS
-    curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
+    curl -sSL promptext.sh/install | bash
 
     # Windows PowerShell
-    irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
+    irm promptext.sh/install.ps1 | iex
+    ```
+
+    **Uninstall:**
+    ```bash
+    # Linux/macOS
+    curl -sSL promptext.sh/uninstall | bash
+
+    # Homebrew
+    brew uninstall promptext
     ```
 
     **Manual Download:**

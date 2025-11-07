@@ -69,12 +69,12 @@ go install github.com/1broseidon/promptext/cmd/promptext@latest
 
 **Linux / macOS (curl):**
 ```bash
-curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
+curl -sSL promptext.sh/install | bash
 ```
 
 **Windows (PowerShell):**
 ```powershell
-irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
+irm promptext.sh/install.ps1 | iex
 ```
 
 **Manual Download:**
