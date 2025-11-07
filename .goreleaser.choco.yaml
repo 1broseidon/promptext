@@ -44,7 +44,7 @@ changelog:
 
 # Use existing GitHub release (created by stable workflow)
 release:
-  disable: false
+  disable: true
   make_latest: false
   prerelease: auto
   mode: keep-existing
