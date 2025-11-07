@@ -88,7 +88,7 @@ snapcrafts:
       output suitable for AI prompts.
     grade: stable
     confinement: classic
-    license: BSD-Zero-Clause
+    license: MIT
     apps:
       promptext:
         command: promptext
