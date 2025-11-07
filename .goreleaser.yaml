@@ -22,19 +22,6 @@ builds:
       - -X main.version={{.Version}}
       - -X main.date={{.Date}}
 
-# Code signing for macOS binaries
-signs:
-  - cmd: codesign
-    args:
-      - --sign
-      - "{{ .Env.MACOS_SIGN_IDENTITY }}"
-      - --timestamp
-      - --options=runtime
-      - --verbose
-      - "${artifact}"
-    artifacts: binary
-    signature: ""
-
 # Archive configuration
 archives:
   - formats: ["tar.gz"]
@@ -81,3 +68,6 @@ homebrew_casks:
     description: "Smart code context extractor for AI assistants"
     binaries:
       - promptext
+    caveats: |
+      On first run, if macOS blocks promptext, run:
+        xattr -d com.apple.quarantine $(which promptext)

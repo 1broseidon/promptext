@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   goreleaser:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,13 +30,6 @@ jobs:
       - name: Run tests
         run: go test -v ./...
 
-      - name: Import Code Signing Certificate
-        if: ${{ secrets.MACOS_CERTIFICATE != '' }}
-        uses: apple-actions/import-codesign-certs@v2
-        with:
-          p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
-          p12-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -45,4 +38,3 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN || secrets.GITHUB_TOKEN }}
-          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
