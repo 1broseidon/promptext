@@ -4,8 +4,8 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://1broseidon.github.io',
-	base: '/promptext',
+	site: 'https://promptext.sh',
+	base: '/',
 	integrations: [
 		starlight({
 			title: 'promptext',
