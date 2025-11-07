@@ -1,0 +1,97 @@
+# GoReleaser Experimental Configuration
+# Publishers: Snap + Chocolatey (when enabled)
+# These are experimental and can fail without affecting stable releases
+version: 2
+
+project_name: promptext
+
+# Build configuration
+builds:
+  - id: default
+    binary: promptext
+    main: ./cmd/promptext
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.date={{.Date}}
+
+# Archive configuration
+archives:
+  - formats: ["tar.gz"]
+    format_overrides:
+      - goos: windows
+        formats: ["zip"]
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- if eq .Os "darwin" }}Darwin
+      {{- else if eq .Os "linux" }}Linux
+      {{- else if eq .Os "windows" }}Windows
+      {{- else }}{{ .Os }}{{ end }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+# Checksum for verification
+checksum:
+  name_template: 'checksums.txt'
+
+# Changelog from git commits
+changelog:
+  sort: asc
+  use: github
+  groups:
+    - title: Features
+      regexp: '^.*?feat.*?:.*$'
+    - title: 'Bug Fixes'
+      regexp: '^.*?fix.*?:.*$'
+    - title: Others
+      order: 999
+
+# Snap (EXPERIMENTAL - pending store approval)
+snapcrafts:
+  - name: promptext
+    publish: true
+    summary: Smart code context extractor for AI assistants
+    description: |
+      Promptext analyzes codebases, filters relevant files, estimates token
+      usage using tiktoken (GPT-3.5/4 compatible), and provides formatted
+      output suitable for AI prompts.
+    grade: stable
+    confinement: classic
+    license: MIT
+    apps:
+      promptext:
+        command: promptext
+
+# Chocolatey (EXPERIMENTAL - disabled until fixed)
+chocolateys:
+  - name: promptext
+    ids:
+      - default
+    title: Promptext
+    authors: George Dikeakos
+    project_url: https://github.com/1broseidon/promptext
+    url_template: "https://github.com/1broseidon/promptext/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    license_url: https://github.com/1broseidon/promptext/blob/main/LICENSE
+    copyright: 2024 George Dikeakos
+    require_license_acceptance: false
+    project_source_url: https://github.com/1broseidon/promptext
+    tags: "cli go ai llm token-counter context"
+    summary: Smart code context extractor for AI assistants
+    description: |
+      Promptext analyzes codebases, filters relevant files, estimates token
+      usage using tiktoken (GPT-3.5/4 compatible), and provides formatted
+      output suitable for AI prompts.
+    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"

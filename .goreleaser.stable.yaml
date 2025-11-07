@@ -1,0 +1,142 @@
+# GoReleaser Stable Configuration
+# Publishers: GitHub Releases + Homebrew Tap
+# Experimental publishers (Snap, Chocolatey) use separate config
+version: 2
+
+project_name: promptext
+
+# Build configuration
+builds:
+  - id: default
+    binary: promptext
+    main: ./cmd/promptext
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.date={{.Date}}
+
+# Archive configuration
+archives:
+  - formats: ["tar.gz"]
+    format_overrides:
+      - goos: windows
+        formats: ["zip"]
+    # Match existing naming: promptext_Darwin_x86_64.tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- if eq .Os "darwin" }}Darwin
+      {{- else if eq .Os "linux" }}Linux
+      {{- else if eq .Os "windows" }}Windows
+      {{- else }}{{ .Os }}{{ end }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+# Checksum for verification
+checksum:
+  name_template: 'checksums.txt'
+
+# Changelog from git commits
+changelog:
+  sort: asc
+  use: github
+  groups:
+    - title: Features
+      regexp: '^.*?feat.*?:.*$'
+    - title: 'Bug Fixes'
+      regexp: '^.*?fix.*?:.*$'
+    - title: Others
+      order: 999
+
+# GitHub Release configuration with stable installation instructions
+release:
+  github:
+    owner: 1broseidon
+    name: promptext
+  header: |
+    ## Installation (Stable & Verified)
+
+    **Homebrew (macOS/Linux)** - Recommended:
+    ```bash
+    brew tap 1broseidon/tap
+    brew install promptext
+    ```
+
+    **Go Install** (All platforms):
+    ```bash
+    go install github.com/1broseidon/promptext/cmd/promptext@latest
+    ```
+
+    **Direct Install Scripts:**
+    ```bash
+    # Linux/macOS
+    curl -sSL https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.sh | bash
+
+    # Windows PowerShell
+    irm https://raw.githubusercontent.com/1broseidon/promptext/main/scripts/install.ps1 | iex
+    ```
+
+    **Manual Download:**
+    Download binaries for your platform from the Assets section below.
+
+    ---
+
+    ### 🚧 Experimental Publishers
+    - **Snap** (Linux): Pending manual review in Snap Store (check back in 2-3 days)
+    - **Chocolatey** (Windows): Under development
+
+    ---
+  footer: |
+    **Full Documentation:** https://github.com/1broseidon/promptext#readme
+
+    **Verify Installation:**
+    ```bash
+    promptext --version
+    # or use the alias
+    prx --version
+    ```
+
+# Homebrew tap (STABLE)
+homebrew_casks:
+  - name: promptext
+    repository:
+      owner: 1broseidon
+      name: homebrew-tap
+    homepage: "https://github.com/1broseidon/promptext"
+    description: "Smart code context extractor for AI assistants"
+    binaries:
+      - promptext
+    custom_block: |
+      postflight do
+        # Remove quarantine attribute
+        system_command "/usr/bin/xattr",
+                       args: ["-d", "com.apple.quarantine", "#{staged_path}/promptext"],
+                       sudo: false
+
+        # Create prx symlink
+        bin_path = "#{HOMEBREW_PREFIX}/bin"
+        prx_link = "#{bin_path}/prx"
+        promptext_bin = "#{bin_path}/promptext"
+
+        if File.exist?(promptext_bin) && !File.exist?(prx_link)
+          File.symlink(promptext_bin, prx_link)
+        end
+      end
+
+      uninstall_postflight do
+        # Remove prx symlink during uninstall
+        prx_link = "#{HOMEBREW_PREFIX}/bin/prx"
+        File.delete(prx_link) if File.symlink?(prx_link)
+      end
