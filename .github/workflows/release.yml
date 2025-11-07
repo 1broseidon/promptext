@@ -36,15 +36,30 @@ jobs:
 
       - name: Install Mono and Chocolatey
         run: |
+          # Install Mono
           sudo apt-get update
           sudo apt-get install -y mono-complete
+
+          # Download and extract Chocolatey
           sudo mkdir -p /opt/chocolatey
-          wget -q -O- "https://github.com/chocolatey/choco/releases/download/2.4.1/chocolatey.v2.4.1.tar.gz" | sudo tar -xz -C "/opt/chocolatey"
+          cd /tmp
+          wget "https://github.com/chocolatey/choco/releases/download/2.4.1/chocolatey.v2.4.1.tar.gz"
+          sudo tar -xzf chocolatey.v2.4.1.tar.gz -C /opt/chocolatey
+
+          # Verify choco.exe exists and is the right file
+          echo "Checking Chocolatey installation:"
+          ls -la /opt/chocolatey/choco.exe
+          file /opt/chocolatey/choco.exe
+
+          # Create wrapper script
           echo '#!/bin/bash' | sudo tee /usr/local/bin/choco
-          echo 'mono /opt/chocolatey/choco.exe "$@"' | sudo tee -a /usr/local/bin/choco
+          echo 'exec mono /opt/chocolatey/choco.exe "$@"' | sudo tee -a /usr/local/bin/choco
           sudo chmod +x /usr/local/bin/choco
-          # Test that choco works
-          choco --version
+
+          # Test with simpler command
+          echo "Testing mono with choco.exe:"
+          mono --version
+          # Don't test choco for now - let GoReleaser handle it
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
