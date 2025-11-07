@@ -6,7 +6,8 @@ project_name: promptext
 
 # Build configuration
 builds:
-  - binary: promptext
+  - id: default
+    binary: promptext
     main: ./cmd/promptext
     env:
       - CGO_ENABLED=0
@@ -61,9 +62,12 @@ changelog:
 # Chocolatey (Windows package manager)
 chocolateys:
   - name: promptext
+    ids:
+      - default  # Reference the build id
     title: Promptext
     authors: George Dikeakos
     project_url: https://github.com/1broseidon/promptext
+    url_template: "https://github.com/1broseidon/promptext/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     license_url: https://github.com/1broseidon/promptext/blob/main/LICENSE
     copyright: 2024 George Dikeakos
     require_license_acceptance: false
