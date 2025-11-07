@@ -59,29 +59,7 @@ changelog:
     - title: Others
       order: 999
 
-# Chocolatey (Windows package manager)
-chocolateys:
-  - name: promptext
-    ids:
-      - default  # Reference the build id
-    title: Promptext
-    authors: George Dikeakos
-    project_url: https://github.com/1broseidon/promptext
-    url_template: "https://github.com/1broseidon/promptext/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    license_url: https://github.com/1broseidon/promptext/blob/main/LICENSE
-    copyright: 2024 George Dikeakos
-    require_license_acceptance: false
-    project_source_url: https://github.com/1broseidon/promptext
-    tags: "cli go ai llm token-counter context"
-    summary: Smart code context extractor for AI assistants
-    description: |
-      Promptext analyzes codebases, filters relevant files, estimates token
-      usage using tiktoken (GPT-3.5/4 compatible), and provides formatted
-      output suitable for AI prompts.
-    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
-
 # Snap (Linux package manager)
-# Note: Requires SNAPCRAFT_STORE_CREDENTIALS secret and snapcraft installed
 snapcrafts:
   - name: promptext
     publish: true
@@ -109,7 +87,23 @@ homebrew_casks:
       - promptext
     custom_block: |
       postflight do
+        # Remove quarantine attribute
         system_command "/usr/bin/xattr",
                        args: ["-d", "com.apple.quarantine", "#{staged_path}/promptext"],
                        sudo: false
+
+        # Create prx symlink
+        bin_path = "#{HOMEBREW_PREFIX}/bin"
+        prx_link = "#{bin_path}/prx"
+        promptext_bin = "#{bin_path}/promptext"
+
+        if File.exist?(promptext_bin) && !File.exist?(prx_link)
+          File.symlink(promptext_bin, prx_link)
+        end
+      end
+
+      uninstall_postflight do
+        # Remove prx symlink during uninstall
+        prx_link = "#{HOMEBREW_PREFIX}/bin/prx"
+        File.delete(prx_link) if File.symlink?(prx_link)
       end

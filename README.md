@@ -60,17 +60,12 @@ brew tap 1broseidon/tap
 brew install promptext
 ```
 
-**Chocolatey (Windows):**
-```powershell
-choco install promptext
-```
-
 **Snap (Linux):**
 ```bash
 sudo snap install promptext --classic
 ```
 
-**Go Install:**
+**Go Install (All platforms - requires Go 1.19+):**
 ```bash
 go install github.com/1broseidon/promptext/cmd/promptext@latest
 ```
@@ -111,13 +106,15 @@ prx --update
 Navigate to your project directory and run:
 
 ```bash
+promptext
+# or use the alias
 prx
 ```
 
 That's it! `promptext` will:
 1. Analyze your project structure
 2. Filter out unnecessary files (node_modules, binaries, etc.)
-3. Package everything into a token-efficient format
+3. Package everything into a token-efficient format (PTX by default)
 4. Copy the result to your clipboard
 
 Now paste into ChatGPT, Claude, or your favorite LLM and start coding!

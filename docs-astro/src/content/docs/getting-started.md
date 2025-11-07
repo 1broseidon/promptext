@@ -7,8 +7,22 @@ description: Quick start guide for promptext installation and basic usage
 
 Choose your preferred installation method:
 
-### Go Install (Recommended)
+### Package Managers (Recommended)
 
+**Homebrew (macOS/Linux):**
+```bash
+brew tap 1broseidon/tap
+brew install promptext
+```
+
+**Snap (Linux):**
+```bash
+sudo snap install promptext --classic
+```
+
+### Go Install
+
+For Go developers (requires Go 1.19+):
 ```bash
 go install github.com/1broseidon/promptext/cmd/promptext@latest
 ```

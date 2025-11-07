@@ -25,7 +25,14 @@ A fast, token-efficient tool that transforms your code into optimized context fo
 ## Quick Start
 
 ```bash
-# Install
+# Install via Homebrew (macOS/Linux)
+brew tap 1broseidon/tap
+brew install promptext
+
+# Or install via Snap (Linux)
+sudo snap install promptext --classic
+
+# Or install via Go (all platforms)
 go install github.com/1broseidon/promptext/cmd/promptext@latest
 
 # Extract current directory (PTX format to clipboard)
