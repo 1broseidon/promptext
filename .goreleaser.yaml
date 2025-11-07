@@ -92,7 +92,6 @@ snapcrafts:
     apps:
       promptext:
         command: promptext
-    skip: '{{ if not (index .Env "SNAPCRAFT_STORE_CREDENTIALS") }}true{{ end }}'
 
 # Homebrew tap
 homebrew_casks:
