@@ -21,16 +21,13 @@ builds:
       - -X main.version={{.Version}}
       - -X main.date={{.Date}}
 
-# Skip archives (snap builds from binaries directly)
-archives:
-  - id: skip-archives
-    meta: true
+# Skip archives, checksums, and changelog (snap builds from binaries directly)
+# Empty archives list skips the archive pipe entirely
+archives: []
 
-# Disable checksums
 checksum:
   disable: true
 
-# Disable changelog
 changelog:
   disable: true
 
