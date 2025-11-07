@@ -77,6 +77,7 @@ chocolateys:
     api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
 
 # Snap (Linux package manager)
+# Note: Requires SNAPCRAFT_STORE_CREDENTIALS secret and snapcraft installed
 snapcrafts:
   - name: promptext
     publish: true
@@ -91,7 +92,7 @@ snapcrafts:
     apps:
       promptext:
         command: promptext
-        plugs: [home, network]
+    skip: '{{ if not (index .Env "SNAPCRAFT_STORE_CREDENTIALS") }}true{{ end }}'
 
 # Homebrew tap
 homebrew_casks:

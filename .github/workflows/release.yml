@@ -30,6 +30,11 @@ jobs:
       - name: Run tests
         run: go test -v ./...
 
+      - name: Install Snapcraft
+        if: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS != '' }}
+        run: |
+          sudo snap install snapcraft --classic
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -38,3 +43,5 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN || secrets.GITHUB_TOKEN }}
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
