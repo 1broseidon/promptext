@@ -102,6 +102,8 @@ jobs:
           cd /tmp
           wget -q "https://github.com/chocolatey/choco/releases/download/2.4.1/chocolatey.v2.4.1.tar.gz"
           sudo tar -xzf chocolatey.v2.4.1.tar.gz -C /opt/chocolatey
+          sudo chown -R "$USER":"$USER" /opt/chocolatey
+          mkdir -p /opt/chocolatey/lib /opt/chocolatey/logs
 
           echo '#!/bin/bash' | sudo tee /usr/local/bin/choco
           echo 'exec mono /opt/chocolatey/choco.exe "$@"' | sudo tee -a /usr/local/bin/choco
