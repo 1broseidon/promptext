@@ -1,0 +1,19 @@
+<svg width="240" height="80" viewBox="0 0 240 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bracket -->
+  <path d="M 30 15 L 15 15 L 15 65 L 30 65"
+        fill="none" stroke="#00FF41" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Asterisk Extraction Mark -->
+  <g transform="translate(40, 40)">
+    <line x1="0" y1="-16" x2="0" y2="16" stroke="#00FF41" stroke-width="4" stroke-linecap="round"/>
+    <line x1="-16" y1="0" x2="16" y2="0" stroke="#00FF41" stroke-width="4" stroke-linecap="round"/>
+    <line x1="-11" y1="-11" x2="11" y2="11" stroke="#00FF41" stroke-width="4" stroke-linecap="round"/>
+    <line x1="-11" y1="11" x2="11" y2="-11" stroke="#00FF41" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="0" cy="-18" r="2.5" fill="#10B981"/>
+    <circle cx="0" cy="18" r="2.5" fill="#10B981"/>
+  </g>
+
+  <!-- Text: promptext -->
+  <text x="65" y="48" font-family="'SF Mono', 'Consolas', 'Monaco', monospace" font-size="28"
+        font-weight="600" fill="#00FF41" letter-spacing="1">promptext</text>
+</svg>

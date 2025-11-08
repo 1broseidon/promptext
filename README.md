@@ -1,6 +1,6 @@
 <div align="center">
 
-# promptext
+<img src=".github/logo.svg" alt="promptext" width="300">
 
 **Convert your codebase into AI-ready prompts**
 
