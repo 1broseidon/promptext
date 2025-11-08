@@ -15,5 +15,5 @@
 
   <!-- Text: promptext -->
   <text x="65" y="48" font-family="'SF Mono', 'Consolas', 'Monaco', monospace" font-size="28"
-        font-weight="600" fill="#00FF41" letter-spacing="1">promptext</text>
+        font-weight="600" fill="#FFFFFF" letter-spacing="1">promptext</text>
 </svg>
