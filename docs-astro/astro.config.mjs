@@ -10,6 +10,10 @@ export default defineConfig({
 		starlight({
 			title: 'promptext',
 			description: 'Smart code context extractor for AI assistants',
+			logo: {
+				light: './src/assets/logo-light.svg',
+				dark: './src/assets/logo.svg',
+			},
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/1broseidon/promptext' }
 			],
@@ -20,7 +24,6 @@ export default defineConfig({
 			// Disable built-in homepage to use custom landing page
 			disable404Route: false,
 			sidebar: [
-				{ label: 'Introduction', slug: 'index' },
 				{ label: 'Getting Started', slug: 'getting-started' },
 				{ label: 'Configuration', slug: 'configuration' },
 				{ label: 'File Filtering', slug: 'file-filtering' },

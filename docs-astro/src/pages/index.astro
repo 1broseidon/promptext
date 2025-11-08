@@ -57,10 +57,12 @@ const features = [
       --bg: #000000;
       --text: #FFFFFF;
       --text-muted: rgba(255, 255, 255, 0.6);
-      --accent: #FFFFFF;
+      --accent: #00FF41;
+      --accent-secondary: #10B981;
+      --accent-glow: rgba(0, 255, 65, 0.5);
       --border: rgba(255, 255, 255, 0.08);
       --code-bg: #0A0A0A;
-      --green: #10B981;
+      --green: #00FF41;
 
       --space-xs: 8px;
       --space-sm: 16px;
@@ -77,9 +79,11 @@ const features = [
       --text: #000000;
       --text-muted: rgba(0, 0, 0, 0.6);
       --accent: #10B981;
+      --accent-secondary: #059669;
+      --accent-glow: rgba(16, 185, 129, 0.5);
       --border: rgba(0, 0, 0, 0.08);
       --code-bg: #FAFAFA;
-      --green: #059669;
+      --green: #10B981;
     }
 
     body {
@@ -117,11 +121,21 @@ const features = [
     }
 
     .logo {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .logo-mark {
+      flex-shrink: 0;
+    }
+
+    .logo-text {
       font-weight: 600;
       font-size: 1.25rem;
       letter-spacing: -0.02em;
-      text-decoration: none;
-      color: var(--text);
     }
 
     .nav-links {
@@ -134,26 +148,53 @@ const features = [
       color: var(--text-muted);
       text-decoration: none;
       font-size: 0.9375rem;
-      transition: color 0.2s;
+      transition: all 0.2s;
+      padding: var(--space-xs);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      border-radius: 4px;
     }
 
     .nav-links a:hover {
       color: var(--text);
+      border-color: var(--border);
+    }
+
+    .nav-links a svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .nav-link-text {
+      display: none;
     }
 
     .theme-toggle {
       background: none;
       border: 1px solid var(--border);
       color: var(--text);
-      padding: var(--space-xs) var(--space-sm);
+      padding: var(--space-xs);
       cursor: pointer;
       font-family: inherit;
       font-size: 0.9375rem;
       transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
     }
 
     .theme-toggle:hover {
       border-color: var(--accent);
+    }
+
+    .theme-toggle svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
     }
 
     /* Hero Section */
@@ -201,6 +242,37 @@ const features = [
       margin-bottom: var(--space-lg);
     }
 
+    .mobile-cta {
+      display: none;
+    }
+
+    .mobile-cta .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xs);
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: all 0.2s;
+      padding: var(--space-md) var(--space-lg);
+      border-radius: 8px;
+    }
+
+    .mobile-cta .btn:hover {
+      color: var(--text);
+      border-color: var(--accent);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .mobile-cta .btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
     /* Controls Row */
     .controls-row {
       display: flex;
@@ -218,6 +290,11 @@ const features = [
       padding: 4px;
       position: relative;
       flex-shrink: 0;
+      transition: border-color 0.2s ease;
+    }
+
+    .os-selector:hover {
+      border-color: var(--accent);
     }
 
     .os-selector-bg {
@@ -227,12 +304,14 @@ const features = [
       background: var(--accent);
       border-radius: 6px;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      opacity: 0.1;
+      opacity: 0.15;
+      box-shadow: 0 0 12px var(--accent-glow);
     }
 
     html[data-theme="light"] .os-selector-bg {
       background: var(--accent);
       opacity: 1;
+      box-shadow: 0 2px 8px var(--accent-glow);
     }
 
     .os-option {
@@ -321,7 +400,7 @@ const features = [
       padding: var(--space-sm) var(--space-md);
       font-family: 'JetBrains Mono', 'SF Mono', Monaco, monospace;
       font-size: 0.9375rem;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
       gap: var(--space-sm);
       border-radius: 8px;
       position: relative;
@@ -335,7 +414,7 @@ const features = [
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+      background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
       transform: translateX(-100%);
       transition: transform 0.6s;
     }
@@ -345,7 +424,8 @@ const features = [
     }
 
     .install-command:hover {
-      border-color: rgba(255, 255, 255, 0.2);
+      border-color: var(--accent);
+      box-shadow: 0 0 16px var(--accent-glow);
     }
 
     .command-text {
@@ -439,6 +519,12 @@ const features = [
       height: 450px;
       display: flex;
       flex-direction: column;
+      transition: all 0.3s ease;
+    }
+
+    .terminal-window:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--accent-glow);
     }
 
     .terminal-header {
@@ -456,6 +542,12 @@ const features = [
       border-radius: 50%;
       background: var(--text-muted);
       opacity: 0.3;
+    }
+
+    .terminal-dot:first-child {
+      background: var(--accent);
+      opacity: 0.6;
+      box-shadow: 0 0 8px var(--accent-glow);
     }
 
     .terminal-body {
@@ -572,13 +664,32 @@ const features = [
 
     .feature-card {
       border: 1px solid var(--border);
+      border-left: 2px solid var(--border);
       padding: var(--space-lg);
-      transition: all 0.2s;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -2px;
+      width: 2px;
+      height: 0;
+      background: linear-gradient(180deg, var(--accent) 0%, var(--accent-secondary) 100%);
+      transition: height 0.3s ease;
     }
 
     .feature-card:hover {
       border-color: var(--accent);
       transform: translateY(-4px);
+      box-shadow: 0 8px 24px var(--accent-glow);
+    }
+
+    .feature-card:hover::before {
+      height: 100%;
     }
 
     .feature-card h3 {
@@ -586,6 +697,11 @@ const features = [
       font-weight: 600;
       letter-spacing: -0.02em;
       margin-bottom: var(--space-sm);
+      transition: color 0.2s ease;
+    }
+
+    .feature-card:hover h3 {
+      color: var(--accent);
     }
 
     .feature-card p {
@@ -621,6 +737,18 @@ const features = [
       .hero-text {
         max-width: 100%;
       }
+
+      .install-section {
+        display: none;
+      }
+
+      .mobile-cta {
+        display: block;
+      }
+
+      .terminal-window {
+        order: -1;
+      }
     }
 
     @media (max-width: 768px) {
@@ -628,8 +756,20 @@ const features = [
         padding: 0 var(--space-md);
       }
 
+      .nav-links {
+        gap: var(--space-sm);
+      }
+
       .hero {
-        padding: var(--space-2xl) var(--space-md);
+        padding: var(--space-xl) var(--space-md);
+      }
+
+      .hero h1 {
+        font-size: 2rem;
+      }
+
+      .hero p {
+        font-size: 1rem;
       }
 
       .install-command {
@@ -663,16 +803,62 @@ const features = [
       .terminal-body {
         font-size: 0.75rem;
       }
+
+      .terminal-window {
+        height: 380px;
+      }
     }
   </style>
 </head>
 <body>
   <nav>
-    <a href="/" class="logo">promptext</a>
+    <a href="/" class="logo">
+      <svg class="logo-mark" width="32" height="32" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 30 10 L 15 10 L 15 54 L 30 54"
+              fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <g transform="translate(40, 32)">
+          <line x1="0" y1="-12" x2="0" y2="12" stroke="var(--accent)" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="-12" y1="0" x2="12" y2="0" stroke="var(--accent)" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="-8.5" y1="-8.5" x2="8.5" y2="8.5" stroke="var(--accent)" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="-8.5" y1="8.5" x2="8.5" y2="-8.5" stroke="var(--accent)" stroke-width="3.5" stroke-linecap="round"/>
+          <circle cx="0" cy="-14" r="2" fill="var(--accent-secondary)"/>
+          <circle cx="0" cy="14" r="2" fill="var(--accent-secondary)"/>
+        </g>
+      </svg>
+      <span class="logo-text">promptext</span>
+    </a>
     <div class="nav-links">
-      <a href="/getting-started">Documentation</a>
-      <a href="https://github.com/1broseidon/promptext" target="_blank">GitHub</a>
-      <button class="theme-toggle" id="themeToggle">Toggle Theme</button>
+      <a href="/getting-started" title="Documentation">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="2" width="10" height="12" rx="1"/>
+          <line x1="6" y1="5" x2="10" y2="5"/>
+          <line x1="6" y1="8" x2="10" y2="8"/>
+          <line x1="6" y1="11" x2="9" y2="11"/>
+        </svg>
+        <span class="nav-link-text">Docs</span>
+      </a>
+      <a href="https://github.com/1broseidon/promptext" target="_blank" title="GitHub">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        <span class="nav-link-text">GitHub</span>
+      </a>
+      <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+        <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg class="moon-icon" style="display: none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
     </div>
   </nav>
 
@@ -732,6 +918,19 @@ const features = [
             </button>
           </div>
         </div>
+
+        <!-- Mobile CTA -->
+        <div class="mobile-cta">
+          <a href="/getting-started" class="btn">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="2" width="10" height="12" rx="1"/>
+              <line x1="6" y1="5" x2="10" y2="5"/>
+              <line x1="6" y1="8" x2="10" y2="8"/>
+              <line x1="6" y1="11" x2="10" y2="11"/>
+            </svg>
+            <span>View Docs</span>
+          </a>
+        </div>
       </div>
 
       <div class="terminal-window">
@@ -769,16 +968,31 @@ const features = [
     const themeToggle = document.getElementById('themeToggle');
     const html = document.documentElement;
 
+    function updateThemeIcon(theme) {
+      const sunIcon = themeToggle?.querySelector('.sun-icon');
+      const moonIcon = themeToggle?.querySelector('.moon-icon');
+
+      if (theme === 'dark') {
+        sunIcon.style.display = 'block';
+        moonIcon.style.display = 'none';
+      } else {
+        sunIcon.style.display = 'none';
+        moonIcon.style.display = 'block';
+      }
+    }
+
     themeToggle?.addEventListener('click', () => {
       const currentTheme = html.getAttribute('data-theme');
       const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
       html.setAttribute('data-theme', newTheme);
       localStorage.setItem('theme', newTheme);
+      updateThemeIcon(newTheme);
     });
 
     // Load saved theme
     const savedTheme = localStorage.getItem('theme') || 'dark';
     html.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
 
     // OS Detection and Install Command
     function detectOS() {

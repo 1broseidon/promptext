@@ -46,6 +46,8 @@
   --color-text: #000000;
   --color-text-muted: rgba(0, 0, 0, 0.6);
   --color-accent: #10B981;
+  --color-accent-secondary: #059669;
+  --color-accent-glow: rgba(16, 185, 129, 0.5);
   --color-border: rgba(0, 0, 0, 0.08);
   --color-selection: rgba(16, 185, 129, 0.2);
   
@@ -75,7 +77,9 @@
   --color-bg-code: #0A0A0A;
   --color-text: #FFFFFF;
   --color-text-muted: rgba(255, 255, 255, 0.6);
-  --color-accent: #FFFFFF;
+  --color-accent: #00FF41;
+  --color-accent-secondary: #10B981;
+  --color-accent-glow: rgba(0, 255, 65, 0.5);
   --color-border: rgba(255, 255, 255, 0.08);
   --color-selection: rgba(255, 255, 255, 0.1);
   
@@ -175,6 +179,14 @@ html {
   font-weight: 600 !important;
   letter-spacing: var(--letter-spacing-h3);
   font-size: var(--text-md) !important;
+  gap: 6px !important;
+  color: var(--color-text) !important;
+}
+
+/* Logo spacing override for Starlight */
+.site-title a {
+  gap: 6px !important;
+  color: var(--color-text) !important;
 }
 
 /* Sidebar */
