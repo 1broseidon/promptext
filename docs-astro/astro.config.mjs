@@ -25,6 +25,7 @@ export default defineConfig({
 			disable404Route: false,
 			sidebar: [
 				{ label: 'Getting Started', slug: 'getting-started' },
+				{ label: 'Library Usage', slug: 'library-usage' },
 				{ label: 'Configuration', slug: 'configuration' },
 				{ label: 'File Filtering', slug: 'file-filtering' },
 				{ label: 'Token Analysis', slug: 'token-analysis' },
