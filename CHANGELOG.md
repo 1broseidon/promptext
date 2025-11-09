@@ -5,6 +5,23 @@ All notable changes to promptext will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2025-11-09
+
+### Fixed
+- **Display Bug**: Fixed current directory showing "." instead of actual project name
+- **Output Formatting**: Improved visual consistency and spacing
+  - Removed misaligned box borders from output display
+  - Changed "Files:" to "Included:" for consistency
+  - Added blank lines between sections for better readability
+  - Applied comma formatting to all token counts in exclusion lists
+  - Simplified success messages ("Copied to clipboard!")
+
+### Changed
+- Output format now matches documentation examples with cleaner spacing
+- Better visual hierarchy with proper section separation
+
+---
+
 ## [0.7.1] - 2025-11-09
 
 ### Changed
