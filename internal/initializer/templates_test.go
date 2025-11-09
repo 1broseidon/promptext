@@ -65,7 +65,7 @@ func TestTemplateGenerator_Generate(t *testing.T) {
 			name:         "Empty project types",
 			projectTypes: []ProjectType{},
 			includeTests: false,
-			expectExts:   []string{}, // No extensions added for unknown project
+			expectExts:   []string{},               // No extensions added for unknown project
 			expectExc:    []string{".git", ".svn"}, // Only base excludes
 		},
 	}

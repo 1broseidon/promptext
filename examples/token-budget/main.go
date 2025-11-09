@@ -114,10 +114,10 @@ func main() {
 	fmt.Println("---")
 
 	limits := map[string]int{
-		"GPT-3.5 (4k context)":    2000, // Leave room for response
-		"GPT-4 (8k context)":      6000,
-		"Claude (100k context)":   80000,
-		"GPT-4-Turbo (128k)":      100000,
+		"GPT-3.5 (4k context)":  2000, // Leave room for response
+		"GPT-4 (8k context)":    6000,
+		"Claude (100k context)": 80000,
+		"GPT-4-Turbo (128k)":    100000,
 	}
 
 	for model, limit := range limits {

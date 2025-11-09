@@ -2,7 +2,6 @@ package promptext
 
 import (
 	"github.com/1broseidon/promptext/internal/format"
-	"github.com/1broseidon/promptext/internal/info"
 	"github.com/1broseidon/promptext/internal/processor"
 )
 
@@ -251,28 +250,4 @@ func fromInternalDirectoryNode(internal *format.DirectoryNode) *DirectoryNode {
 	}
 
 	return node
-}
-
-// fromInternalProjectInfo converts internal info.ProjectInfo to public types (used internally)
-func fromInternalProjectInfo(internal *info.ProjectInfo) (*GitInfo, *Metadata) {
-	var gitInfo *GitInfo
-	var metadata *Metadata
-
-	if internal.GitInfo != nil {
-		gitInfo = &GitInfo{
-			Branch:        internal.GitInfo.Branch,
-			CommitHash:    internal.GitInfo.CommitHash,
-			CommitMessage: internal.GitInfo.CommitMessage,
-		}
-	}
-
-	if internal.Metadata != nil {
-		metadata = &Metadata{
-			Language:     internal.Metadata.Language,
-			Version:      internal.Metadata.Version,
-			Dependencies: internal.Metadata.Dependencies,
-		}
-	}
-
-	return gitInfo, metadata
 }

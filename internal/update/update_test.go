@@ -10,9 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -90,19 +88,6 @@ type roundTripperFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
-}
-
-func newTestServer(t *testing.T, handler http.Handler) *httptest.Server {
-	t.Helper()
-	ln, err := net.Listen("tcp4", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("listen: %v", err)
-	}
-	server := httptest.NewUnstartedServer(handler)
-	server.Listener = ln
-	server.Start()
-	t.Cleanup(server.Close)
-	return server
 }
 
 func TestFindReleaseAssets(t *testing.T) {

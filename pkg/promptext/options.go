@@ -20,14 +20,14 @@ type config struct {
 // newDefaultConfig creates a config with sensible defaults.
 func newDefaultConfig() *config {
 	return &config{
-		extensions:      nil,        // nil means all supported extensions
-		excludes:        nil,        // nil means no custom excludes
-		gitignore:       true,       // respect .gitignore by default
-		useDefaultRules: true,       // use built-in filtering rules by default
-		tokenBudget:     0,          // 0 means unlimited
-		format:          FormatPTX,  // PTX is the default format
-		verbose:         false,      // quiet by default
-		debug:           false,      // no debug logging by default
+		extensions:      nil,       // nil means all supported extensions
+		excludes:        nil,       // nil means no custom excludes
+		gitignore:       true,      // respect .gitignore by default
+		useDefaultRules: true,      // use built-in filtering rules by default
+		tokenBudget:     0,         // 0 means unlimited
+		format:          FormatPTX, // PTX is the default format
+		verbose:         false,     // quiet by default
+		debug:           false,     // no debug logging by default
 	}
 }
 

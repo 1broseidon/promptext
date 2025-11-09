@@ -416,7 +416,7 @@ func TestInitializer_SecurityInputValidation(t *testing.T) {
 
 	// Test that non-absolute paths are handled correctly
 	init = NewInitializer(".", false, true)
-	err = init.RunQuick()
+	_ = init.RunQuick()
 	// Should not panic, may succeed or fail depending on CWD
 	// Just verify it doesn't panic
 }

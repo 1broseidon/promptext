@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/1broseidon/promptext/internal/filter"
 	"github.com/1broseidon/promptext/internal/log"
@@ -249,14 +248,4 @@ func validateDirectory(path string) error {
 	}
 
 	return nil
-}
-
-// Helper function to join extensions for internal use
-func joinExtensions(extensions []string) string {
-	return strings.Join(extensions, ",")
-}
-
-// Helper function to join excludes for internal use
-func joinExcludes(excludes []string) string {
-	return strings.Join(excludes, ",")
 }
