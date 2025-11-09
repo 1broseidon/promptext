@@ -287,7 +287,7 @@ func runWithLibrary(dirPath string, extension string, exclude string, noCopy boo
 		} else {
 			// Build detailed exclusion summary
 			var summary strings.Builder
-			summary.WriteString(fmt.Sprintf("\n⚠️ Excluded %d files due to token budget:\n", result.ExcludedFiles))
+			summary.WriteString(fmt.Sprintf("\n\n⚠️ Excluded %d files due to token budget:\n", result.ExcludedFiles))
 
 			// Show first 5 excluded files with token counts
 			displayCount := 5
