@@ -276,8 +276,7 @@ func runWithLibrary(dirPath string, extension string, exclude string, noCopy boo
 				}
 			}
 
-			fmt.Printf("\033[32m╭%s╮\n│ %s │\n╰%s╯\033[0m\n",
-				strings.Repeat("─", 60), info.String(), strings.Repeat("─", 60))
+			fmt.Printf("\033[32m%s\033[0m\n", info.String())
 		}
 		return nil
 	}
@@ -347,8 +346,7 @@ func runWithLibrary(dirPath string, extension string, exclude string, noCopy boo
 		}
 	}
 
-	infoFormatted := fmt.Sprintf("╭%s╮\n│ %s │\n╰%s╯",
-		strings.Repeat("─", 60), info.String(), strings.Repeat("─", 60))
+	infoFormatted := info.String()
 
 	// Handle output
 	if outFile != "" {
