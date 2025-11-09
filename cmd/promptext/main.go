@@ -8,9 +8,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/1broseidon/promptext/internal/format"
 	"github.com/1broseidon/promptext/internal/initializer"
 	"github.com/1broseidon/promptext/internal/processor"
 	"github.com/1broseidon/promptext/internal/update"
+	"github.com/1broseidon/promptext/pkg/promptext"
+	"github.com/atotto/clipboard"
 	"github.com/spf13/pflag"
 )
 
@@ -182,6 +185,340 @@ type initializerFactory func(root string, force bool, quiet bool) initializerRun
 
 type processorFunc func(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string, debug bool, gitignore bool, useDefaultRules bool, dryRun bool, quiet bool, relevanceKeywords string, maxTokens int, explainSelection bool) error
 
+// runWithLibrary uses the promptext library for extraction instead of calling processor.Run() directly.
+// This provides a thin CLI wrapper around the library while maintaining backward compatibility.
+func runWithLibrary(dirPath string, extension string, exclude string, noCopy bool, infoOnly bool, verbose bool, outputFormat string, outFile string, debug bool, gitignore bool, useDefaultRules bool, dryRun bool, quiet bool, relevanceKeywords string, maxTokens int, explainSelection bool) error {
+	// For dry-run and explain-selection modes, fall back to processor.Run() as they use internal-only features
+	if dryRun || explainSelection {
+		return processor.Run(dirPath, extension, exclude, noCopy, infoOnly, verbose, outputFormat, outFile, debug, gitignore, useDefaultRules, dryRun, quiet, relevanceKeywords, maxTokens, explainSelection)
+	}
+
+	// Build library options from CLI flags
+	opts := []promptext.Option{}
+
+	// Extensions
+	if extension != "" {
+		exts := strings.Split(extension, ",")
+		opts = append(opts, promptext.WithExtensions(exts...))
+	}
+
+	// Excludes
+	if exclude != "" {
+		excludes := strings.Split(exclude, ",")
+		opts = append(opts, promptext.WithExcludes(excludes...))
+	}
+
+	// GitIgnore
+	opts = append(opts, promptext.WithGitIgnore(gitignore))
+
+	// Default rules
+	opts = append(opts, promptext.WithDefaultRules(useDefaultRules))
+
+	// Relevance keywords
+	if relevanceKeywords != "" {
+		keywords := strings.FieldsFunc(relevanceKeywords, func(r rune) bool {
+			return r == ',' || r == ' '
+		})
+		opts = append(opts, promptext.WithRelevance(keywords...))
+	}
+
+	// Token budget
+	if maxTokens > 0 {
+		opts = append(opts, promptext.WithTokenBudget(maxTokens))
+	}
+
+	// Format
+	opts = append(opts, promptext.WithFormat(promptext.Format(outputFormat)))
+
+	// Verbose and debug
+	if debug {
+		opts = append(opts, promptext.WithDebug(true))
+	} else if verbose {
+		opts = append(opts, promptext.WithVerbose(true))
+	}
+
+	// Extract using the library
+	result, err := promptext.Extract(dirPath, opts...)
+	if err != nil {
+		return err
+	}
+
+	// Handle info-only mode
+	if infoOnly {
+		if quiet {
+			fmt.Printf("files=%d tokens=%d\n", len(result.ProjectOutput.Files), result.TokenCount)
+		} else {
+			// Format project info display
+			var info strings.Builder
+
+			// Project header
+			if result.ProjectOutput.Metadata != nil && result.ProjectOutput.Metadata.Language != "" {
+				info.WriteString(fmt.Sprintf("📦 %s", filepath.Base(dirPath)))
+				info.WriteString(fmt.Sprintf(" (%s)", result.ProjectOutput.Metadata.Language))
+			} else {
+				info.WriteString(fmt.Sprintf("📦 %s", filepath.Base(dirPath)))
+			}
+
+			// File and token count
+			fileCount := len(result.ProjectOutput.Files)
+			totalFileCount := fileCount + result.ExcludedFiles
+
+			if result.ExcludedFiles > 0 {
+				info.WriteString(fmt.Sprintf("\n   Included: %d/%d files • ~%s tokens",
+					fileCount, totalFileCount, formatTokenCount(result.TokenCount)))
+				if result.TotalTokens > result.TokenCount {
+					info.WriteString(fmt.Sprintf("\n   Full project: %d files • ~%s tokens",
+						totalFileCount, formatTokenCount(result.TotalTokens)))
+				}
+			} else {
+				info.WriteString(fmt.Sprintf("\n   Files: %d", fileCount))
+				if result.TokenCount > 0 {
+					info.WriteString(fmt.Sprintf(" • Tokens: ~%s", formatTokenCount(result.TokenCount)))
+				}
+			}
+
+			fmt.Printf("\033[32m╭%s╮\n│ %s │\n╰%s╯\033[0m\n",
+				strings.Repeat("─", 60), info.String(), strings.Repeat("─", 60))
+		}
+		return nil
+	}
+
+	// Build exclusion message if files were excluded
+	exclusionMsg := ""
+	if result.ExcludedFiles > 0 {
+		if quiet {
+			exclusionMsg = fmt.Sprintf(" excluded=%d", result.ExcludedFiles)
+		} else {
+			// Build detailed exclusion summary
+			var summary strings.Builder
+			summary.WriteString(fmt.Sprintf("\n⚠️  Excluded %d files due to token budget:\n", result.ExcludedFiles))
+
+			// Show first 5 excluded files with token counts
+			displayCount := 5
+			if len(result.ExcludedFileList) < displayCount {
+				displayCount = len(result.ExcludedFileList)
+			}
+
+			totalExcludedTokens := 0
+			for i := 0; i < displayCount; i++ {
+				excluded := result.ExcludedFileList[i]
+				summary.WriteString(fmt.Sprintf("    • %s (~%d tokens)\n", excluded.Path, excluded.Tokens))
+				totalExcludedTokens += excluded.Tokens
+			}
+
+			// Add summary for remaining files
+			if len(result.ExcludedFileList) > displayCount {
+				remaining := len(result.ExcludedFileList) - displayCount
+				remainingTokens := 0
+				for i := displayCount; i < len(result.ExcludedFileList); i++ {
+					remainingTokens += result.ExcludedFileList[i].Tokens
+				}
+				totalExcludedTokens += remainingTokens
+				summary.WriteString(fmt.Sprintf("    ... and %d more files (~%d tokens)\n", remaining, remainingTokens))
+			}
+
+			summary.WriteString(fmt.Sprintf("    Total excluded: ~%d tokens", totalExcludedTokens))
+			exclusionMsg = summary.String()
+		}
+	}
+
+	// Format basic project info for display
+	var info strings.Builder
+	if result.ProjectOutput.Metadata != nil && result.ProjectOutput.Metadata.Language != "" {
+		info.WriteString(fmt.Sprintf("📦 %s", filepath.Base(dirPath)))
+		info.WriteString(fmt.Sprintf(" (%s)", result.ProjectOutput.Metadata.Language))
+	} else {
+		info.WriteString(fmt.Sprintf("📦 %s", filepath.Base(dirPath)))
+	}
+
+	fileCount := len(result.ProjectOutput.Files)
+	totalFileCount := fileCount + result.ExcludedFiles
+
+	if result.ExcludedFiles > 0 {
+		info.WriteString(fmt.Sprintf("\n   Included: %d/%d files • ~%s tokens",
+			fileCount, totalFileCount, formatTokenCount(result.TokenCount)))
+		if result.TotalTokens > result.TokenCount {
+			info.WriteString(fmt.Sprintf("\n   Full project: %d files • ~%s tokens",
+				totalFileCount, formatTokenCount(result.TotalTokens)))
+		}
+	} else {
+		info.WriteString(fmt.Sprintf("\n   Files: %d", fileCount))
+		if result.TokenCount > 0 {
+			info.WriteString(fmt.Sprintf(" • Tokens: ~%s", formatTokenCount(result.TokenCount)))
+		}
+	}
+
+	infoFormatted := fmt.Sprintf("╭%s╮\n│ %s │\n╰%s╯",
+		strings.Repeat("─", 60), info.String(), strings.Repeat("─", 60))
+
+	// Handle output
+	if outFile != "" {
+		if err := os.WriteFile(outFile, []byte(result.FormattedOutput), 0644); err != nil {
+			return fmt.Errorf("error writing to output file: %w", err)
+		}
+		if quiet {
+			fmt.Printf("written=%s format=%s files=%d tokens=%d%s\n", outFile, outputFormat, len(result.ProjectOutput.Files), result.TokenCount, exclusionMsg)
+		} else {
+			fmt.Printf("\033[32m%s\n✓ code context written to %s (%s format)%s\033[0m\n", infoFormatted, outFile, outputFormat, exclusionMsg)
+		}
+	} else if !noCopy {
+		if err := clipboard.WriteAll(result.FormattedOutput); err != nil {
+			if !quiet {
+				fmt.Printf("Warning: Failed to copy to clipboard: %v\n", err)
+			}
+			if quiet {
+				return fmt.Errorf("clipboard copy failed")
+			}
+		} else {
+			if quiet {
+				fmt.Printf("clipboard=ok format=%s files=%d tokens=%d%s\n", outputFormat, len(result.ProjectOutput.Files), result.TokenCount, exclusionMsg)
+			} else {
+				fmt.Printf("\033[32m%s\n✓ code context copied to clipboard (%s format)%s\033[0m\n", infoFormatted, outputFormat, exclusionMsg)
+			}
+		}
+	}
+
+	return nil
+}
+
+// formatTokenCount formats token count with comma separators for readability
+func formatTokenCount(tokens int) string {
+	if tokens < 1000 {
+		return fmt.Sprintf("%d", tokens)
+	}
+	// Add comma separators for thousands
+	str := fmt.Sprintf("%d", tokens)
+	var result strings.Builder
+	for i, c := range str {
+		if i > 0 && (len(str)-i)%3 == 0 {
+			result.WriteRune(',')
+		}
+		result.WriteRune(c)
+	}
+	return result.String()
+}
+
+// Helper functions to convert between library and internal types
+func parseExtensions(extension string) []string {
+	if extension == "" {
+		return nil
+	}
+	return strings.Split(extension, ",")
+}
+
+func parseExcludes(exclude string) []string {
+	if exclude == "" {
+		return nil
+	}
+	return strings.Split(exclude, ",")
+}
+
+func toInternalProjectOutput(output *promptext.ProjectOutput) *format.ProjectOutput {
+	if output == nil {
+		return nil
+	}
+
+	internal := &format.ProjectOutput{}
+
+	// Convert DirectoryTree
+	if output.DirectoryTree != nil {
+		internal.DirectoryTree = toInternalDirectoryNode(output.DirectoryTree)
+	}
+
+	// Convert GitInfo
+	if output.GitInfo != nil {
+		internal.GitInfo = &format.GitInfo{
+			Branch:        output.GitInfo.Branch,
+			CommitHash:    output.GitInfo.CommitHash,
+			CommitMessage: output.GitInfo.CommitMessage,
+		}
+	}
+
+	// Convert Metadata
+	if output.Metadata != nil {
+		internal.Metadata = &format.Metadata{
+			Language:     output.Metadata.Language,
+			Version:      output.Metadata.Version,
+			Dependencies: output.Metadata.Dependencies,
+		}
+	}
+
+	// Convert Files
+	internal.Files = make([]format.FileInfo, len(output.Files))
+	for i, file := range output.Files {
+		internal.Files[i] = format.FileInfo{
+			Path:    file.Path,
+			Content: file.Content,
+			Tokens:  file.Tokens,
+		}
+		if file.Truncation != nil {
+			internal.Files[i].Truncation = &format.TruncationInfo{
+				Mode:           file.Truncation.Mode,
+				OriginalTokens: file.Truncation.OriginalTokens,
+			}
+		}
+	}
+
+	// Convert FileStats
+	if output.FileStats != nil {
+		internal.FileStats = &format.FileStatistics{
+			TotalFiles:   output.FileStats.TotalFiles,
+			TotalLines:   output.FileStats.TotalLines,
+			PackageCount: output.FileStats.PackageCount,
+		}
+	}
+
+	// Convert Budget
+	if output.Budget != nil {
+		internal.Budget = &format.BudgetInfo{
+			MaxTokens:       output.Budget.MaxTokens,
+			EstimatedTokens: output.Budget.EstimatedTokens,
+			FileTruncations: output.Budget.FileTruncations,
+		}
+	}
+
+	// Convert FilterConfig
+	if output.FilterConfig != nil {
+		internal.FilterConfig = &format.FilterConfig{
+			Includes: output.FilterConfig.Includes,
+			Excludes: output.FilterConfig.Excludes,
+		}
+	}
+
+	return internal
+}
+
+func toInternalDirectoryNode(node *promptext.DirectoryNode) *format.DirectoryNode {
+	if node == nil {
+		return nil
+	}
+
+	internal := &format.DirectoryNode{
+		Name: node.Name,
+		Type: node.Type,
+	}
+
+	if len(node.Children) > 0 {
+		internal.Children = make([]*format.DirectoryNode, len(node.Children))
+		for i, child := range node.Children {
+			internal.Children[i] = toInternalDirectoryNode(child)
+		}
+	}
+
+	return internal
+}
+
+func toInternalExcludedList(list []promptext.ExcludedFileInfo) []processor.ExcludedFileInfo {
+	result := make([]processor.ExcludedFileInfo, len(list))
+	for i, item := range list {
+		result[i] = processor.ExcludedFileInfo{
+			Path:   item.Path,
+			Tokens: item.Tokens,
+		}
+	}
+	return result
+}
+
 type cliDeps struct {
 	stdout         io.Writer
 	stderr         io.Writer
@@ -205,7 +542,7 @@ func defaultCLIDeps() cliDeps {
 		newInitializer: func(root string, force bool, quiet bool) initializerRunner {
 			return initializer.NewInitializer(root, force, quiet)
 		},
-		processorRun: processor.Run,
+		processorRun: runWithLibrary, // Use library instead of processor.Run
 		absPath:      filepath.Abs,
 	}
 }
