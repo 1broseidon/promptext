@@ -252,10 +252,10 @@ func runWithLibrary(dirPath string, extension string, exclude string, noCopy boo
 
 			// Project header
 			if result.ProjectOutput.Metadata != nil && result.ProjectOutput.Metadata.Language != "" {
-				info.WriteString(fmt.Sprintf("📦 %s", filepath.Base(dirPath)))
+				info.WriteString(fmt.Sprintf("📦 %s", getProjectDisplayName(dirPath)))
 				info.WriteString(fmt.Sprintf(" (%s)", result.ProjectOutput.Metadata.Language))
 			} else {
-				info.WriteString(fmt.Sprintf("📦 %s", filepath.Base(dirPath)))
+				info.WriteString(fmt.Sprintf("📦 %s", getProjectDisplayName(dirPath)))
 			}
 
 			// File and token count
@@ -324,10 +324,10 @@ func runWithLibrary(dirPath string, extension string, exclude string, noCopy boo
 	// Format basic project info for display
 	var info strings.Builder
 	if result.ProjectOutput.Metadata != nil && result.ProjectOutput.Metadata.Language != "" {
-		info.WriteString(fmt.Sprintf("📦 %s", filepath.Base(dirPath)))
+		info.WriteString(fmt.Sprintf("📦 %s", getProjectDisplayName(dirPath)))
 		info.WriteString(fmt.Sprintf(" (%s)", result.ProjectOutput.Metadata.Language))
 	} else {
-		info.WriteString(fmt.Sprintf("📦 %s", filepath.Base(dirPath)))
+		info.WriteString(fmt.Sprintf("📦 %s", getProjectDisplayName(dirPath)))
 	}
 
 	fileCount := len(result.ProjectOutput.Files)
@@ -395,6 +395,18 @@ func formatTokenCount(tokens int) string {
 		result.WriteRune(c)
 	}
 	return result.String()
+}
+
+// getProjectDisplayName returns the proper display name for a project directory.
+// It resolves "." to the actual directory name.
+func getProjectDisplayName(dirPath string) string {
+	// If dirPath is "." or relative, resolve to absolute path
+	absPath, err := filepath.Abs(dirPath)
+	if err != nil {
+		// Fallback to original if we can't resolve
+		return filepath.Base(dirPath)
+	}
+	return filepath.Base(absPath)
 }
 
 type cliDeps struct {
