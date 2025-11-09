@@ -10,6 +10,85 @@ All notable changes to promptext are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2025-11-09
+
+### Changed
+- **CLI Architecture**: Migrated CLI to use promptext library as thin wrapper
+  - CLI now calls `promptext.Extract()` instead of `processor.Run()` directly
+  - Maintains 100% backward compatibility with existing CLI behavior
+  - All CLI flags map to library options via functional options pattern
+  - Falls back to `processor.Run()` for internal-only features (dry-run, explain-selection)
+- **Code Organization**: Better separation of concerns
+  - CLI handles I/O operations (clipboard, files, stdout)
+  - Library handles all processing logic
+  - Shared code path between CLI and library users
+
+### Added
+- Helper function `formatTokenCount()` for readable token display with comma separators
+- Type conversion utilities between library and internal types
+- Enhanced output formatting for info mode and exclusion messages
+
+### Fixed
+- Output formatting consistency across different modes
+- Token count display accuracy in quiet mode
+
+---
+
+## [0.7.0-alpha] - 2025-11-09
+
+### Added
+- **Go Library API**: promptext can now be used as a library in Go applications
+  - Main entry point: `promptext.Extract(dir string, opts ...Option) (*Result, error)`
+  - Reusable extractor: `promptext.NewExtractor(opts ...Option) *Extractor`
+  - Functional options pattern for clean, composable configuration
+- **Library Features**:
+  - `WithExtensions()` - Filter by file extensions
+  - `WithExcludes()` - Exclude file patterns
+  - `WithRelevance()` - Keyword-based relevance filtering
+  - `WithTokenBudget()` - AI model token limit enforcement
+  - `WithFormat()` - Output format selection
+  - `WithGitIgnore()` - Control .gitignore respect
+  - `WithDefaultRules()` - Control built-in filtering rules
+  - `WithVerbose()` / `WithDebug()` - Logging control
+- **Result Types**: Complete structured access to extraction data
+  - `Result` - Formatted output + metadata
+  - `ProjectOutput` - Complete project data structure
+  - `FileInfo` - Individual file information
+  - Token counts, exclusion lists, project info
+- **Format System**:
+  - `Format` type for output formats (PTX, JSONL, Markdown, XML)
+  - `Formatter` interface for custom formatters
+  - `RegisterFormatter()` for extensibility
+  - `Result.As()` for format conversion
+- **Error Handling**: Well-typed sentinel errors
+  - `ErrInvalidDirectory` - Invalid/inaccessible directory
+  - `ErrNoFilesMatched` - No matching files found
+  - `ErrTokenBudgetTooLow` - Budget too low
+  - `ErrInvalidFormat` - Unsupported format
+- **Examples**: Practical usage demonstrations
+  - `examples/basic/` - Fundamental library usage patterns
+  - `examples/token-budget/` - AI-focused extraction examples
+  - Complete working code for common use cases
+- **Documentation**: Comprehensive package documentation
+  - Godoc comments on all exported types and functions
+  - Quick start guide and common patterns
+  - Complete API reference at pkg.go.dev
+
+### Changed
+- **Package Structure**: Added public API package
+  - `pkg/promptext/` - Public library API surface
+  - `internal/` - Private implementation (unchanged)
+  - Clean separation between public and internal code
+- **README**: Added "Using as a Library" section with examples
+- **Module Organization**: Library-first architecture while maintaining CLI
+
+### Development
+- 13 unit tests for library functionality (all passing)
+- Integration tests with example programs
+- Zero breaking changes to existing CLI or internal packages
+
+---
+
 ## [0.6.3] - 2025-11-07
 
 ### Changed
