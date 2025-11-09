@@ -263,17 +263,15 @@ func runWithLibrary(dirPath string, extension string, exclude string, noCopy boo
 			totalFileCount := fileCount + result.ExcludedFiles
 
 			if result.ExcludedFiles > 0 {
-				info.WriteString(fmt.Sprintf("\n   Included: %d/%d files • ~%s tokens",
+				info.WriteString(fmt.Sprintf("\nIncluded: %d/%d files • ~%s tokens",
 					fileCount, totalFileCount, formatTokenCount(result.TokenCount)))
 				if result.TotalTokens > result.TokenCount {
-					info.WriteString(fmt.Sprintf("\n   Full project: %d files • ~%s tokens",
+					info.WriteString(fmt.Sprintf("\nFull project: %d files • ~%s tokens",
 						totalFileCount, formatTokenCount(result.TotalTokens)))
 				}
 			} else {
-				info.WriteString(fmt.Sprintf("\n   Files: %d", fileCount))
-				if result.TokenCount > 0 {
-					info.WriteString(fmt.Sprintf(" • Tokens: ~%s", formatTokenCount(result.TokenCount)))
-				}
+				info.WriteString(fmt.Sprintf("\nIncluded: %d files • ~%s tokens",
+					fileCount, formatTokenCount(result.TokenCount)))
 			}
 
 			fmt.Printf("\033[32m%s\033[0m\n", info.String())
@@ -289,7 +287,7 @@ func runWithLibrary(dirPath string, extension string, exclude string, noCopy boo
 		} else {
 			// Build detailed exclusion summary
 			var summary strings.Builder
-			summary.WriteString(fmt.Sprintf("\n⚠️  Excluded %d files due to token budget:\n", result.ExcludedFiles))
+			summary.WriteString(fmt.Sprintf("\n⚠️ Excluded %d files due to token budget:\n", result.ExcludedFiles))
 
 			// Show first 5 excluded files with token counts
 			displayCount := 5
@@ -300,7 +298,7 @@ func runWithLibrary(dirPath string, extension string, exclude string, noCopy boo
 			totalExcludedTokens := 0
 			for i := 0; i < displayCount; i++ {
 				excluded := result.ExcludedFileList[i]
-				summary.WriteString(fmt.Sprintf("    • %s (~%d tokens)\n", excluded.Path, excluded.Tokens))
+				summary.WriteString(fmt.Sprintf("• %s (~%s tokens)\n", excluded.Path, formatTokenCount(excluded.Tokens)))
 				totalExcludedTokens += excluded.Tokens
 			}
 
@@ -312,10 +310,10 @@ func runWithLibrary(dirPath string, extension string, exclude string, noCopy boo
 					remainingTokens += result.ExcludedFileList[i].Tokens
 				}
 				totalExcludedTokens += remainingTokens
-				summary.WriteString(fmt.Sprintf("    ... and %d more files (~%d tokens)\n", remaining, remainingTokens))
+				summary.WriteString(fmt.Sprintf("... and %d more files (~%s tokens)\n", remaining, formatTokenCount(remainingTokens)))
 			}
 
-			summary.WriteString(fmt.Sprintf("    Total excluded: ~%d tokens", totalExcludedTokens))
+			summary.WriteString(fmt.Sprintf("Total excluded: ~%s tokens", formatTokenCount(totalExcludedTokens)))
 			exclusionMsg = summary.String()
 		}
 	}
@@ -333,17 +331,15 @@ func runWithLibrary(dirPath string, extension string, exclude string, noCopy boo
 	totalFileCount := fileCount + result.ExcludedFiles
 
 	if result.ExcludedFiles > 0 {
-		info.WriteString(fmt.Sprintf("\n   Included: %d/%d files • ~%s tokens",
+		info.WriteString(fmt.Sprintf("\nIncluded: %d/%d files • ~%s tokens",
 			fileCount, totalFileCount, formatTokenCount(result.TokenCount)))
 		if result.TotalTokens > result.TokenCount {
-			info.WriteString(fmt.Sprintf("\n   Full project: %d files • ~%s tokens",
+			info.WriteString(fmt.Sprintf("\nFull project: %d files • ~%s tokens",
 				totalFileCount, formatTokenCount(result.TotalTokens)))
 		}
 	} else {
-		info.WriteString(fmt.Sprintf("\n   Files: %d", fileCount))
-		if result.TokenCount > 0 {
-			info.WriteString(fmt.Sprintf(" • Tokens: ~%s", formatTokenCount(result.TokenCount)))
-		}
+		info.WriteString(fmt.Sprintf("\nIncluded: %d files • ~%s tokens",
+			fileCount, formatTokenCount(result.TokenCount)))
 	}
 
 	infoFormatted := info.String()
@@ -356,7 +352,7 @@ func runWithLibrary(dirPath string, extension string, exclude string, noCopy boo
 		if quiet {
 			fmt.Printf("written=%s format=%s files=%d tokens=%d%s\n", outFile, outputFormat, len(result.ProjectOutput.Files), result.TokenCount, exclusionMsg)
 		} else {
-			fmt.Printf("\033[32m%s\n✓ code context written to %s (%s format)%s\033[0m\n", infoFormatted, outFile, outputFormat, exclusionMsg)
+			fmt.Printf("\033[32m%s%s\n\n✓ Code context written to %s (%s format)\033[0m\n", infoFormatted, exclusionMsg, outFile, outputFormat)
 		}
 	} else if !noCopy {
 		if err := clipboard.WriteAll(result.FormattedOutput); err != nil {
@@ -370,7 +366,7 @@ func runWithLibrary(dirPath string, extension string, exclude string, noCopy boo
 			if quiet {
 				fmt.Printf("clipboard=ok format=%s files=%d tokens=%d%s\n", outputFormat, len(result.ProjectOutput.Files), result.TokenCount, exclusionMsg)
 			} else {
-				fmt.Printf("\033[32m%s\n✓ code context copied to clipboard (%s format)%s\033[0m\n", infoFormatted, outputFormat, exclusionMsg)
+				fmt.Printf("\033[32m%s%s\n\n✓ Copied to clipboard!\033[0m\n", infoFormatted, exclusionMsg)
 			}
 		}
 	}
