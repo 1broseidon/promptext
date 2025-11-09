@@ -121,7 +121,8 @@ Perfect for:
 - 🐛 **Bug Investigation** — Let AI analyze related files together with proper context
 - 🔄 **Code Migration** — Give LLMs full legacy codebase context for refactoring
 - 🎯 **Prompt Engineering** — Create consistent, repeatable AI prompts from code
-- 🔌 **API Integration** — Generate structured code context for AI-powered dev tools
+- 🔌 **Library Integration** — Use the Go API to integrate code extraction into your AI/ML workflows
+- 🛠️ **Build Custom Tools** — Embed promptext capabilities in your own applications
 
 ---
 
@@ -217,6 +218,129 @@ When `--max-tokens` is set, `promptext` shows exactly what was included:
 ```
 
 This helps you understand the trade-offs and adjust your filters or budget as needed.
+
+---
+
+## Using as a Library
+
+`promptext` can be used as a Go library in your own applications, allowing you to programmatically extract code context and integrate it into AI/ML workflows.
+
+### Installation
+
+```bash
+go get github.com/1broseidon/promptext/pkg/promptext
+```
+
+### Quick Start
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/1broseidon/promptext/pkg/promptext"
+)
+
+func main() {
+    // Simple extraction
+    result, err := promptext.Extract(".")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("Extracted %d files (%d tokens)\n",
+        len(result.ProjectOutput.Files),
+        result.TokenCount)
+
+    // Use the formatted output
+    fmt.Println(result.FormattedOutput)
+}
+```
+
+### Common Patterns
+
+**Filter by extensions:**
+```go
+result, err := promptext.Extract(".",
+    promptext.WithExtensions(".go", ".mod", ".sum"),
+    promptext.WithExcludes("*_test.go", "vendor/"),
+)
+```
+
+**AI-optimized extraction with token budget:**
+```go
+result, err := promptext.Extract(".",
+    promptext.WithRelevance("auth", "login"),
+    promptext.WithTokenBudget(8000),
+    promptext.WithFormat(promptext.FormatPTX),
+)
+
+// Send to AI API
+sendToAI(result.FormattedOutput)
+```
+
+**Reusable extractor:**
+```go
+extractor := promptext.NewExtractor(
+    promptext.WithExtensions(".go"),
+    promptext.WithTokenBudget(5000),
+)
+
+result1, _ := extractor.Extract("/project1")
+result2, _ := extractor.Extract("/project2")
+```
+
+**Format conversion:**
+```go
+result, _ := promptext.Extract(".", promptext.WithFormat(promptext.FormatPTX))
+
+// Convert to different formats
+markdown, _ := result.As(promptext.FormatMarkdown)
+jsonl, _ := result.As(promptext.FormatJSONL)
+```
+
+### Available Options
+
+- `WithExtensions(extensions ...string)` - Include specific file extensions
+- `WithExcludes(patterns ...string)` - Exclude files matching patterns
+- `WithGitIgnore(enabled bool)` - Respect .gitignore patterns (default: true)
+- `WithDefaultRules(enabled bool)` - Use built-in filtering rules (default: true)
+- `WithRelevance(keywords ...string)` - Filter by keyword relevance
+- `WithTokenBudget(maxTokens int)` - Limit output to token budget
+- `WithFormat(format Format)` - Set output format (PTX, JSONL, Markdown, XML)
+- `WithVerbose(enabled bool)` - Enable verbose logging
+- `WithDebug(enabled bool)` - Enable debug logging with timing
+
+### Output Formats
+
+- `FormatPTX` - PTX v2.0 (recommended for AI)
+- `FormatJSONL` - Machine-friendly JSONL
+- `FormatMarkdown` - Human-readable markdown
+- `FormatXML` - Machine-parseable XML
+
+### Error Handling
+
+```go
+result, err := promptext.Extract("/invalid/path")
+if err != nil {
+    if errors.Is(err, promptext.ErrInvalidDirectory) {
+        // Handle invalid directory
+    }
+    if errors.Is(err, promptext.ErrNoFilesMatched) {
+        // Handle no matching files
+    }
+}
+```
+
+### Examples
+
+See the [examples/](examples/) directory for complete working examples:
+- `examples/basic/` - Simple usage patterns
+- `examples/token-budget/` - AI-focused extraction with token limits
+
+For full API documentation, see [pkg.go.dev/github.com/1broseidon/promptext/pkg/promptext](https://pkg.go.dev/github.com/1broseidon/promptext/pkg/promptext)
 
 ---
 
