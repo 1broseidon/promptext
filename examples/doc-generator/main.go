@@ -105,6 +105,11 @@ func generateAllDocs(config *Config) {
 }
 
 func generateDoc(config *Config) error {
+	// Validate output path to prevent directory traversal
+	if err := validateOutputPath(config.OutputFile); err != nil {
+		return fmt.Errorf("invalid output path: %w", err)
+	}
+
 	// Extract code based on documentation type
 	result, err := extractCodeForDocs(config)
 	if err != nil {
@@ -414,4 +419,35 @@ go get github.com/example/project
 	}
 
 	return os.WriteFile(config.OutputFile, []byte(template), 0644)
+}
+
+// validateOutputPath ensures the output path is safe and doesn't escape the current directory
+func validateOutputPath(path string) error {
+	// Clean the path to resolve .. and .
+	cleaned := filepath.Clean(path)
+
+	// Get absolute path for both current dir and output path
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get working directory: %w", err)
+	}
+
+	// Make output path absolute
+	absPath := cleaned
+	if !filepath.IsAbs(cleaned) {
+		absPath = filepath.Join(cwd, cleaned)
+	}
+
+	// Ensure the output path is under current directory or in typical doc locations
+	relPath, err := filepath.Rel(cwd, absPath)
+	if err != nil {
+		return fmt.Errorf("invalid output path: %w", err)
+	}
+
+	// Prevent paths that escape current directory
+	if strings.HasPrefix(relPath, "..") {
+		return fmt.Errorf("output path cannot be outside current directory: %s", path)
+	}
+
+	return nil
 }

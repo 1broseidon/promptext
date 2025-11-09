@@ -114,8 +114,8 @@ func getPRInfo() (*PRInfo, error) {
 	info.Title = getEnvOrDefault("PR_TITLE", fmt.Sprintf("Changes in %s", info.HeadBranch))
 
 	// Get list of changed files
-	diffCmd := fmt.Sprintf("git diff --name-only %s...%s", info.BaseBranch, info.HeadBranch)
-	changedFiles, err := runGitCommand("sh", "-c", diffCmd)
+	// Use direct git command to prevent command injection
+	changedFiles, err := runGitCommand("git", "diff", "--name-only", fmt.Sprintf("%s...%s", info.BaseBranch, info.HeadBranch))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get changed files: %w", err)
 	}
