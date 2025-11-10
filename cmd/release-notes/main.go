@@ -17,6 +17,7 @@ func main() {
 	version := flag.String("version", "", "Version to generate notes for (e.g., v0.7.3)")
 	sinceTag := flag.String("since", "", "Generate notes since this tag (auto-detects if empty)")
 	output := flag.String("output", "", "Output file (prints to stdout if empty)")
+	aiPrompt := flag.Bool("ai-prompt", false, "Generate prompt for Claude Code to enhance release notes")
 	flag.Parse()
 
 	// Get the tag to compare from
@@ -58,18 +59,31 @@ func main() {
 	fmt.Fprintf(os.Stderr, "   Extracted context: ~%d tokens from %d files\n",
 		result.TokenCount, len(result.ProjectOutput.Files))
 
-	// Generate release notes
-	fmt.Fprintln(os.Stderr, "\n📝 Generating release notes...\n")
-	releaseNotes := generateReleaseNotes(*version, fromTag, commits, result)
+	// Generate release notes or AI prompt
+	if *aiPrompt {
+		fmt.Fprintln(os.Stderr, "\n📝 Generating Claude Code prompt...\n")
+		prompt := generateClaudeCodePrompt(*version, fromTag, commits, result)
 
-	// Output
-	if *output != "" {
-		if err := os.WriteFile(*output, []byte(releaseNotes), 0644); err != nil {
-			log.Fatalf("Failed to write output: %v", err)
+		if *output != "" {
+			if err := os.WriteFile(*output, []byte(prompt), 0644); err != nil {
+				log.Fatalf("Failed to write output: %v", err)
+			}
+			fmt.Fprintf(os.Stderr, "✅ Prompt written to %s\n", *output)
+		} else {
+			fmt.Println(prompt)
 		}
-		fmt.Fprintf(os.Stderr, "✅ Release notes written to %s\n", *output)
 	} else {
-		fmt.Println(releaseNotes)
+		fmt.Fprintln(os.Stderr, "\n📝 Generating release notes...\n")
+		releaseNotes := generateReleaseNotes(*version, fromTag, commits, result)
+
+		if *output != "" {
+			if err := os.WriteFile(*output, []byte(releaseNotes), 0644); err != nil {
+				log.Fatalf("Failed to write output: %v", err)
+			}
+			fmt.Fprintf(os.Stderr, "✅ Release notes written to %s\n", *output)
+		} else {
+			fmt.Println(releaseNotes)
+		}
 	}
 }
 
@@ -245,4 +259,77 @@ func generateReleaseNotes(version, fromTag string, commits []string, result *pro
 	notes.WriteString("---\n\n")
 
 	return notes.String()
+}
+
+// generateClaudeCodePrompt generates a prompt for Claude Code to enhance release notes
+func generateClaudeCodePrompt(version, fromTag string, commits []string, result *promptext.Result) string {
+	var prompt strings.Builder
+
+	// Determine version
+	if version == "" {
+		version = "0.7.4"
+	}
+
+	prompt.WriteString("# Release Notes Enhancement Request\n\n")
+	prompt.WriteString("Please generate comprehensive release notes for promptext version " + version + "\n\n")
+
+	prompt.WriteString("## Context\n\n")
+	prompt.WriteString(fmt.Sprintf("- **Version**: %s\n", version))
+	prompt.WriteString(fmt.Sprintf("- **Changes since**: %s\n", fromTag))
+	prompt.WriteString(fmt.Sprintf("- **Commits analyzed**: %d\n", len(commits)))
+	prompt.WriteString(fmt.Sprintf("- **Files changed**: %d\n", len(result.ProjectOutput.Files)))
+	prompt.WriteString(fmt.Sprintf("- **Context extracted**: ~%d tokens\n\n", result.TokenCount))
+
+	prompt.WriteString("## Commit History\n\n")
+	prompt.WriteString("```\n")
+	for _, commit := range commits {
+		prompt.WriteString(commit + "\n")
+	}
+	prompt.WriteString("```\n\n")
+
+	prompt.WriteString("## Changed Files Summary\n\n")
+	for _, file := range result.ProjectOutput.Files {
+		prompt.WriteString(fmt.Sprintf("- `%s` (~%d tokens)\n", file.Path, file.Tokens))
+	}
+	prompt.WriteString("\n")
+
+	prompt.WriteString("## Code Context (via promptext)\n\n")
+	prompt.WriteString("```\n")
+	prompt.WriteString(result.FormattedOutput)
+	prompt.WriteString("\n```\n\n")
+
+	prompt.WriteString("## Task\n\n")
+	prompt.WriteString("Generate release notes in Keep a Changelog format with these sections:\n\n")
+	prompt.WriteString("### Added\n")
+	prompt.WriteString("- New features (be specific and detailed)\n")
+	prompt.WriteString("- Focus on user-facing value\n\n")
+	prompt.WriteString("### Changed\n")
+	prompt.WriteString("- Improvements and modifications\n\n")
+	prompt.WriteString("### Fixed\n")
+	prompt.WriteString("- Bug fixes\n\n")
+	prompt.WriteString("### Documentation\n")
+	prompt.WriteString("- Doc updates\n\n")
+
+	prompt.WriteString("## Requirements\n\n")
+	prompt.WriteString("1. Use the commit history and code context to write detailed, clear descriptions\n")
+	prompt.WriteString("2. Group related changes together logically\n")
+	prompt.WriteString("3. Focus on user impact, not implementation details\n")
+	prompt.WriteString("4. Be specific about what changed and why it matters\n")
+	prompt.WriteString("5. Follow Keep a Changelog format\n")
+	prompt.WriteString("6. Include markdown formatting for code, paths, etc.\n\n")
+
+	prompt.WriteString("## Example Format\n\n")
+	prompt.WriteString("```markdown\n")
+	prompt.WriteString("## [" + version + "] - " + time.Now().Format("2006-01-02") + "\n\n")
+	prompt.WriteString("### Added\n")
+	prompt.WriteString("- **Release Notes Generator**: Automated tool using promptext library to analyze git changes\n")
+	prompt.WriteString("  - Extracts code context with token-aware analysis\n")
+	prompt.WriteString("  - Categorizes commits by type (feat, fix, docs)\n")
+	prompt.WriteString("  - Generates changelog-compatible markdown\n\n")
+	prompt.WriteString("...\n")
+	prompt.WriteString("```\n\n")
+
+	prompt.WriteString("Please generate the complete, polished release notes now.\n")
+
+	return prompt.String()
 }
