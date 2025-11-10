@@ -5,6 +5,31 @@ All notable changes to promptext will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - 2025-11-09
+
+### Added
+- **Comprehensive Default Exclusions**: Added 70+ new default exclusion patterns covering all major programming languages and frameworks
+  - **JavaScript/TypeScript/Node.js**: SvelteKit, Remix, Astro, Docusaurus, VuePress, Jekyll, Parcel, Turbo, Rollup caches, Vercel/Netlify deployments
+  - **Python**: Tox, Nox, egg-info, Jupyter checkpoints, coverage reports, all virtual environment variants (.venv, venv, env, virtualenv)
+  - **Ruby**: Bundle directories and gem caches
+  - **Java/Kotlin/Scala**: Gradle and Maven wrapper directories
+  - **C#/.NET**: obj/, packages/, NuGet packages
+  - **Swift/iOS**: SwiftPM, DerivedData, Pods, xcuserdata
+  - **Dart/Flutter**: Dart tool and Flutter plugin caches
+  - **Elixir**: _build, deps, Elixir LS
+  - **Android**: External native build, CXX, local.properties
+  - **General**: Editor swap files, Thumbs.db, Bazaar VCS, Docker cache, test result directories, database journals
+  - View complete list: [defaults.go](https://github.com/1broseidon/promptext/blob/main/internal/filter/rules/defaults.go)
+
+### Changed
+- Organized default exclusions by ecosystem with clear section headers for better maintainability
+- All patterns now have inline comments explaining their purpose
+
+### Fixed
+- **Critical**: Python virtual environment directories (.venv/, venv/, etc.) were being included in output, causing massive token bloat
+
+---
+
 ## [0.7.2] - 2025-11-09
 
 ### Fixed
