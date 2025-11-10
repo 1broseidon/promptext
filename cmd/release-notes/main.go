@@ -61,7 +61,7 @@ func main() {
 
 	// Generate release notes or AI prompt
 	if *aiPrompt {
-		fmt.Fprintln(os.Stderr, "\n📝 Generating Claude Code prompt...\n")
+		fmt.Fprintln(os.Stderr, "\n📝 Generating Claude Code prompt...")
 		prompt := generateClaudeCodePrompt(*version, fromTag, commits, result)
 
 		if *output != "" {
@@ -73,7 +73,7 @@ func main() {
 			fmt.Println(prompt)
 		}
 	} else {
-		fmt.Fprintln(os.Stderr, "\n📝 Generating release notes...\n")
+		fmt.Fprintln(os.Stderr, "\n📝 Generating release notes...")
 		releaseNotes := generateReleaseNotes(*version, fromTag, commits, result)
 
 		if *output != "" {
