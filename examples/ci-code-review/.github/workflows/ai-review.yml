@@ -1,0 +1,175 @@
+# AI-Powered Code Review Workflow
+#
+# This workflow runs on every pull request to automatically extract code context
+# and prepare it for AI review. You can extend this to automatically post review
+# comments by integrating with an AI API (Claude, GPT, etc.)
+#
+# Setup:
+# 1. Copy this file to your repo's .github/workflows/ directory
+# 2. (Optional) Add ANTHROPIC_API_KEY or OPENAI_API_KEY to repository secrets
+# 3. Customize token budget and review guidelines as needed
+
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    # Optionally limit to specific branches
+    # branches: [main, develop]
+
+  # Allow manual triggers for testing
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+
+jobs:
+  extract-context:
+    name: Extract PR Context
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout code with full history for proper diffs
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history to compare branches
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # Setup Go environment
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.22'
+          cache: true
+
+      # Install promptext
+      - name: Install promptext
+        run: |
+          go install github.com/1broseidon/promptext/cmd/promptext@latest
+
+      # Extract PR context using the example tool
+      - name: Extract PR Context
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref || 'main' }}
+        run: |
+          # Ensure base branch exists
+          git fetch origin $BASE_BRANCH:$BASE_BRANCH || true
+
+          # Run the context extractor
+          cd examples/ci-code-review
+          go run main.go
+
+          # Show summary
+          echo "## 📊 Review Context Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Token Count**: $(jq -r '.token_count' pr-review-metadata.json)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Files Analyzed**: $(jq -r '.file_count' pr-review-metadata.json)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Files Changed**: $(jq -r '.pr_info.changed_files | length' pr-review-metadata.json)" >> $GITHUB_STEP_SUMMARY
+
+      # Upload artifacts for manual review or downstream jobs
+      - name: Upload Review Context
+        uses: actions/upload-artifact@v4
+        with:
+          name: review-context-pr-${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+          path: |
+            examples/ci-code-review/pr-review-context.ptx
+            examples/ci-code-review/review-prompt.txt
+            examples/ci-code-review/pr-review-metadata.json
+          retention-days: 30
+
+      # Optional: Post summary comment to PR
+      - name: Comment PR Summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const metadata = JSON.parse(fs.readFileSync('examples/ci-code-review/pr-review-metadata.json', 'utf8'));
+
+            const comment = `## 🤖 AI Review Context Ready
+
+            Context has been extracted and is ready for AI review:
+
+            - **Files Analyzed**: ${metadata.file_count}
+            - **Token Count**: ${metadata.token_count.toLocaleString()}
+            - **Files Changed**: ${metadata.pr_info.changed_files.length}
+
+            ### Changed Files
+            ${metadata.pr_info.changed_files.map(f => `- \`${f}\``).join('\n')}
+
+            ### Next Steps
+            The review context is available as a workflow artifact. You can:
+            1. Download the artifact and send it to your AI assistant
+            2. Use the provided review prompt for structured feedback
+            3. Post the AI's suggestions as review comments
+
+            _Note: Automated AI review posting is not enabled. See workflow file for integration examples._
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  # Optional: Automated AI Review (requires API key)
+  # Uncomment and configure this job to automatically post AI reviews
+  #
+  # ai-review:
+  #   name: AI Review (Automated)
+  #   runs-on: ubuntu-latest
+  #   needs: extract-context
+  #   if: false  # Set to true when ready to enable
+  #
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #
+  #     - name: Download Review Context
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: review-context-pr-${{ github.event.pull_request.number }}
+  #
+  #     - name: Send to Claude API
+  #       env:
+  #         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  #       run: |
+  #         # Combine prompt and context
+  #         PROMPT=$(cat review-prompt.txt)
+  #         CONTEXT=$(cat pr-review-context.ptx)
+  #
+  #         # Call Claude API
+  #         REVIEW=$(curl -s https://api.anthropic.com/v1/messages \
+  #           -H "x-api-key: $ANTHROPIC_API_KEY" \
+  #           -H "anthropic-version: 2023-06-01" \
+  #           -H "content-type: application/json" \
+  #           -d "{
+  #             \"model\": \"claude-3-5-sonnet-20241022\",
+  #             \"max_tokens\": 4096,
+  #             \"messages\": [{
+  #               \"role\": \"user\",
+  #               \"content\": \"$PROMPT\n\n$CONTEXT\"
+  #             }]
+  #           }" | jq -r '.content[0].text')
+  #
+  #         # Save review
+  #         echo "$REVIEW" > ai-review.txt
+  #
+  #     - name: Post AI Review Comment
+  #       uses: actions/github-script@v7
+  #       with:
+  #         script: |
+  #           const fs = require('fs');
+  #           const review = fs.readFileSync('ai-review.txt', 'utf8');
+  #
+  #           github.rest.issues.createComment({
+  #             issue_number: context.issue.number,
+  #             owner: context.repo.owner,
+  #             repo: context.repo.repo,
+  #             body: `## 🤖 AI Code Review\n\n${review}\n\n---\n*This review was generated automatically by Claude 3.5 Sonnet*`
+  #           });
