@@ -7,20 +7,54 @@ func DefaultExcludes() []types.Rule {
 		// Pattern-based exclusions (fastest - checked first)
 		NewPatternRule([]string{
 			".DS_Store",
+			"Thumbs.db",
 
 			// Version control
 			".git/",
 			".git*",
 			".svn/",
 			".hg/",
+			".bzr/",
 
-			// Dependencies and packages
+			// ========== JavaScript/TypeScript/Node.js ==========
+			// Dependencies
 			"node_modules/",
-			"vendor/",
 			"bower_components/",
 			"jspm_packages/",
 
-			// Python virtual environments
+			// Build outputs
+			"dist/",
+			"build/",
+			"out/",
+			".output/", // Nuxt 3
+
+			// Framework-specific
+			".next/",           // Next.js
+			".nuxt/",           // Nuxt.js
+			".svelte-kit/",     // SvelteKit
+			".remix/",          // Remix
+			".astro/",          // Astro
+			".docusaurus/",     // Docusaurus
+			".vuepress/",       // VuePress
+			"_site/",           // Jekyll
+
+			// Bundler caches
+			".parcel-cache/",
+			".turbo/",
+			".rollup.cache/",
+
+			// Package manager
+			".npm/",
+			".yarn/",
+			".pnp.*",
+			".pnpm-debug.log",
+
+			// Deployment
+			".vercel/",
+			".netlify/",
+
+			// ========== Python ==========
+			// Virtual environments
 			".venv/",
 			"venv/",
 			"env/",
@@ -28,45 +62,105 @@ func DefaultExcludes() []types.Rule {
 			"virtualenv/",
 			".virtualenv/",
 
-			// IDE and editor
-			".idea/",
-			".vscode/",
-			".vs/",
-			"*.sublime-*",
-
-			// Build and output
-			"dist/",
-			"build/",
-			"out/",
-			"bin/",
-			"target/",
-
-			// Cache directories
+			// Cache and build
 			"__pycache__/",
 			".pytest_cache/",
 			".mypy_cache/",
 			".ruff_cache/",
-			".sass-cache/",
-			".npm/",
-			".yarn/",
-			".pnp.*",
-			".next/",
-			".nuxt/",
-			".cache/",
+			".tox/",
+			".nox/",
+			"*.egg-info/",
+			".eggs/",
+			".Python",
+			"pip-wheel-metadata/",
+			".ipynb_checkpoints/",
+			"htmlcov/",
+			".coverage",
 
-			// Test coverage
+			// ========== Ruby ==========
+			".bundle/",
+			"vendor/bundle/",
+			".gem/",
+
+			// ========== PHP ==========
+			"vendor/", // Composer (also used by Go)
+
+			// ========== Go ==========
+			"vendor/", // Go modules
+
+			// ========== Rust ==========
+			"target/", // Cargo
+
+			// ========== Java/Kotlin/Scala ==========
+			"target/",          // Maven
+			".gradle/",         // Gradle
+			".mvn/",            // Maven wrapper
+			"out/",             // IntelliJ
+
+			// ========== C#/.NET ==========
+			"bin/",
+			"obj/",
+			"packages/",
+			"*.nupkg",
+
+			// ========== Swift/iOS ==========
+			".build/",
+			".swiftpm/",
+			"DerivedData/",
+			"Pods/",
+			"xcuserdata/",
+
+			// ========== Dart/Flutter ==========
+			".dart_tool/",
+			".flutter-plugins",
+			".flutter-plugins-dependencies",
+
+			// ========== Elixir ==========
+			"_build/",
+			"deps/",
+			".elixir_ls/",
+
+			// ========== Android ==========
+			".externalNativeBuild/",
+			".cxx/",
+			"local.properties",
+
+			// ========== IDE and Editor ==========
+			".idea/",
+			".vscode/",
+			".vs/",
+			"*.sublime-*",
+			"*.swp",
+			"*.swo",
+			"*~",
+
+			// ========== Test Coverage ==========
 			"coverage/",
 			".nyc_output/",
+			"test-results/",
+			"junit/",
+			".phpunit.result.cache",
 
-			// Infrastructure
+			// ========== Infrastructure/DevOps ==========
 			".terraform/",
 			".vagrant/",
+			".docker/",
 
-			// Logs and temp
+			// ========== General Cache ==========
+			".cache/",
+			".temp/",
+			".tmp/",
+			".sass-cache/",
+
+			// ========== Logs and Temp ==========
 			"logs/",
 			"*.log",
 			"tmp/",
 			"temp/",
+
+			// ========== Database ==========
+			"*.db-shm",
+			"*.db-wal",
 		}, types.Exclude),
 
 		// Lock file detection (multi-layered, ordered by confidence)
