@@ -20,6 +20,14 @@ func DefaultExcludes() []types.Rule {
 			"bower_components/",
 			"jspm_packages/",
 
+			// Python virtual environments
+			".venv/",
+			"venv/",
+			"env/",
+			".env/",
+			"virtualenv/",
+			".virtualenv/",
+
 			// IDE and editor
 			".idea/",
 			".vscode/",
@@ -36,10 +44,15 @@ func DefaultExcludes() []types.Rule {
 			// Cache directories
 			"__pycache__/",
 			".pytest_cache/",
+			".mypy_cache/",
+			".ruff_cache/",
 			".sass-cache/",
 			".npm/",
 			".yarn/",
 			".pnp.*",
+			".next/",
+			".nuxt/",
+			".cache/",
 
 			// Test coverage
 			"coverage/",
