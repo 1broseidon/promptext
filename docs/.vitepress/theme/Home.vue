@@ -1,6 +1,12 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useData } from 'vitepress'
 const { theme } = useData()
+
+const isWindows = ref(false)
+onMounted(() => {
+  isWindows.value = navigator.userAgent.includes('Windows')
+})
 
 const features = [
   {
@@ -50,8 +56,9 @@ const features = [
 
       <!-- Install -->
       <div class="install-block">
-        <span class="install-dollar">$</span>
-        <code>go install github.com/1broseidon/promptext/cmd/prx@latest</code>
+        <span class="install-os">{{ isWindows ? 'PS' : 'macOS / Linux' }}</span>
+        <code v-if="!isWindows">curl -sSL promptext.sh/install | bash</code>
+        <code v-else>irm promptext.sh/install.ps1 | iex</code>
       </div>
 
       <!-- Actions -->
@@ -251,6 +258,17 @@ prx . --format markdown</code></pre>
   border: 1px solid var(--vp-c-divider);
   font-family: var(--vp-font-family-mono);
   font-size: 0.8125rem;
+}
+
+.install-os {
+  color: var(--vp-c-text-3);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  user-select: none;
+  white-space: nowrap;
+  padding-right: 0.25rem;
+  border-right: 1px solid var(--vp-c-divider);
 }
 
 .install-dollar {
