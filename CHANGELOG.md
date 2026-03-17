@@ -5,6 +5,16 @@ All notable changes to promptext will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.5] - 2026-03-17
+
+### Fixed
+- Self-update notification no longer shows a false positive after upgrading via Homebrew (or any external upgrade) — cached update state is now re-validated against the running version before displaying
+
+### Changed
+- CI: bump actions/checkout, actions/setup-go, and goreleaser-action to Node.js 24 compatible versions
+
+---
+
 ## [0.7.4] - 2026-03-17
 
 ### Added

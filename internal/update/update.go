@@ -591,10 +591,14 @@ func CheckAndNotifyUpdate(currentVersion string) {
 	// Check cache first to avoid excessive API calls
 	cache, err := loadUpdateCacheFn()
 	if err == nil && time.Since(cache.LastCheck) < checkInterval {
-		// Recent check exists, use cached result
+		// Re-validate cached result against current version in case user upgraded
+		// (e.g. via brew) without the cache being invalidated
 		if cache.UpdateAvailable {
-			fmt.Fprintf(os.Stderr, "\n💡 Update available: %s (current: %s)\n", cache.LatestVersion, currentVersion)
-			fmt.Fprintf(os.Stderr, "   Run 'promptext --update' to upgrade\n\n")
+			newer, verErr := isNewerVersion(strings.TrimPrefix(cache.LatestVersion, "v"), strings.TrimPrefix(currentVersion, "v"))
+			if verErr == nil && newer {
+				fmt.Fprintf(os.Stderr, "\n💡 Update available: %s (current: %s)\n", cache.LatestVersion, currentVersion)
+				fmt.Fprintf(os.Stderr, "   Run 'promptext --update' to upgrade\n\n")
+			}
 		}
 		return
 	}
