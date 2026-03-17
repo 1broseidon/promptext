@@ -276,7 +276,7 @@ func replaceBinary(execPath, binaryPath string, verbose bool) error {
 	}
 
 	// Remove old backup if it exists
-	os.Remove(backupPath)
+	_ = os.Remove(backupPath)
 
 	// Rename current binary to backup
 	if err := os.Rename(execPath, backupPath); err != nil {
@@ -287,15 +287,15 @@ func replaceBinary(execPath, binaryPath string, verbose bool) error {
 	// We use copy instead of rename because binaryPath might be on a different filesystem
 	if err := copyFileFn(binaryPath, execPath); err != nil {
 		// Rollback: restore backup
-		os.Rename(backupPath, execPath)
+		_ = os.Rename(backupPath, execPath)
 		return fmt.Errorf("failed to install new binary: %w", err)
 	}
 
 	// Clean up temporary binary file
-	os.Remove(binaryPath)
+	_ = os.Remove(binaryPath)
 
 	// Remove backup on success
-	os.Remove(backupPath)
+	_ = os.Remove(backupPath)
 	return nil
 }
 

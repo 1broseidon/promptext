@@ -54,6 +54,26 @@ changelog:
     - title: Others
       order: 999
 
+brews:
+  - ids:
+      - default
+    repository:
+      owner: 1broseidon
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    commit_author:
+      name: github-actions[bot]
+      email: 41898282+github-actions[bot]@users.noreply.github.com
+    commit_msg_template: "formula: update promptext to {{ .Tag }}"
+    homepage: https://promptext.sh
+    description: Smart code context extractor for AI assistants
+    license: MIT
+    install: |
+      bin.install "promptext"
+      bin.install_symlink "promptext" => "prx"
+
 release:
   github:
     owner: 1broseidon

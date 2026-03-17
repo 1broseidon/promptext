@@ -2,6 +2,7 @@ package relevance
 
 import (
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -145,13 +146,9 @@ func (s *Scorer) ScoreFiles(files []FileContent) []ScoredFile {
 	}
 
 	// Sort by score (highest first)
-	for i := 0; i < len(scored)-1; i++ {
-		for j := i + 1; j < len(scored); j++ {
-			if scored[j].Score > scored[i].Score {
-				scored[i], scored[j] = scored[j], scored[i]
-			}
-		}
-	}
+	sort.Slice(scored, func(i, j int) bool {
+		return scored[i].Score > scored[j].Score
+	})
 
 	return scored
 }

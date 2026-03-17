@@ -29,14 +29,14 @@ func DefaultExcludes() []types.Rule {
 			".output/", // Nuxt 3
 
 			// Framework-specific
-			".next/",           // Next.js
-			".nuxt/",           // Nuxt.js
-			".svelte-kit/",     // SvelteKit
-			".remix/",          // Remix
-			".astro/",          // Astro
-			".docusaurus/",     // Docusaurus
-			".vuepress/",       // VuePress
-			"_site/",           // Jekyll
+			".next/",       // Next.js
+			".nuxt/",       // Nuxt.js
+			".svelte-kit/", // SvelteKit
+			".remix/",      // Remix
+			".astro/",      // Astro
+			".docusaurus/", // Docusaurus
+			".vuepress/",   // VuePress
+			"_site/",       // Jekyll
 
 			// Bundler caches
 			".parcel-cache/",
@@ -92,10 +92,10 @@ func DefaultExcludes() []types.Rule {
 			"target/", // Cargo
 
 			// ========== Java/Kotlin/Scala ==========
-			"target/",          // Maven
-			".gradle/",         // Gradle
-			".mvn/",            // Maven wrapper
-			"out/",             // IntelliJ
+			"target/",  // Maven
+			".gradle/", // Gradle
+			".mvn/",    // Maven wrapper
+			"out/",     // IntelliJ
 
 			// ========== C#/.NET ==========
 			"bin/",

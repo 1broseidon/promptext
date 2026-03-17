@@ -18,7 +18,7 @@ import (
 
 // Build information. Populated at build time using -ldflags:
 //
-//	go build -ldflags "-X main.version=v0.2.4 -X main.commit=`git rev-parse HEAD` -X main.date=`date -u +%Y-%m-%d`"
+//	go build -ldflags "-X main.version=v0.7.3 -X main.date=`date -u +%Y-%m-%d`"
 var (
 	version = "dev"     // version from git tag
 	date    = "unknown" // build date in YYYY-MM-DD format
