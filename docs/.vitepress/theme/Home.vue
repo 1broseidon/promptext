@@ -1,4 +1,7 @@
 <script setup>
+import { useData } from 'vitepress'
+const { theme } = useData()
+
 const features = [
   {
     title: 'Relevance Scoring',
@@ -41,6 +44,7 @@ const features = [
       <div class="tagline-row">
         <div class="accent-line"></div>
         <p class="tagline">Smart code context extractor</p>
+        <span v-if="theme.version" class="version-tag">{{ theme.version }}</span>
       </div>
       <p class="subtitle">Token-aware code extraction with relevance scoring, language-aware filtering, and multiple output formats for AI assistant integration.</p>
 
@@ -218,6 +222,14 @@ prx . --format markdown</code></pre>
   color: var(--vp-c-text-3);
   font-size: 0.875rem;
   font-weight: 500;
+}
+
+.version-tag {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.6875rem;
+  color: var(--vp-c-text-3);
+  letter-spacing: 0.05em;
+  margin-left: auto;
 }
 
 .subtitle {
