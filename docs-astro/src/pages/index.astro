@@ -913,7 +913,7 @@ const features = [
 
           <!-- Install Command -->
           <div class="install-command" id="installCommand">
-            <code class="command-text" id="commandText">curl -sSL chain.sh/promptext/install | bash</code>
+            <code class="command-text" id="commandText">curl -sSL chain.sh/promptext/scripts/install.sh | bash</code>
             <button class="copy-btn" id="copyBtn" title="Copy to clipboard">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="4" y="4" width="8" height="10" rx="1"/>
@@ -1016,15 +1016,15 @@ const features = [
     // OS configuration
     const osConfig = {
       mac: {
-        command: 'curl -sSL chain.sh/promptext/install | bash',
+        command: 'curl -sSL chain.sh/promptext/scripts/install.sh | bash',
         name: 'macOS'
       },
       windows: {
-        command: 'irm chain.sh/promptext/install.ps1 | iex',
+        command: 'irm chain.sh/promptext/scripts/install.ps1 | iex',
         name: 'Windows'
       },
       linux: {
-        command: 'curl -sSL chain.sh/promptext/install | bash',
+        command: 'curl -sSL chain.sh/promptext/scripts/install.sh | bash',
         name: 'Linux'
       }
     };

@@ -1,9 +1,9 @@
 # Installation Scripts
 
-These scripts are served via Astro endpoints at:
-- `chain.sh/promptext/install` → `install.sh`
-- `chain.sh/promptext/uninstall` → `uninstall.sh`
-- `chain.sh/promptext/install.ps1` → `install.ps1`
+These scripts are served directly as static files at:
+- `chain.sh/promptext/scripts/install.sh`
+- `chain.sh/promptext/scripts/uninstall.sh`
+- `chain.sh/promptext/scripts/install.ps1`
 
 ## Keeping Scripts in Sync
 
@@ -14,11 +14,9 @@ When updating installation scripts:
 2. Copy them here: `cp scripts/*.{sh,ps1} docs-astro/public/scripts/`
 3. Commit both locations together
 
-## Endpoints
+## Publishing
 
-The Astro endpoints are defined in:
-- `src/pages/install.ts`
-- `src/pages/uninstall.ts`
-- `src/pages/install.ps1.ts`
-
-These endpoints serve the scripts as plain text with proper headers for piping to bash/PowerShell.
+These files are published directly from:
+- `public/scripts/install.sh`
+- `public/scripts/uninstall.sh`
+- `public/scripts/install.ps1`

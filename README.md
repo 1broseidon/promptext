@@ -55,12 +55,12 @@ Working with AI assistants requires code context, but:
 
 **macOS/Linux:**
 ```bash
-curl -sSL chain.sh/promptext/install | bash
+curl -sSL chain.sh/promptext/scripts/install.sh | bash
 ```
 
 **Windows:**
 ```powershell
-irm chain.sh/promptext/install.ps1 | iex
+irm chain.sh/promptext/scripts/install.ps1 | iex
 ```
 
 **Go Install (requires Go 1.19+):**
@@ -85,7 +85,7 @@ prx --update
 
 **Uninstall:**
 ```bash
-curl -sSL chain.sh/promptext/uninstall | bash
+curl -sSL chain.sh/promptext/scripts/uninstall.sh | bash
 ```
 
 > **Note:** `promptext` automatically checks for new releases once per day and notifies you when updates are available.
