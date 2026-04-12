@@ -7,12 +7,12 @@ description: Quick start guide for promptext installation and basic usage
 
 **macOS/Linux:**
 ```bash
-curl -sSL promptext.sh/install | bash
+curl -sSL chain.sh/promptext/install | bash
 ```
 
 **Windows:**
 ```powershell
-irm promptext.sh/install.ps1 | iex
+irm chain.sh/promptext/install.ps1 | iex
 ```
 
 **Go Install (requires Go 1.19+):**
@@ -27,7 +27,7 @@ Download binaries from [GitHub Releases](https://github.com/1broseidon/promptext
 
 **Linux/macOS:**
 ```bash
-curl -sSL promptext.sh/uninstall | bash
+curl -sSL chain.sh/promptext/uninstall | bash
 ```
 
 **Manual Removal:**

@@ -1,9 +1,9 @@
 # Installation Scripts
 
 These scripts are served via Astro endpoints at:
-- `promptext.sh/install` → `install.sh`
-- `promptext.sh/uninstall` → `uninstall.sh`
-- `promptext.sh/install.ps1` → `install.ps1`
+- `chain.sh/promptext/install` → `install.sh`
+- `chain.sh/promptext/uninstall` → `uninstall.sh`
+- `chain.sh/promptext/install.ps1` → `install.ps1`
 
 ## Keeping Scripts in Sync
 

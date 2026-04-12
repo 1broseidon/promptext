@@ -161,10 +161,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.2] - 2025-11-07
 
 ### Added
-- **Custom Domain**: Configured promptext.sh as the official documentation domain
+- **Custom Domain**: Configured promptext.sh as the original documentation domain
   - DNS records configured for GitHub Pages
   - Domain verified and secured with HTTPS
-  - All documentation now served from promptext.sh
+  - Documentation was originally served from promptext.sh and now lives at chain.sh/promptext
 - **Landing Page**: Beautiful minimal hero section with live terminal demo
   - Split-screen layout with hero text and animated terminal
   - Real-time demonstration of token budget and relevance filtering

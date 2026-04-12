@@ -4,7 +4,7 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://promptext.sh',
+	site: 'https://chain.sh/promptext',
 	base: '/',
 	integrations: [
 		starlight({

@@ -14,7 +14,7 @@ A fast, token-efficient tool that transforms your code into optimized context fo
 [![Release](https://img.shields.io/github/release/1broseidon/promptext.svg)](https://github.com/1broseidon/promptext/releases/latest)
 [![Documentation](https://img.shields.io/badge/docs-chain.sh-blue)](https://chain.sh/promptext)
 
-[Documentation](https://1broseidon.github.io/promptext/) • [Installation](#installation) • [Quick Start](#quick-start) • [Examples](#usage)
+[Documentation](https://chain.sh/promptext) • [Installation](#installation) • [Quick Start](#quick-start) • [Examples](#usage)
 
 </div>
 
@@ -55,12 +55,12 @@ Working with AI assistants requires code context, but:
 
 **macOS/Linux:**
 ```bash
-curl -sSL promptext.sh/install | bash
+curl -sSL chain.sh/promptext/install | bash
 ```
 
 **Windows:**
 ```powershell
-irm promptext.sh/install.ps1 | iex
+irm chain.sh/promptext/install.ps1 | iex
 ```
 
 **Go Install (requires Go 1.19+):**
@@ -85,7 +85,7 @@ prx --update
 
 **Uninstall:**
 ```bash
-curl -sSL promptext.sh/uninstall | bash
+curl -sSL chain.sh/promptext/uninstall | bash
 ```
 
 > **Note:** `promptext` automatically checks for new releases once per day and notifies you when updates are available.
@@ -482,7 +482,7 @@ The following are **always excluded** automatically:
 
 ## Documentation
 
-For comprehensive documentation, visit [1broseidon.github.io/promptext](https://1broseidon.github.io/promptext/)
+For comprehensive documentation, visit [chain.sh/promptext](https://chain.sh/promptext)
 
 Topics covered:
 - 📖 **Configuration Reference** — All options and settings
@@ -544,6 +544,6 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 **Built with ❤️ by the promptext community**
 
-[⭐ Star on GitHub](https://github.com/1broseidon/promptext) • [📖 Documentation](https://1broseidon.github.io/promptext/) • [🐛 Report Bug](https://github.com/1broseidon/promptext/issues)
+[⭐ Star on GitHub](https://github.com/1broseidon/promptext) • [📖 Documentation](https://chain.sh/promptext) • [🐛 Report Bug](https://github.com/1broseidon/promptext/issues)
 
 </div>

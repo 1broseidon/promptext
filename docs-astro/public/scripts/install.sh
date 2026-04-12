@@ -33,7 +33,7 @@ Examples:
 
 Uninstall (Recommended):
     # Use dedicated uninstall script:
-    curl -sSL promptext.sh/uninstall | bash
+    curl -sSL chain.sh/promptext/uninstall | bash
 EOF
     exit 0
 }
@@ -320,7 +320,7 @@ install_promptext() {
     echo "You can use either '$BINARY_NAME' or 'prx' command after restarting your terminal."
     echo ""
     echo "To uninstall, run:"
-    echo "  curl -sSL promptext.sh/uninstall | bash"
+    echo "  curl -sSL chain.sh/promptext/uninstall | bash"
 }
 
 # Main script

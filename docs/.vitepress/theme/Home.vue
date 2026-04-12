@@ -57,8 +57,8 @@ const features = [
       <!-- Install -->
       <div class="install-block">
         <span class="install-os">{{ isWindows ? 'PS' : 'macOS / Linux' }}</span>
-        <code v-if="!isWindows">curl -sSL promptext.sh/install | bash</code>
-        <code v-else>irm promptext.sh/install.ps1 | iex</code>
+        <code v-if="!isWindows">curl -sSL chain.sh/promptext/install | bash</code>
+        <code v-else>irm chain.sh/promptext/install.ps1 | iex</code>
       </div>
 
       <!-- Actions -->

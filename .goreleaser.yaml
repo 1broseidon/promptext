@@ -67,7 +67,7 @@ brews:
       name: github-actions[bot]
       email: 41898282+github-actions[bot]@users.noreply.github.com
     commit_msg_template: "formula: update promptext to {{ .Tag }}"
-    homepage: https://promptext.sh
+    homepage: https://chain.sh/promptext
     description: Smart code context extractor for AI assistants
     license: MIT
     install: |
@@ -85,10 +85,10 @@ release:
     **Install Scripts (Recommended):**
     ```bash
     # macOS/Linux
-    curl -sSL promptext.sh/install | bash
+    curl -sSL chain.sh/promptext/install | bash
 
     # Windows PowerShell
-    irm promptext.sh/install.ps1 | iex
+    irm chain.sh/promptext/install.ps1 | iex
     ```
 
     **Go Install:**
@@ -101,12 +101,12 @@ release:
 
     **Uninstall:**
     ```bash
-    curl -sSL promptext.sh/uninstall | bash
+    curl -sSL chain.sh/promptext/uninstall | bash
     ```
 
     ---
   footer: |
-    **Documentation:** https://promptext.sh
+    **Documentation:** https://chain.sh/promptext
 
     **Verify Installation:**
     ```bash
