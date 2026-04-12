@@ -1,6 +1,10 @@
 ---
 import { Icon } from '@astrojs/starlight/components';
 
+const basePath = '/promptext';
+const homeHref = `${basePath}/`;
+const docsHref = `${basePath}/getting-started/`;
+
 const features = [
   {
     title: "Smart Filtering",
@@ -812,7 +816,7 @@ const features = [
 </head>
 <body>
   <nav>
-    <a href="/" class="logo">
+    <a href={homeHref} class="logo">
       <svg class="logo-mark" width="32" height="32" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
         <path d="M 30 10 L 15 10 L 15 54 L 30 54"
               fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -828,7 +832,7 @@ const features = [
       <span class="logo-text">promptext</span>
     </a>
     <div class="nav-links">
-      <a href="/getting-started" title="Documentation">
+      <a href={docsHref} title="Documentation">
         <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
           <rect x="3" y="2" width="10" height="12" rx="1"/>
           <line x1="6" y1="5" x2="10" y2="5"/>
@@ -896,7 +900,7 @@ const features = [
             </div>
 
             <!-- Docs Link -->
-            <a href="/getting-started" class="docs-link">
+            <a href={docsHref} class="docs-link">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
                 <rect x="3" y="2" width="10" height="12" rx="1"/>
                 <line x1="6" y1="5" x2="10" y2="5"/>
@@ -921,7 +925,7 @@ const features = [
 
         <!-- Mobile CTA -->
         <div class="mobile-cta">
-          <a href="/getting-started" class="btn">
+          <a href={docsHref} class="btn">
             <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <rect x="3" y="2" width="10" height="12" rx="1"/>
               <line x1="6" y1="5" x2="10" y2="5"/>
