@@ -239,7 +239,7 @@ main() {
     print_success "Promptext has been uninstalled!"
     echo ""
     print_info "Note: You may need to restart your terminal for changes to take effect"
-    print_info "To reinstall: curl -sSL chain.sh/promptext/install | bash"
+    print_info "To reinstall: curl -sSL chain.sh/promptext/scripts/install.sh | bash"
 }
 
 # Run main function
